@@ -1,4 +1,4 @@
-module gost
+module github.com/Lukmanern/gost
 
 go 1.20
 

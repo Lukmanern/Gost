@@ -1,6 +1,6 @@
 package main
 
-import "gost/application"
+import "github.com/Lukmanern/gost/application"
 
 func main() {
 	application.RunApp()

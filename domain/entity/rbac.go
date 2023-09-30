@@ -1,6 +1,6 @@
 package entity
 
-import "gost/domain/base"
+import "github.com/Lukmanern/gost/domain/base"
 
 type Role struct {
 	ID   int    `gorm:"type:bigint(20) unsigned not null;autoIncrement;primaryKey" json:"id"`

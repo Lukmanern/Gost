@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"gost/database/connection"
-	"gost/domain/entity"
 	"log"
+
+	"github.com/Lukmanern/gost/database/connection"
+	"github.com/Lukmanern/gost/domain/entity"
 )
 
 // Becareful using this

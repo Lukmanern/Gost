@@ -3,11 +3,12 @@ package application
 import (
 	"errors"
 	"fmt"
-	"gost/database/connection"
 	"log"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/Lukmanern/gost/database/connection"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
