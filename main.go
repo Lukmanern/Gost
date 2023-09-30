@@ -1,9 +1,12 @@
 package main
 
 import (
-	"github.com/Lukmanern/gost/application"
+	"fmt"
+
+	"github.com/Lukmanern/gost/internal/env"
 )
 
 func main() {
-	application.RunApp()
+	fmt.Println(env.ReadConfig("./.env"))
+	// application.RunApp()
 }
