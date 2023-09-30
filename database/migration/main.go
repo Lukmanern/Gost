@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/Lukmanern/gost/database/connection"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/internal/rbac"
 )
 
 // Becareful using this
@@ -15,13 +17,19 @@ func main() {
 	db := connection.LoadDatabase()
 	fmt.Print("\n\nStart Migration\n\n")
 	defer fmt.Print("\n\nFinish Migration\n\n")
+	dropAllTable := false
 
 	// do in development
 	// Becoreful, delete entire Tables of Your Database...
-	deleteErr := db.Migrator().DropTable(AllTables()...)
-	if deleteErr != nil {
-		log.Panicf("Error while deleting tables DB : %s", deleteErr)
-	}
+	func() {
+		tables := AllTables()
+		deleteErr := db.Migrator().DropTable(tables...)
+		if deleteErr != nil {
+			log.Panicf("Error while deleting tables DB : %s", deleteErr)
+		}
+
+		dropAllTable = true
+	}()
 
 	migrateErr := db.AutoMigrate(
 		AllTables()...,
@@ -30,9 +38,26 @@ func main() {
 		log.Panicf("Error while migration DB : %s", migrateErr)
 		db.Rollback()
 	}
+
+	if dropAllTable {
+		// add just permission and table :)
+		for _, data := range rbac.AllPermissions() {
+			time.Sleep(100 * time.Millisecond)
+			if createErr := db.Create(&data).Error; createErr != nil {
+				log.Panicf("Error while create Permissions : %s", createErr)
+			}
+		}
+		time.Sleep(500 * time.Millisecond)
+		for _, data := range rbac.AllRoles() {
+			time.Sleep(100 * time.Millisecond)
+			if createErr := db.Create(&data).Error; createErr != nil {
+				log.Panicf("Error while create Roles : %s", createErr)
+			}
+		}
+	}
 }
 
-// Add Your Table Here : must sorted right.
+// Don't forget to Add Your new Table Here : must sorted .
 func AllTables() []interface{} {
 	return []any{
 		&entity.User{},

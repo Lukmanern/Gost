@@ -4,7 +4,7 @@ import "github.com/Lukmanern/gost/domain/base"
 
 type Role struct {
 	ID   int    `gorm:"type:bigint(20) unsigned not null;autoIncrement;primaryKey" json:"id"`
-	Name string `gorm:"type:varchar(255) not null" json:"name"`
+	Name string `gorm:"type:varchar(255) not null unique" json:"name"`
 
 	base.TimeAttributes
 }
@@ -29,7 +29,7 @@ func (r *RoleHasPermissions) TableName() string {
 
 type Permission struct {
 	ID   int    `gorm:"type:bigint(20) unsigned not null;autoIncrement;primaryKey" json:"id"`
-	Name string `gorm:"type:varchar(255) not null" json:"name"`
+	Name string `gorm:"type:varchar(255) not null unique" json:"name"`
 
 	base.TimeAttributes
 }
