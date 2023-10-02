@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/Lukmanern/gost/internal/env"
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -18,7 +19,8 @@ var (
 func LoadDatabase() *gorm.DB {
 	gormDatabaseOnce.Do(func() {
 		// try to connect to database
-		dsn := "root:@tcp(localhost:3306)/gost?charset=utf8mb4&multiStatements=true&parseTime=true"
+		env.ReadConfig("./.env")
+		dsn := env.Configuration().GetDatabaseURI()
 		var conErr error
 
 		gormDatabase, conErr = gorm.Open(mysql.Open(dsn), &gorm.Config{})

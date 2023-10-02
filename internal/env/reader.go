@@ -1,7 +1,9 @@
 package env
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -21,31 +23,38 @@ var (
 )
 
 type Config struct {
-	Title             string        `env-default:"Golang Test Fatur Rahman"`
-	AccessTokenTTL    time.Duration `env:"ACCESS_TOKEN_TTL" env-default:"1440m" env-upd`
-	Port              int           `env:"PORT" env-default:"7007"`
-	SecretBytes       string        `env:"SECRET_BYTES" env-default:"secret"`
-	MysqlRootHost     string        `env:"MYSQL_ROOT_HOST" env-upd`
-	MysqlRootPassword string        `env:"MYSQL_ROOT_PASSWORD" env-upd`
-	MysqlPort         string        `env:"MYSQL_PORT" env-upd`
-	MysqlUser         string        `env:"MYSQL_USER" env-upd`
-	MysqlPassword     string        `env:"MYSQL_PASSWORD" env-upd`
-	MysqlDbname       string        `env:"MYSQL_DBNAME" env-upd`
-	DatabaseURI       string
-	PublicKey         string `env:"PUBLIC_KEY" env-required`
-	PrivateKey        string `env:"PRIVATE_KEY" env-required`
-	SMTPServer        string `env:"SMTP_SERVER" env-required`
-	SMTPPort          int    `env:"SMTP_PORT" env-required`
-	SMTPEmail         string `env:"SMTP_EMAIL" env-required`
-	SMTPPassword      string `env:"SMTP_PASSWORD" env-required`
-	ClientURL         string `env:"CLIENT_URL" env-required`
+	AppName           string        `env:"APP_NAME"`
+	AppInProduction   bool          `env:"APP_IN_PRODUCTION"`
+	AppKey            string        `env:"APP_SECRET_KEY"`
+	AppAccessTokenTTL time.Duration `env:"APP_ACCESS_TOKEN_TTL"`
+	AppPort           int           `env:"APP_PORT"`
+
+	DatabaseRootHost     string `env:"DB_HOST"`
+	DatabaseRootPassword string `env:"DB_ROOT_PASSWORD"`
+	DatabasePort         string `env:"DB_PORT"`
+	DatabaseUser         string `env:"DB_USERNAME"`
+	DatabasePassword     string `env:"DB_PASSWORD"`
+	DatabaseName         string `env:"DB_DATABASE"`
+	DatabaseURI          string
+
+	PublicKey  string `env:"PUBLIC_KEY"`
+	PrivateKey string `env:"PRIVATE_KEY"`
+
+	SMTPServer   string `env:"SMTP_SERVER"`
+	SMTPPort     int    `env:"SMTP_PORT"`
+	SMTPEmail    string `env:"SMTP_EMAIL"`
+	SMTPPassword string `env:"SMTP_PASSWORD"`
+	ClientURL    string `env:"CLIENT_URL"`
 }
 
-func ReadConfig(file string) *Config {
+func ReadConfig(filePath string) *Config {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		log.Panicf(`.env file isn't exist/found: "%s"`, filePath)
+	}
 	cfgOnce.Do(func() {
-		envFile = &file
+		envFile = &filePath
 		log.Printf(`Reading config file: "%s"`, *envFile)
-		err := cleanenv.ReadConfig(file, &cfg)
+		err := cleanenv.ReadConfig(filePath, &cfg)
 		if err != nil {
 			err := cleanenv.ReadEnv(&cfg)
 			if err != nil {
@@ -54,4 +63,40 @@ func ReadConfig(file string) *Config {
 		}
 	})
 	return &cfg
+}
+
+func Configuration() Config {
+	if envFile == nil {
+		log.Panic(`configuration file is not set. Call ReadConfig("path_to_file") first`)
+	}
+	err := cleanenv.UpdateEnv(&cfg)
+	if err != nil {
+		log.Fatalf("Config error %s", err.Error())
+	}
+	return cfg
+}
+
+func (c Config) GetDatabaseURI() string {
+	c.DatabaseURI = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&multiStatements=true&parseTime=true",
+		c.DatabaseUser, c.DatabasePassword, c.DatabaseRootHost, c.DatabasePort, c.DatabaseName)
+
+	return c.DatabaseURI
+}
+
+func (c Config) ShowVars() {
+	fmt.Printf("%-21s: %s\n", "AppName", c.AppName)
+	fmt.Printf("%-21s: %v\n", "AppInProduction", c.AppInProduction)
+	fmt.Printf("%-21s: %s\n", "AppKey", c.AppKey)
+	fmt.Printf("%-21s: %s\n", "AppAccessTokenTTL", c.AppAccessTokenTTL)
+	fmt.Printf("%-21s: %d\n", "AppPort", c.AppPort)
+
+	fmt.Printf("%-21s: %s\n", "DatabaseRootHost", c.DatabaseRootHost)
+	fmt.Printf("%-21s: %s\n", "DatabaseRootPassword", c.DatabaseRootPassword)
+	fmt.Printf("%-21s: %s\n", "DatabasePort", c.DatabasePort)
+	fmt.Printf("%-21s: %s\n", "DatabaseUser", c.DatabaseUser)
+	fmt.Printf("%-21s: %s\n", "DatabasePassword", c.DatabasePassword)
+	fmt.Printf("%-21s: %s\n", "DatabaseName", c.DatabaseName)
+	fmt.Printf("%-21s: %s\n", "DatabaseURI", c.DatabaseURI)
+
+	// add more as needed
 }
