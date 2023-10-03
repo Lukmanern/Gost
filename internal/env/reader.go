@@ -10,18 +10,6 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-var (
-	PublicKey  *[]byte
-	PrivateKey *[]byte
-
-	envFile *string
-	cfg     Config
-
-	PublicKeyReadOne  sync.Once
-	PrivateKeyReadOne sync.Once
-	cfgOnce           sync.Once
-)
-
 type Config struct {
 	AppName           string        `env:"APP_NAME"`
 	AppInProduction   bool          `env:"APP_IN_PRODUCTION"`
@@ -46,6 +34,18 @@ type Config struct {
 	SMTPPassword string `env:"SMTP_PASSWORD"`
 	ClientURL    string `env:"CLIENT_URL"`
 }
+
+var (
+	PublicKey  *[]byte
+	PrivateKey *[]byte
+
+	envFile *string
+	cfg     Config
+
+	PublicKeyReadOne  sync.Once
+	PrivateKeyReadOne sync.Once
+	cfgOnce           sync.Once
+)
 
 func ReadConfig(filePath string) *Config {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -83,7 +83,7 @@ func (c Config) GetDatabaseURI() string {
 	return c.DatabaseURI
 }
 
-func (c Config) ShowVars() {
+func (c Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "AppName", c.AppName)
 	fmt.Printf("%-21s: %v\n", "AppInProduction", c.AppInProduction)
 	fmt.Printf("%-21s: %s\n", "AppKey", c.AppKey)

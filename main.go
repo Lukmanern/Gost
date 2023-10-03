@@ -7,5 +7,5 @@ import (
 func main() {
 	env.ReadConfig("./.env")
 	config := env.Configuration()
-	config.ShowVars()
+	config.ShowConfig()
 }
