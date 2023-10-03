@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/Lukmanern/gost/database/connection"
+	"github.com/Lukmanern/gost/database/connector"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -46,7 +46,7 @@ var (
 )
 
 func RunApp() {
-	connection.LoadDatabase()
+	connector.LoadDatabase()
 
 	router.Use(cors.New(cors.Config{
 		AllowCredentials: true,

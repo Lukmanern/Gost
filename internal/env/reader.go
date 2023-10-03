@@ -25,6 +25,8 @@ type Config struct {
 	DatabaseName         string `env:"DB_DATABASE"`
 	DatabaseURI          string
 
+	RedisURI string `env:"REDIS_URI"`
+
 	PublicKey  string `env:"PUBLIC_KEY"`
 	PrivateKey string `env:"PRIVATE_KEY"`
 

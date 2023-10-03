@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/Lukmanern/gost/database/connection"
+	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/internal/rbac"
 )
@@ -14,7 +14,7 @@ import (
 // This will delete entire DB Tables,
 // and recreate from beginning
 func main() {
-	db := connection.LoadDatabase()
+	db := connector.LoadDatabase()
 	fmt.Print("\n\nStart Migration\n\n")
 	defer fmt.Print("\n\nFinish Migration\n\n")
 	dropAllTable := false
