@@ -16,20 +16,20 @@ type JWTHandler struct {
 }
 
 func NewHWTHandler() *JWTHandler {
-	jwtHandler := JWTHandler{}
-	jwtHandler.privateKeyOnce.Do(func() {
+	handler := JWTHandler{}
+	handler.privateKeyOnce.Do(func() {
 		rng := rand.Reader
 		var err error
-		jwtHandler.privateKey, err = rsa.GenerateKey(rng, 2048)
+		handler.privateKey, err = rsa.GenerateKey(rng, 2048)
 		if err != nil {
 			log.Panicf("error while generating rsa-key: %v", err)
 		}
-		if jwtHandler.privateKey == nil {
+		if handler.privateKey == nil {
 			log.Panic("failed generating rsa-key")
 		}
 	})
 
-	return &jwtHandler
+	return &handler
 }
 
 // This func used for login.

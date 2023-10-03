@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type StdFormatReturn struct {
+type response struct {
 	Message string      `json:"message"`
 	Success bool        `json:"success"`
 	Data    interface{} `json:"data"`
@@ -12,7 +12,7 @@ type StdFormatReturn struct {
 
 func formatResponse(c *fiber.Ctx, statusCode int, success bool, message string, data interface{}) error {
 	c.Status(statusCode)
-	return c.JSON(StdFormatReturn{
+	return c.JSON(response{
 		Message: message,
 		Success: success,
 		Data:    data,

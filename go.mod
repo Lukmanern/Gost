@@ -11,6 +11,8 @@ require (
 	gorm.io/gorm v1.25.4
 )
 
+require github.com/pkg/errors v0.9.1
+
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
