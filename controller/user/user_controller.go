@@ -21,13 +21,19 @@ type UserControllerImpl struct {
 	service service.UserService
 }
 
+func NewUserController(userService service.UserService) UserController {
+	return &UserControllerImpl{
+		service: userService,
+	}
+}
+
 func (ctr UserControllerImpl) Create(c *fiber.Ctx) error {
 	var user model.UserCreate
 	if err := c.BodyParser(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
 	}
 	validate := validator.New()
-	if err := validate.Struct(user); err != nil {
+	if err := validate.Struct(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
 	}
 

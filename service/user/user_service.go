@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sync"
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
@@ -22,13 +23,25 @@ type UserServiceImpl struct {
 	repository repository.UserRepository
 }
 
-func NewUserService(userRepository repository.UserRepository) UserService {
-	return &UserServiceImpl{
-		repository: userRepository,
-	}
+var (
+	userService     *UserServiceImpl
+	userServiceOnce sync.Once
+)
+
+func NewUserService() UserService {
+	userServiceOnce.Do(func() {
+		userService = &UserServiceImpl{
+			repository: repository.NewUserRepository(),
+		}
+	})
+
+	return userService
 }
 
 func (service UserServiceImpl) Create(ctx context.Context, user model.UserCreate) (id int, err error) {
+	// Todo
+	// GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error)
+	// validasi dulu apakah email yang digunakan untuk regis sudah ada di database atau belum
 	userEntity := entity.User{
 		Name:     user.Name,
 		Email:    user.Email,
