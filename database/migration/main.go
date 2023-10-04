@@ -62,8 +62,6 @@ func AllTables() []interface{} {
 	return []any{
 		&entity.User{},
 		&entity.Role{},
-		&entity.UserHasRoles{},
 		&entity.Permission{},
-		&entity.RoleHasPermissions{},
 	}
 }

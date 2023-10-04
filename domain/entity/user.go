@@ -9,22 +9,10 @@ type User struct {
 	Password string `gorm:"type:varchar(255) not null" json:"password"`
 
 	base.TimeAttributes
+
+	Roles []Role `gorm:"many2many:user_has_roles" json:"roles"`
 }
 
 func (u *User) TableName() string {
 	return "users"
-}
-
-// User Has Many Roles === user <-many to many-> role
-// Role/s Has Many Permissions === role <-many to many-> permission
-
-type UserHasRoles struct {
-	UserID int  `json:"user_id"`
-	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user"`
-	RoleID int  `json:"role_id"`
-	Role   Role `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"role"`
-}
-
-func (r *UserHasRoles) TableName() string {
-	return "user_has_roles"
 }
