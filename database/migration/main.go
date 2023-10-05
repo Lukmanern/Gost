@@ -7,8 +7,21 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/rbac"
 )
+
+// Don't forget to Add Your new
+// Table Here : must sorted .
+func AllTables() []interface{} {
+	return []any{
+		&entity.User{},
+		&entity.Role{},
+		&entity.Permission{},
+
+		// Add more tables/structs here
+	}
+}
 
 // Becareful using this
 // This will delete entire DB Tables,
@@ -17,19 +30,23 @@ func main() {
 	db := connector.LoadDatabase()
 	fmt.Print("\n\nStart Migration\n\n")
 	defer fmt.Print("\n\nFinish Migration\n\n")
-	dropAllTable := false
 
 	// do in development
-	// Becoreful, delete entire Tables of Your Database...
-	func() {
-		tables := AllTables()
-		deleteErr := db.Migrator().DropTable(tables...)
-		if deleteErr != nil {
-			log.Panicf("Error while deleting tables DB : %s", deleteErr)
-		}
-
-		dropAllTable = true
-	}()
+	// Becoreful, delete entire
+	// Tables and datas of Your Database.
+	env.ReadConfig("./.env")
+	appInProduction := env.Configuration().GetAppInProduction()
+	if !appInProduction {
+		func() {
+			fmt.Print("\n\nWarning : DROP ALL TABLES in 9 seconds (CTRL+C to stop)\n\n")
+			time.Sleep(9 * time.Second)
+			tables := AllTables()
+			deleteErr := db.Migrator().DropTable(tables...)
+			if deleteErr != nil {
+				log.Panicf("Error while deleting tables DB : %s", deleteErr)
+			}
+		}()
+	}
 
 	migrateErr := db.AutoMigrate(
 		AllTables()...,
@@ -39,8 +56,8 @@ func main() {
 		db.Rollback()
 	}
 
-	if dropAllTable {
-		// add just permission and table :)
+	if !appInProduction {
+		// add permission and table
 		for _, data := range rbac.AllPermissions() {
 			time.Sleep(100 * time.Millisecond)
 			if createErr := db.Create(&data).Error; createErr != nil {
@@ -54,14 +71,5 @@ func main() {
 				log.Panicf("Error while create Roles : %s", createErr)
 			}
 		}
-	}
-}
-
-// Don't forget to Add Your new Table Here : must sorted .
-func AllTables() []interface{} {
-	return []any{
-		&entity.User{},
-		&entity.Role{},
-		&entity.Permission{},
 	}
 }

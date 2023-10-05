@@ -85,6 +85,10 @@ func (c Config) GetDatabaseURI() string {
 	return c.DatabaseURI
 }
 
+func (c Config) GetAppInProduction() bool {
+	return c.AppInProduction
+}
+
 func (c Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "AppName", c.AppName)
 	fmt.Printf("%-21s: %v\n", "AppInProduction", c.AppInProduction)
