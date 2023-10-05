@@ -19,7 +19,7 @@ type UserService interface {
 	GetByID(ctx context.Context, id int) (user *model.UserResponse, err error)
 	GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error)
 	GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error)
-	Update(ctx context.Context, user model.UserUpdate) (err error)
+	Update(ctx context.Context, user model.UserProfileUpdate) (err error)
 	Delete(ctx context.Context, id int) (err error)
 }
 
@@ -121,7 +121,7 @@ func (service UserServiceImpl) GetAll(ctx context.Context, filter base.RequestGe
 	return users, total, nil
 }
 
-func (service UserServiceImpl) Update(ctx context.Context, user model.UserUpdate) (err error) {
+func (service UserServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
 	isUserExist := func() bool {
 		getUser, getErr := service.GetByID(ctx, user.ID)
 		if getErr != nil {

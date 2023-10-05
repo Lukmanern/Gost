@@ -7,8 +7,6 @@ import (
 
 func main() {
 	env.ReadConfig("./.env")
-	config := env.Configuration()
-	config.ShowConfig()
-
+	_ = env.Configuration()
 	application.RunApp()
 }

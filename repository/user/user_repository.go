@@ -18,6 +18,7 @@ type UserRepository interface {
 	GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.User, total int, err error)
 	Update(ctx context.Context, user entity.User) (err error)
 	Delete(ctx context.Context, id int) (err error)
+	UpdatePassword(ctx context.Context, id int, passwordHashed string) (err error)
 }
 
 type UserRepositoryImpl struct {
@@ -97,15 +98,15 @@ func (repo UserRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGe
 
 func (repo UserRepositoryImpl) Update(ctx context.Context, user entity.User) (err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
-		var oldData entity.User
-		result := tx.Where("id = ?", user.ID).First(&oldData)
+		var oldUser entity.User
+		result := tx.Where("id = ?", user.ID).First(&oldUser)
 		if result.Error != nil {
 			return result.Error
 		}
 
-		oldData.Name = user.Name
-		oldData.UpdatedAt = user.UpdatedAt
-		result = tx.Save(&oldData)
+		oldUser.Name = user.Name
+		oldUser.UpdatedAt = user.UpdatedAt
+		result = tx.Save(&oldUser)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -122,4 +123,23 @@ func (repo UserRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
 		return result.Error
 	}
 	return nil
+}
+
+func (repo UserRepositoryImpl) UpdatePassword(ctx context.Context, id int, passwordHashed string) (err error) {
+	err = repo.db.Transaction(func(tx *gorm.DB) error {
+		var user entity.User
+		result := tx.Where("id = ?", id).First(&user)
+		if result.Error != nil {
+			return result.Error
+		}
+		user.Password = passwordHashed
+		user.SetUpdateTime()
+		result = tx.Save(&user)
+		if result.Error != nil {
+			return result.Error
+		}
+		return nil
+	})
+
+	return err
 }

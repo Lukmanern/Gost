@@ -15,6 +15,5 @@ func (att *TimeFieds) SetTimes() {
 
 func (att *TimeFieds) SetUpdateTime() {
 	timeNow := time.Now()
-	att.CreatedAt = &timeNow
 	att.UpdatedAt = &timeNow
 }

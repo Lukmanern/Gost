@@ -82,6 +82,7 @@ func RunApp() {
 	}()
 
 	getUserRoutes(router)
+	getUserAuthRoutes(router)
 
 	if err := router.Listen(fmt.Sprintf(":%d", 9009)); err != nil {
 		log.Printf("Oops... Server is not running! Reason: %v", err)

@@ -104,7 +104,6 @@ func (ctr UserControllerImpl) GetAll(c *fiber.Ctx) error {
 		Data: data,
 	}
 
-	// return base.Response(c, 200, true, "success loaded", users)
 	return base.ResponseLoaded(c, response)
 }
 
@@ -113,7 +112,7 @@ func (ctr UserControllerImpl) Update(c *fiber.Ctx) error {
 	if err != nil || id <= 0 {
 		return base.ResponseBadRequest(c, "invalid id")
 	}
-	var user model.UserUpdate
+	var user model.UserProfileUpdate
 	if err := c.BodyParser(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
 	}
