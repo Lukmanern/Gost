@@ -112,6 +112,9 @@ func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	if err := validate.Struct(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
 	}
+	if user.NewPassword == user.OldPassword {
+		return base.ResponseBadRequest(c, "no new password, try another new password")
+	}
 	if user.NewPassword != user.NewPasswordConfirm {
 		return base.ResponseBadRequest(c, "new password confirmation is wrong")
 	}
@@ -134,6 +137,7 @@ func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
 	}
+	user.ID = 1
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())

@@ -123,7 +123,7 @@ func (service UserServiceImpl) GetAll(ctx context.Context, filter base.RequestGe
 
 func (service UserServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
 	isUserExist := func() bool {
-		getUser, getErr := service.GetByID(ctx, user.ID)
+		getUser, getErr := service.repository.GetByID(ctx, user.ID)
 		if getErr != nil {
 			return false
 		}
@@ -153,7 +153,7 @@ func (service UserServiceImpl) Update(ctx context.Context, user model.UserProfil
 
 func (service UserServiceImpl) Delete(ctx context.Context, id int) (err error) {
 	isUserExist := func() bool {
-		getUser, getErr := service.GetByID(ctx, id)
+		getUser, getErr := service.repository.GetByID(ctx, id)
 		if getErr != nil {
 			return false
 		}
