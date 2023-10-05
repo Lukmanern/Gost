@@ -4,6 +4,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type PageMeta struct {
+	Total int `json:"total"`
+	Pages int `json:"pages"`
+	Page  int `json:"page"`
+}
+
+type GetAllResponse struct {
+	Meta PageMeta      `json:"meta"`
+	Data []interface{} `json:"data"`
+}
+
 type response struct {
 	Message string      `json:"message"`
 	Success bool        `json:"success"`

@@ -7,7 +7,7 @@ type Role struct {
 	Name        string `gorm:"type:varchar(255) not null unique" json:"name"`
 	Description string `gorm:"type:varchar(255) not null" json:"description"`
 
-	base.TimeAttributes
+	base.TimeFieds
 
 	Permissions []Permission `gorm:"many2many:role_has_permissions" json:"permissions"`
 }
@@ -21,7 +21,7 @@ type Permission struct {
 	Name        string `gorm:"type:varchar(255) not null unique" json:"name"`
 	Description string `gorm:"type:varchar(255) not null" json:"description"`
 
-	base.TimeAttributes
+	base.TimeFieds
 }
 
 func (r *Permission) TableName() string {

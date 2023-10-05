@@ -20,6 +20,6 @@ func getUserRoutes(router fiber.Router) {
 	userRoute.Post("create", userController.Create)
 	userRoute.Get("", userController.GetAll)
 	userRoute.Get(":id", userController.Get)
-	userRoute.Put("update", userController.Update)
-	userRoute.Delete("update", userController.Delete)
+	userRoute.Put(":id", userController.Update)
+	userRoute.Delete(":id", userController.Delete)
 }

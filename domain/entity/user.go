@@ -8,7 +8,7 @@ type User struct {
 	Email    string `gorm:"type:varchar(100) not null unique" json:"email"`
 	Password string `gorm:"type:varchar(255) not null" json:"password"`
 
-	base.TimeAttributes
+	base.TimeFieds
 
 	Roles []Role `gorm:"many2many:user_has_roles" json:"roles"`
 }

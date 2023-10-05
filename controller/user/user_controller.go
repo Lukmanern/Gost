@@ -1,6 +1,8 @@
 package service
 
 import (
+	"math"
+
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
 	service "github.com/Lukmanern/gost/service/user"
@@ -40,24 +42,115 @@ func (ctr UserControllerImpl) Create(c *fiber.Ctx) error {
 	ctx := c.Context()
 	id, createErr := ctr.service.Create(ctx, user)
 	if createErr != nil {
+		fiberErr, ok := createErr.(*fiber.Error)
+		if ok {
+			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
 		return base.ResponseInternalServerError(c, "internal server error: "+createErr.Error())
 	}
-
-	return base.ResponseCreated(c, "success create data", id)
+	data := map[string]any{
+		"id": id,
+	}
+	return base.ResponseCreated(c, "success create data", data)
 }
 
 func (ctr UserControllerImpl) Get(c *fiber.Ctx) error {
-	return base.ResponseLoaded(c, nil)
+	id, err := c.ParamsInt("id")
+	if err != nil || id <= 0 {
+		return base.ResponseBadRequest(c, "invalid id")
+	}
+
+	ctx := c.Context()
+	user, getErr := ctr.service.GetByID(ctx, id)
+	if getErr != nil {
+		fiberErr, ok := getErr.(*fiber.Error)
+		if ok {
+			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return base.ResponseInternalServerError(c, "internal server error: "+getErr.Error())
+	}
+
+	return base.ResponseLoaded(c, user)
 }
 
 func (ctr UserControllerImpl) GetAll(c *fiber.Ctx) error {
-	return base.ResponseLoaded(c, nil)
+	request := base.RequestGetAll{
+		Page:    c.QueryInt("page", 1),
+		Limit:   c.QueryInt("limit", 20),
+		Keyword: c.Query("search"),
+		Sort:    c.Query("sort"),
+	}
+	if request.Page <= 0 || request.Limit <= 0 {
+		return base.ResponseBadRequest(c, "invalid page or limit value")
+	}
+
+	ctx := c.Context()
+	users, total, getErr := ctr.service.GetAll(ctx, request)
+	if getErr != nil {
+		return base.ResponseInternalServerError(c, "internal server error: "+getErr.Error())
+	}
+
+	data := make([]interface{}, len(users))
+	for i := range users {
+		data[i] = users[i]
+	}
+
+	response := base.GetAllResponse{
+		Meta: base.PageMeta{
+			Total: total,
+			Pages: int(math.Ceil(float64(total) / float64(request.Limit))),
+			Page:  request.Page,
+		},
+		Data: data,
+	}
+
+	// return base.Response(c, 200, true, "success loaded", users)
+	return base.ResponseLoaded(c, response)
 }
 
 func (ctr UserControllerImpl) Update(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil || id <= 0 {
+		return base.ResponseBadRequest(c, "invalid id")
+	}
+	var user model.UserUpdate
+	if err := c.BodyParser(&user); err != nil {
+		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+	}
+	user.ID = id
+	validate := validator.New()
+	if err := validate.Struct(&user); err != nil {
+		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+	}
+
+	ctx := c.Context()
+	updateErr := ctr.service.Update(ctx, user)
+	if updateErr != nil {
+		fiberErr, ok := updateErr.(*fiber.Error)
+		if ok {
+			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return base.ResponseInternalServerError(c, "internal server error: "+updateErr.Error())
+	}
+
 	return base.ResponseNoContent(c, "success update data")
 }
 
 func (ctr UserControllerImpl) Delete(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil || id <= 0 {
+		return base.ResponseBadRequest(c, "invalid id")
+	}
+
+	ctx := c.Context()
+	deleteErr := ctr.service.Delete(ctx, id)
+	if deleteErr != nil {
+		fiberErr, ok := deleteErr.(*fiber.Error)
+		if ok {
+			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return base.ResponseInternalServerError(c, "internal server error: "+deleteErr.Error())
+	}
+
 	return base.ResponseNoContent(c, "success delete data")
 }

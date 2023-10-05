@@ -14,7 +14,7 @@ func AllRoles() []entity.Role {
 		newRoleEntity := entity.Role{
 			Name: name,
 		}
-		newRoleEntity.SetTimeAttributes()
+		newRoleEntity.SetTimes()
 		roles = append(roles, newRoleEntity)
 	}
 

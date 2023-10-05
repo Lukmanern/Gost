@@ -1,8 +1,8 @@
 package base
 
 type RequestGetAll struct {
-	Keyword string `json:"search" query:"search"`
-	Limit   int    `json:"limit" query:"limit"`
-	Page    int    `json:"page" query:"page"`
-	Sort    string `json:"sort" query:"sort"`
+	Page    int    `query:"page"`
+	Limit   int    `query:"limit"`
+	Keyword string `query:"search"`
+	Sort    string `query:"sort"`
 }
