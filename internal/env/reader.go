@@ -89,6 +89,34 @@ func (c Config) GetAppInProduction() bool {
 	return c.AppInProduction
 }
 
+func (c Config) GetPublicKey() []byte {
+	PublicKeyReadOne.Do(func() {
+		if _, err := os.Stat(c.PublicKey); os.IsNotExist(err) {
+			log.Panicf(`.env file isn't exist/found: "%s"`, c.PublicKey)
+		}
+		signKey, err := os.ReadFile(c.PublicKey)
+		if err != nil {
+			log.Fatalf("%s", err.Error())
+		}
+		PublicKey = &signKey
+	})
+	return *PublicKey
+}
+
+func (c Config) GetPrivateKey() []byte {
+	PrivateKeyReadOne.Do(func() {
+		if _, err := os.Stat(c.PublicKey); os.IsNotExist(err) {
+			log.Panicf(`.env file isn't exist/found: "%s"`, c.PublicKey)
+		}
+		signKey, err := os.ReadFile(c.PrivateKey)
+		if err != nil {
+			log.Fatalf("%s", err.Error())
+		}
+		PrivateKey = &signKey
+	})
+	return *PrivateKey
+}
+
 func (c Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "AppName", c.AppName)
 	fmt.Printf("%-21s: %v\n", "AppInProduction", c.AppInProduction)

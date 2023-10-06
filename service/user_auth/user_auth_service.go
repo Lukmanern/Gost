@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/hash"
+	"github.com/Lukmanern/gost/internal/jwt"
 	userRepository "github.com/Lukmanern/gost/repository/user"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -23,6 +26,7 @@ type UserAuthService interface {
 
 type UserAuthServiceImpl struct {
 	userRepository userRepository.UserRepository
+	jwtHandler     *jwt.JWTHandler
 }
 
 var (
@@ -34,6 +38,7 @@ func NewUserAuthService() UserAuthService {
 	userAuthServiceOnce.Do(func() {
 		userAuthService = &UserAuthServiceImpl{
 			userRepository: userRepository.NewUserRepository(),
+			jwtHandler:     jwt.NewJWTHandler(),
 		}
 	})
 
@@ -60,7 +65,14 @@ func (service UserAuthServiceImpl) Login(ctx context.Context, user model.UserLog
 		return "", fiber.NewError(fiber.StatusBadRequest, "wrong password")
 	}
 
-	return "TOKEN-EXAMPLE", nil
+	config := env.Configuration()
+	expired := time.Now().Add(config.AppAccessTokenTTL)
+	token, generetaErr := service.jwtHandler.GenerateJWT(userCheck.ID, user.Email, "role", []string{"permission-1", "permission-2"}, expired)
+	if generetaErr != nil {
+		return "", fiber.NewError(fiber.StatusInternalServerError, "system error while generating token, please try again")
+	}
+
+	return token, nil
 }
 
 func (service UserAuthServiceImpl) Logout(ctx context.Context) (err error) {
