@@ -60,9 +60,9 @@ func ResponseBadRequest(c *fiber.Ctx, message string) error {
 }
 
 // FormatResponseUnauthorized formats a response with HTTP status 401.
-func ResponseUnauthorized(c *fiber.Ctx, message string) error {
+func ResponseUnauthorized(c *fiber.Ctx) error {
 	return formatResponse(
-		c, fiber.StatusUnauthorized, false, message, nil)
+		c, fiber.StatusUnauthorized, false, "unauthorized", nil)
 }
 
 // FormatResponseNotFound formats a response with HTTP status 404.

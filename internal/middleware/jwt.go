@@ -1,4 +1,4 @@
-package jwt
+package middleware
 
 import (
 	"crypto/rsa"
@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/Lukmanern/gost/internal/env"
@@ -28,27 +27,26 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-var privateKeyOnce sync.Once
-
 func NewJWTHandler() *JWTHandler {
+	env.ReadConfig("./.env")
+	config := env.Configuration()
 	newJWTHandler := JWTHandler{}
-	privateKeyOnce.Do(func() {
-		env.ReadConfig("./.env")
-		config := env.Configuration()
-		var publicKeyErr error
-		newJWTHandler.publicKey, publicKeyErr = jwt.ParseRSAPublicKeyFromPEM([]byte(config.GetPublicKey()))
-		if publicKeyErr != nil {
-			log.Fatalln("jwt public key parser failed: please check in log")
-		}
 
-		var privateKeyErr error
-		newJWTHandler.privateKey, privateKeyErr = jwt.ParseRSAPrivateKeyFromPEM([]byte(config.GetPrivateKey()))
-		if privateKeyErr != nil {
-			log.Fatalln("jwt private key parser failed: please check in log")
-		}
-	})
+	var publicKeyErr error
+	newJWTHandler.publicKey, publicKeyErr = jwt.ParseRSAPublicKeyFromPEM([]byte(config.GetPublicKey()))
+	if publicKeyErr != nil {
+		log.Fatalln("jwt public key parser failed: please check in log")
+	}
+	var privateKeyErr error
+	newJWTHandler.privateKey, privateKeyErr = jwt.ParseRSAPrivateKeyFromPEM([]byte(config.GetPrivateKey()))
+	if privateKeyErr != nil {
+		log.Fatalln("jwt private key parser failed: please check in log")
+	}
 
-	if newJWTHandler.privateKey == nil || newJWTHandler.publicKey == nil {
+	if newJWTHandler.privateKey == nil {
+		log.Fatalln("jwt private keys are missed")
+	}
+	if newJWTHandler.publicKey == nil {
 		log.Fatalln("jwt public keys are missed")
 	}
 	return &newJWTHandler
@@ -101,6 +99,22 @@ func (j *JWTHandler) GenerateJWTWithLabel(label string, expired time.Time) (t st
 	return t, nil
 }
 
+func (j JWTHandler) InvalidateToken(c *fiber.Ctx) error {
+	cookie := extractToken(c)
+	claims := Claims{}
+	token, err := jwt.ParseWithClaims(cookie, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
+		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fiber.NewError(fiber.StatusUnauthorized, fmt.Sprintf("unexpected method: %s", jwtToken.Header["alg"]))
+		}
+
+		return j.publicKey, nil
+	})
+	if err != nil || !token.Valid {
+		return fiber.NewError(fiber.StatusUnauthorized, "unauthenticated")
+	}
+	return nil
+}
+
 func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 	cookie := extractToken(c)
 	claims := Claims{}
@@ -115,7 +129,6 @@ func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "unauthenticated")
 	}
 	c.Locals("claims", &claims)
-
 	return c.Next()
 }
 
@@ -123,7 +136,7 @@ func (j JWTHandler) IsTokenValid(cookie string) bool {
 	claims := Claims{}
 	token, err := jwt.ParseWithClaims(cookie, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
 		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fiber.NewError(fiber.StatusUnauthorized, fmt.Sprintf("unexpected method: %s", jwtToken.Header["alg"]))
+			return nil, fiber.NewError(fiber.StatusUnauthorized)
 		}
 
 		return j.publicKey, nil
@@ -176,10 +189,9 @@ func (j JWTHandler) ExtractTokenMetadata(c *fiber.Ctx) (*Claims, error) {
 }
 
 func extractToken(c *fiber.Ctx) string {
-	bearToken := c.Get("Authorization")
-
+	bearerToken := c.Get("Authorization")
 	// Normally Authorization HTTP header.
-	onlyToken := strings.Split(bearToken, " ")
+	onlyToken := strings.Split(bearerToken, " ")
 	if len(onlyToken) == 2 {
 		return onlyToken[1]
 	}

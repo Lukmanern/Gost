@@ -8,10 +8,12 @@ import (
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/middleware"
 	service "github.com/Lukmanern/gost/service/user_auth"
 )
 
 type UserAuthController interface {
+	MyProfile(c *fiber.Ctx) error
 	Login(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
 	ForgetPassword(c *fiber.Ctx) error
@@ -36,6 +38,10 @@ func NewUserAuthController(service service.UserAuthService) UserAuthController {
 	})
 
 	return userAuthController
+}
+
+func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
+	return base.ResponseLoaded(c, nil)
 }
 
 func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
@@ -65,13 +71,13 @@ func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 }
 
 func (ctr UserAuthControllerImpl) Logout(c *fiber.Ctx) error {
-	ctx := c.Context()
-	logoutErr := ctr.service.Logout(ctx)
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return base.ResponseUnauthorized(c)
+	}
+
+	logoutErr := ctr.service.Logout(c)
 	if logoutErr != nil {
-		fiberErr, ok := logoutErr.(*fiber.Error)
-		if ok {
-			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
-		}
 		return base.ResponseInternalServerError(c, "internal server error: "+logoutErr.Error())
 	}
 

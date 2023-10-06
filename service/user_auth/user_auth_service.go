@@ -6,19 +6,20 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/hash"
-	"github.com/Lukmanern/gost/internal/jwt"
+	"github.com/Lukmanern/gost/internal/middleware"
 	userRepository "github.com/Lukmanern/gost/repository/user"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 type UserAuthService interface {
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
-	Logout(ctx context.Context) (err error)
+	Logout(c *fiber.Ctx) (err error)
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
 	UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
@@ -26,7 +27,7 @@ type UserAuthService interface {
 
 type UserAuthServiceImpl struct {
 	userRepository userRepository.UserRepository
-	jwtHandler     *jwt.JWTHandler
+	jwtHandler     *middleware.JWTHandler
 }
 
 var (
@@ -38,7 +39,7 @@ func NewUserAuthService() UserAuthService {
 	userAuthServiceOnce.Do(func() {
 		userAuthService = &UserAuthServiceImpl{
 			userRepository: userRepository.NewUserRepository(),
-			jwtHandler:     jwt.NewJWTHandler(),
+			jwtHandler:     middleware.NewJWTHandler(),
 		}
 	})
 
@@ -75,7 +76,12 @@ func (service UserAuthServiceImpl) Login(ctx context.Context, user model.UserLog
 	return token, nil
 }
 
-func (service UserAuthServiceImpl) Logout(ctx context.Context) (err error) {
+func (service UserAuthServiceImpl) Logout(c *fiber.Ctx) (err error) {
+	err = service.jwtHandler.InvalidateToken(c)
+	if err != nil {
+		return errors.New("problem invalidating token")
+	}
+
 	return nil
 }
 
