@@ -1,5 +1,7 @@
 package model
 
+import "github.com/Lukmanern/gost/domain/entity"
+
 type UserLogin struct {
 	Email    string `validate:"required,email,min=5,max=60" json:"email"`
 	Password string `validate:"required,min=8,max=30" json:"password"`
@@ -14,4 +16,11 @@ type UserPasswordUpdate struct {
 	OldPassword        string `validate:"required,min=8,max=30" json:"old_password"`
 	NewPassword        string `validate:"required,min=8,max=30" json:"new_password"`
 	NewPasswordConfirm string `validate:"required,min=8,max=30" json:"new_password_confirm"`
+}
+
+type UserProfile struct {
+	Email       string
+	Name        string
+	Role        entity.Role
+	Permissions []entity.Permission
 }

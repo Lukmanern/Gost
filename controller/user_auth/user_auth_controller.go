@@ -40,10 +40,6 @@ func NewUserAuthController(service service.UserAuthService) UserAuthController {
 	return userAuthController
 }
 
-func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
-	return base.ResponseLoaded(c, nil)
-}
-
 func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 	var user model.UserLogin
 	if err := c.BodyParser(&user); err != nil {
@@ -136,6 +132,11 @@ func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	}
 
 	return base.ResponseNoContent(c, "success update password")
+}
+
+func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
+	// ctr.service
+	return base.ResponseLoaded(c, nil)
 }
 
 func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {

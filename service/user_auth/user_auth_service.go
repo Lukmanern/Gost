@@ -22,6 +22,7 @@ type UserAuthService interface {
 	Logout(c *fiber.Ctx) (err error)
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
 	UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
+	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
 }
 
@@ -120,6 +121,31 @@ func (service UserAuthServiceImpl) UpdatePassword(ctx context.Context, user mode
 	}
 
 	return nil
+}
+
+func (service UserAuthServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
+	user, err := service.userRepository.GetByID(ctx, id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return profile, fiber.NewError(fiber.StatusNotFound, "user not found")
+		}
+
+		return profile, err
+	}
+	if user == nil {
+		return profile, fiber.NewError(fiber.StatusInternalServerError, "error while checking user")
+	}
+
+	// Todo get role and permissions
+
+	profile = model.UserProfile{
+		Name:        user.Name,
+		Email:       user.Email,
+		Role:        entity.Role{},
+		Permissions: []entity.Permission{},
+	}
+
+	return profile, nil
 }
 
 func (service UserAuthServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
