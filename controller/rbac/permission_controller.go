@@ -4,8 +4,9 @@ import (
 	"sync"
 
 	"github.com/Lukmanern/gost/domain/base"
-	service "github.com/Lukmanern/gost/service/rbac"
 	"github.com/gofiber/fiber/v2"
+
+	service "github.com/Lukmanern/gost/service/rbac"
 )
 
 type PermissionController interface {
