@@ -36,12 +36,12 @@ func NewJWTHandler() *JWTHandler {
 	var publicKeyErr error
 	newJWTHandler.publicKey, publicKeyErr = jwt.ParseRSAPublicKeyFromPEM([]byte(config.GetPublicKey()))
 	if publicKeyErr != nil {
-		log.Fatalln("jwt public key parser failed: please check in log")
+		log.Fatalln("jwt public key parser failed: please check in log file at ./log/log-files")
 	}
 	var privateKeyErr error
 	newJWTHandler.privateKey, privateKeyErr = jwt.ParseRSAPrivateKeyFromPEM([]byte(config.GetPrivateKey()))
 	if privateKeyErr != nil {
-		log.Fatalln("jwt private key parser failed: please check in log")
+		log.Fatalln("jwt private key parser failed: please check in log file at ./log/log-files")
 	}
 
 	if newJWTHandler.privateKey == nil {
@@ -127,7 +127,7 @@ func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 		return j.publicKey, nil
 	})
 	if err != nil || !token.Valid {
-		return fiber.NewError(fiber.StatusUnauthorized, "unauthenticated")
+		return base.ResponseUnauthorized(c)
 	}
 	c.Locals("claims", &claims)
 	return c.Next()

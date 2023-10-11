@@ -81,7 +81,7 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getUserRoutes(router)
+	getUserRoutes(router) // don't use this for production
 	getUserAuthRoutes(router)
 
 	if err := router.Listen(fmt.Sprintf(":%d", 9009)); err != nil {

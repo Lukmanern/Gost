@@ -1,4 +1,6 @@
-package service
+// don't use this for production
+
+package controller
 
 import (
 	"math"

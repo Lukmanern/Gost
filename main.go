@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	// checking for .env and keys files are exist.
 	env.ReadConfig("./.env")
 	c := env.Configuration()
 	dbURI := c.GetDatabaseURI()

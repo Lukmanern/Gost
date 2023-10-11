@@ -134,11 +134,6 @@ func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	return base.ResponseNoContent(c, "success update password")
 }
 
-func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
-	// ctr.service
-	return base.ResponseLoaded(c, nil)
-}
-
 func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	var user model.UserProfileUpdate
 	if err := c.BodyParser(&user); err != nil {
@@ -161,4 +156,22 @@ func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	}
 
 	return base.ResponseNoContent(c, "success update profile")
+}
+
+func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
+	user, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok {
+		return base.ResponseBadRequest(c, "invalid token")
+	}
+
+	ctx := c.Context()
+	userProfile, getErr := ctr.service.MyProfile(ctx, user.ID)
+	if getErr != nil {
+		fiberErr, ok := getErr.(*fiber.Error)
+		if ok {
+			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return base.ResponseInternalServerError(c, "internal server error: "+getErr.Error())
+	}
+	return base.ResponseLoaded(c, userProfile)
 }

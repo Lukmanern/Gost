@@ -20,17 +20,12 @@ func getUserAuthRoutes(router fiber.Router) {
 	userAuthController = controller.NewUserAuthController(userAuthService)
 
 	userAuthRoute := router.Group("user/auth")
-	// login-logout
 	userAuthRoute.Post("login", userAuthController.Login)
 
 	userAuthRouteAuth := userAuthRoute.Use(jwtHandler.IsAuthenticated)
 	userAuthRouteAuth.Post("logout", userAuthController.Logout)
-
-	// profile
 	userAuthRouteAuth.Get("my-profile", userAuthController.MyProfile)
 	userAuthRouteAuth.Post("profile-update", userAuthController.UpdateProfile)
-
-	// update password
 	userAuthRouteAuth.Post("forget-password", userAuthController.ForgetPassword)
 	userAuthRouteAuth.Post("update-password", userAuthController.UpdatePassword)
 }

@@ -1,3 +1,5 @@
+// don't use this for production
+
 package service
 
 import (
@@ -5,13 +7,14 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/hash"
 	repository "github.com/Lukmanern/gost/repository/user"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 type UserService interface {
