@@ -100,7 +100,7 @@ func (ctr UserAuthControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 		return base.ResponseInternalServerError(c, "internal server error: "+forgetErr.Error())
 	}
 
-	return base.ResponseNoContent(c, "success sending link for reset password to email, check your email inbox")
+	return base.ResponseLoaded(c, "success sending link for reset password to email, check your email inbox")
 }
 
 func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
@@ -131,7 +131,7 @@ func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 		return base.ResponseInternalServerError(c, "internal server error: "+updateErr.Error())
 	}
 
-	return base.ResponseNoContent(c, "success update password")
+	return base.ResponseLoaded(c, "success update password")
 }
 
 func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
@@ -155,7 +155,7 @@ func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 		return base.ResponseInternalServerError(c, "internal server error: "+updateErr.Error())
 	}
 
-	return base.ResponseNoContent(c, "success update profile")
+	return base.ResponseLoaded(c, "success update profile")
 }
 
 func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {

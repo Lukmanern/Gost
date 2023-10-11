@@ -48,9 +48,9 @@ func ResponseCreated(c *fiber.Ctx, message string, data interface{}) error {
 }
 
 // ResponseNoContent formats a successful response with HTTP status 201.
-func ResponseNoContent(c *fiber.Ctx, message string) error {
-	return formatResponse(
-		c, fiber.StatusNoContent, true, message, nil)
+func ResponseNoContent(c *fiber.Ctx) error {
+	c.Status(fiber.StatusNoContent)
+	return c.Send(nil)
 }
 
 // FormatResponseBadRequest formats a response with HTTP status 400.

@@ -4,13 +4,11 @@ import (
 	"context"
 	"sync"
 
-	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
-	"gorm.io/gorm"
 )
 
-type RoleRepository interface {
+type RoleController interface {
 	Create(ctx context.Context, role entity.Role) (id int, err error)
 	GetByID(ctx context.Context, id int) (role *entity.Role, err error)
 	GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error)
@@ -18,43 +16,37 @@ type RoleRepository interface {
 	Delete(ctx context.Context, id int) (err error)
 }
 
-type RoleRepositoryImpl struct {
-	roleTableName string
-	db            *gorm.DB
+type RoleControllerImpl struct {
 }
 
 var (
-	roleTableName          string = "roles"
-	roleRepositoryImpl     *RoleRepositoryImpl
-	roleRepositoryImplOnce sync.Once
+	roleControllerImpl     *RoleControllerImpl
+	roleControllerImplOnce sync.Once
 )
 
-func NewRoleRepository() RoleRepository {
-	roleRepositoryImplOnce.Do(func() {
-		roleRepositoryImpl = &RoleRepositoryImpl{
-			roleTableName: roleTableName,
-			db:            connector.LoadDatabase(),
-		}
+func NewRoleController() RoleController {
+	roleControllerImplOnce.Do(func() {
+		roleControllerImpl = &RoleControllerImpl{}
 	})
-	return roleRepositoryImpl
+	return roleControllerImpl
 }
 
-func (repo RoleRepositoryImpl) Create(ctx context.Context, role entity.Role) (id int, err error) {
+func (repo RoleControllerImpl) Create(ctx context.Context, role entity.Role) (id int, err error) {
 	return
 }
 
-func (repo RoleRepositoryImpl) GetByID(ctx context.Context, id int) (role *entity.Role, err error) {
+func (repo RoleControllerImpl) GetByID(ctx context.Context, id int) (role *entity.Role, err error) {
 	return
 }
 
-func (repo RoleRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error) {
+func (repo RoleControllerImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error) {
 	return
 }
 
-func (repo RoleRepositoryImpl) Update(ctx context.Context, role entity.Role) (err error) {
+func (repo RoleControllerImpl) Update(ctx context.Context, role entity.Role) (err error) {
 	return
 }
 
-func (repo RoleRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
+func (repo RoleControllerImpl) Delete(ctx context.Context, id int) (err error) {
 	return
 }

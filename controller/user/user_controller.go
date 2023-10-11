@@ -134,7 +134,7 @@ func (ctr UserControllerImpl) Update(c *fiber.Ctx) error {
 		return base.ResponseInternalServerError(c, "internal server error: "+updateErr.Error())
 	}
 
-	return base.ResponseNoContent(c, "success update data")
+	return base.ResponseNoContent(c)
 }
 
 func (ctr UserControllerImpl) Delete(c *fiber.Ctx) error {
@@ -153,5 +153,5 @@ func (ctr UserControllerImpl) Delete(c *fiber.Ctx) error {
 		return base.ResponseInternalServerError(c, "internal server error: "+deleteErr.Error())
 	}
 
-	return base.ResponseNoContent(c, "success delete data")
+	return base.ResponseNoContent(c)
 }

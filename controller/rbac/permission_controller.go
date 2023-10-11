@@ -1,60 +1,55 @@
 package service
 
 import (
-	"context"
 	"sync"
 
-	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
-	"github.com/Lukmanern/gost/domain/entity"
-	"gorm.io/gorm"
+	service "github.com/Lukmanern/gost/service/rbac"
+	"github.com/gofiber/fiber/v2"
 )
 
-type PermissionRepository interface {
-	Create(ctx context.Context, user entity.Permission) (id int, err error)
-	GetByID(ctx context.Context, id int) (user *entity.Permission, err error)
-	GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.Permission, total int, err error)
-	Update(ctx context.Context, user entity.Permission) (err error)
-	Delete(ctx context.Context, id int) (err error)
+type PermissionController interface {
+	Create(c *fiber.Ctx) error
+	Get(c *fiber.Ctx) error
+	GetAll(c *fiber.Ctx) error
+	Update(c *fiber.Ctx) error
+	Delete(c *fiber.Ctx) error
 }
 
-type PermissionRepositoryImpl struct {
-	permissionTableName string
-	db                  *gorm.DB
+type PermissionControllerImpl struct {
+	service service.PermissionService
 }
 
 var (
-	permissionTableName          string = "permissions"
-	permissionRepositoryImpl     *PermissionRepositoryImpl
-	permissionRepositoryImplOnce sync.Once
+	permissionControllerImpl     *PermissionControllerImpl
+	permissionControllerImplOnce sync.Once
 )
 
-func NewPermissionRepository() PermissionRepository {
-	permissionRepositoryImplOnce.Do(func() {
-		permissionRepositoryImpl = &PermissionRepositoryImpl{
-			permissionTableName: permissionTableName,
-			db:                  connector.LoadDatabase(),
+func NewPermissionController(service service.PermissionService) PermissionController {
+	permissionControllerImplOnce.Do(func() {
+		permissionControllerImpl = &PermissionControllerImpl{
+			service: service,
 		}
 	})
-	return permissionRepositoryImpl
+	return permissionControllerImpl
 }
 
-func (repo PermissionRepositoryImpl) Create(ctx context.Context, user entity.Permission) (id int, err error) {
-	return
+func (ctr PermissionControllerImpl) Create(c *fiber.Ctx) error {
+	return base.ResponseCreated(c, "success created", nil)
 }
 
-func (repo PermissionRepositoryImpl) GetByID(ctx context.Context, id int) (user *entity.Permission, err error) {
-	return
+func (ctr PermissionControllerImpl) Get(c *fiber.Ctx) error {
+	return base.ResponseLoaded(c, nil)
 }
 
-func (repo PermissionRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.Permission, total int, err error) {
-	return
+func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
+	return base.ResponseLoaded(c, nil)
 }
 
-func (repo PermissionRepositoryImpl) Update(ctx context.Context, user entity.Permission) (err error) {
-	return
+func (ctr PermissionControllerImpl) Update(c *fiber.Ctx) error {
+	return base.ResponseNoContent(c)
 }
 
-func (repo PermissionRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
-	return
+func (ctr PermissionControllerImpl) Delete(c *fiber.Ctx) error {
+	return base.ResponseNoContent(c)
 }
