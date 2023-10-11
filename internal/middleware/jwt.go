@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -201,7 +202,6 @@ func extractToken(c *fiber.Ctx) string {
 
 func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 	tokenString := extractToken(c)
-
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		return j.publicKey, nil
 	})
@@ -214,41 +214,24 @@ func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 
 func (j JWTHandler) HasPermission(c *fiber.Ctx, permissions ...string) error {
 	claims := c.Locals("claims").(*Claims)
-	isPermitted := false
 	for _, permission := range permissions {
 		for _, authority := range claims.Permissions {
 			if permission == authority {
-				isPermitted = true
-				break
+				return c.Next()
 			}
 		}
-		if isPermitted {
-			break
-		}
 	}
-	if !isPermitted {
-		c.Status(fiber.StatusUnauthorized)
-		return c.JSON(fiber.Map{
-			"message": "you are not permitted",
-		})
-	}
-	return c.Next()
+
+	return base.ResponseUnauthorized(c)
 }
 
 func (j JWTHandler) HasRole(c *fiber.Ctx, roles ...string) error {
 	claims := c.Locals("claims").(*Claims)
-	isPermitted := false
 	for _, role := range roles {
 		if role == claims.Role {
-			isPermitted = true
-			break
+			return c.Next()
 		}
 	}
-	if !isPermitted {
-		c.Status(fiber.StatusUnauthorized)
-		return c.JSON(fiber.Map{
-			"message": "you are not permitted",
-		})
-	}
-	return c.Next()
+
+	return base.ResponseUnauthorized(c)
 }

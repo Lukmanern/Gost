@@ -1,16 +1,22 @@
 package main
 
 import (
+	"log"
+
 	"github.com/Lukmanern/gost/application"
 	"github.com/Lukmanern/gost/internal/env"
 )
 
 func main() {
 	env.ReadConfig("./.env")
-	_ = env.Configuration()
+	c := env.Configuration()
+	dbURI := c.GetDatabaseURI()
+	privKey := c.GetPrivateKey()
+	pubKey := c.GetPublicKey()
 
-	// exp := time.Now().Add(5 * time.Hour)
-	// fmt.Println(jwt.NewJWTHandler().GenerateJWT(1, "email", "role", []string{"any-1", "any-2"}, exp))
+	if dbURI == "" || privKey == nil || pubKey == nil {
+		log.Fatal("Database URI or keys aren't valid")
+	}
 
 	application.RunApp()
 }

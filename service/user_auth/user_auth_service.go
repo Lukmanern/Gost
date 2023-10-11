@@ -14,6 +14,7 @@ import (
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/middleware"
+	"github.com/Lukmanern/gost/internal/rbac"
 	userRepository "github.com/Lukmanern/gost/repository/user"
 )
 
@@ -67,9 +68,15 @@ func (service UserAuthServiceImpl) Login(ctx context.Context, user model.UserLog
 		return "", fiber.NewError(fiber.StatusBadRequest, "wrong password")
 	}
 
+	permissions := []string{}
+	for _, permissionEntity := range rbac.AllPermissions() {
+		permissions = append(permissions, permissionEntity.Name)
+	}
+	roleName := rbac.AllRoles()[1].Name
+
 	config := env.Configuration()
 	expired := time.Now().Add(config.AppAccessTokenTTL)
-	token, generetaErr := service.jwtHandler.GenerateJWT(userCheck.ID, user.Email, "role", []string{"permission-1", "permission-2"}, expired)
+	token, generetaErr := service.jwtHandler.GenerateJWT(userCheck.ID, user.Email, roleName, permissions, expired)
 	if generetaErr != nil {
 		return "", fiber.NewError(fiber.StatusInternalServerError, "system error while generating token, please try again")
 	}

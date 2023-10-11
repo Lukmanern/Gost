@@ -92,7 +92,7 @@ func (c Config) GetAppInProduction() bool {
 func (c Config) GetPublicKey() []byte {
 	PublicKeyReadOne.Do(func() {
 		if _, err := os.Stat(c.PublicKey); os.IsNotExist(err) {
-			log.Panicf(`.env file isn't exist/found: "%s"`, c.PublicKey)
+			log.Panicf(`Public-key (./keys/publickey.crt see .env file) file isn't exist/found: "%s"`, c.PublicKey)
 		}
 		signKey, err := os.ReadFile(c.PublicKey)
 		if err != nil {
@@ -105,8 +105,8 @@ func (c Config) GetPublicKey() []byte {
 
 func (c Config) GetPrivateKey() []byte {
 	PrivateKeyReadOne.Do(func() {
-		if _, err := os.Stat(c.PublicKey); os.IsNotExist(err) {
-			log.Panicf(`.env file isn't exist/found: "%s"`, c.PublicKey)
+		if _, err := os.Stat(c.PrivateKey); os.IsNotExist(err) {
+			log.Panicf(`Private-key (./keys/private.key see .env file) file isn't exist/found: "%s"`, c.PrivateKey)
 		}
 		signKey, err := os.ReadFile(c.PrivateKey)
 		if err != nil {
