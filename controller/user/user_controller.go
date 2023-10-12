@@ -5,12 +5,12 @@ package controller
 import (
 	"math"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
 	service "github.com/Lukmanern/gost/service/user"
-
-	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2"
 )
 
 type UserController interface {

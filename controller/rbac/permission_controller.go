@@ -3,9 +3,9 @@ package service
 import (
 	"sync"
 
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/Lukmanern/gost/domain/base"
 	service "github.com/Lukmanern/gost/service/rbac"
 )
 

@@ -16,7 +16,7 @@ type RoleService interface {
 	Create(ctx context.Context, data model.RoleCreate) (id int, err error)
 	ConnectPermissions(ctx context.Context, data model.RoleConnectToPermissions) (err error)
 	GetByID(ctx context.Context, id int) (role *entity.Role, err error)
-	GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error)
+	GetAll(ctx context.Context, filter base.RequestGetAll) (roles []model.RoleResponse, total int, err error)
 	Update(ctx context.Context, data model.RoleUpdate) (err error)
 	Delete(ctx context.Context, id int) (err error)
 }
@@ -42,8 +42,24 @@ func NewRoleService(servicePermission PermissionService) RoleService {
 }
 
 func (svc RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (id int, err error) {
-	// roleEntity
-	// svc.repository.GetAll(ctx, base.RequestGetAll{Limit: })
+	for _, id := range data.PermissionsID {
+		permission, getErr := svc.servicePermission.GetByID(ctx, id)
+		if getErr != nil || permission == nil {
+			return 0, fiber.NewError(fiber.StatusNotFound, "one of permissions isn't found")
+		}
+	}
+	role, getErr := svc.repository.GetByName(ctx, data.Name)
+	if getErr == nil || role != nil {
+		return 0, fiber.NewError(fiber.StatusBadRequest, "role name has been used")
+	}
+	entityRole := entity.Role{
+		Name:        data.Name,
+		Description: data.Description,
+	}
+	id, err = svc.repository.Create(ctx, entityRole, data.PermissionsID)
+	if err != nil {
+		return 0, err
+	}
 	return
 }
 
@@ -59,9 +75,9 @@ func (svc RoleServiceImpl) ConnectPermissions(ctx context.Context, data model.Ro
 		return fiber.NewError(fiber.StatusNotFound, "role not found")
 	}
 	for _, id := range data.PermissionsID {
-		service, getErr := svc.servicePermission.GetByID(ctx, id)
-		if getErr != nil || service == nil {
-			return fiber.NewError(fiber.StatusNotFound, "on of services isn't found")
+		permission, getErr := svc.servicePermission.GetByID(ctx, id)
+		if getErr != nil || permission == nil {
+			return fiber.NewError(fiber.StatusNotFound, "one of permissions isn't found")
 		}
 	}
 
@@ -87,19 +103,43 @@ func (svc RoleServiceImpl) GetByID(ctx context.Context, id int) (role *entity.Ro
 	return role, nil
 }
 
-func (svc RoleServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error) {
-	return
+func (svc RoleServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []model.RoleResponse, total int, err error) {
+	roleEntities, total, err := svc.repository.GetAll(ctx, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	roles = []model.RoleResponse{}
+	for _, roleEntity := range roleEntities {
+		newRole := model.RoleResponse{
+			ID:          roleEntity.ID,
+			Name:        roleEntity.Name,
+			Description: roleEntity.Description,
+		}
+
+		roles = append(roles, newRole)
+	}
+
+	return roles, total, nil
 }
 
 func (svc RoleServiceImpl) Update(ctx context.Context, data model.RoleUpdate) (err error) {
-	role, getErr := svc.repository.GetByID(ctx, data.ID)
+	roleByName, getErr := svc.repository.GetByName(ctx, data.Name)
+	if getErr != nil && getErr != gorm.ErrRecordNotFound {
+		return getErr
+	}
+	if roleByName != nil && roleByName.ID != data.ID {
+		return fiber.NewError(fiber.StatusBadRequest, "role name has been used")
+	}
+
+	roleByID, getErr := svc.repository.GetByID(ctx, data.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, "role not found")
 		}
 		return getErr
 	}
-	if role == nil {
+	if roleByID == nil {
 		return fiber.NewError(fiber.StatusNotFound, "role not found")
 	}
 

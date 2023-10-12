@@ -1,9 +1,10 @@
 package application
 
 import (
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/rbac"
-	"github.com/gofiber/fiber/v2"
 
 	controller "github.com/Lukmanern/gost/controller/rbac"
 	service "github.com/Lukmanern/gost/service/rbac"

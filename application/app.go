@@ -8,11 +8,11 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/Lukmanern/gost/database/connector"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+
+	"github.com/Lukmanern/gost/database/connector"
 )
 
 var (
