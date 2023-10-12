@@ -1,4 +1,4 @@
-name: workflow for Golang using Snyk
+name: Example workflow for Golang using Snyk
 on: push
 jobs:
   security:
@@ -9,3 +9,5 @@ jobs:
         uses: snyk/actions/golang@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
