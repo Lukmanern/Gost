@@ -81,8 +81,9 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getUserRoutes(router) // don't use this for production
+	getUserRoutes(router) // don't use this for production, you can comment this line
 	getUserAuthRoutes(router)
+	getRBACAuthRoutes(router)
 
 	if err := router.Listen(fmt.Sprintf(":%d", 9009)); err != nil {
 		log.Printf("Oops... Server is not running! Reason: %v", err)

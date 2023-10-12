@@ -213,7 +213,10 @@ func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 }
 
 func (j JWTHandler) HasPermission(c *fiber.Ctx, permissions ...string) error {
-	claims := c.Locals("claims").(*Claims)
+	claims, ok := c.Locals("claims").(*Claims)
+	if !ok {
+		return base.ResponseUnauthorized(c)
+	}
 	for _, permission := range permissions {
 		for _, authority := range claims.Permissions {
 			if permission == authority {
@@ -226,7 +229,10 @@ func (j JWTHandler) HasPermission(c *fiber.Ctx, permissions ...string) error {
 }
 
 func (j JWTHandler) HasRole(c *fiber.Ctx, roles ...string) error {
-	claims := c.Locals("claims").(*Claims)
+	claims, ok := c.Locals("claims").(*Claims)
+	if !ok {
+		return base.ResponseUnauthorized(c)
+	}
 	for _, role := range roles {
 		if role == claims.Role {
 			return c.Next()
@@ -234,4 +240,18 @@ func (j JWTHandler) HasRole(c *fiber.Ctx, roles ...string) error {
 	}
 
 	return base.ResponseUnauthorized(c)
+}
+
+// for handler or middleware
+func (j JWTHandler) CheckHasPermission(permissions ...string) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		return j.HasPermission(c, permissions...)
+	}
+}
+
+// for handler or middleware
+func (j JWTHandler) CheckHasRole(roles ...string) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		return j.HasRole(c, roles...)
+	}
 }
