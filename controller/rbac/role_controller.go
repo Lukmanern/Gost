@@ -43,6 +43,13 @@ func (ctr RoleControllerImpl) Create(c *fiber.Ctx) error {
 	if err := c.BodyParser(&role); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
 	}
+	if len(role.PermissionsID) > 0 {
+		for _, id := range role.PermissionsID {
+			if id < 1 {
+				return base.ResponseBadRequest(c, "one of permissions id invalid")
+			}
+		}
+	}
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
@@ -67,6 +74,17 @@ func (ctr RoleControllerImpl) Connect(c *fiber.Ctx) error {
 	var role model.RoleConnectToPermissions
 	if err := c.BodyParser(&role); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+	}
+	// hashmap
+	idCheckers := make(map[int]bool)
+	for _, id := range role.PermissionsID {
+		if id < 1 {
+			return base.ResponseBadRequest(c, "One of the permission IDs is invalid")
+		}
+		if idCheckers[id] {
+			return base.ResponseBadRequest(c, "Permission IDs contain the same value")
+		}
+		idCheckers[id] = true
 	}
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {

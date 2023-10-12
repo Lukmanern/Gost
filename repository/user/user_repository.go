@@ -46,6 +46,7 @@ func (repo UserRepositoryImpl) Create(ctx context.Context, user entity.User) (id
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		res := tx.Create(&user)
 		if res.Error != nil {
+			tx.Rollback()
 			return res.Error
 		}
 		id = user.ID

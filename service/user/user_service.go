@@ -45,8 +45,8 @@ func NewUserService() UserService {
 	return userService
 }
 
-func (service UserServiceImpl) Create(ctx context.Context, user model.UserCreate) (id int, err error) {
-	userCheck, err := service.GetByEmail(ctx, user.Email)
+func (svc UserServiceImpl) Create(ctx context.Context, user model.UserCreate) (id int, err error) {
+	userCheck, err := svc.GetByEmail(ctx, user.Email)
 	if err == nil || userCheck != nil {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "email has been used")
 	}
@@ -63,15 +63,15 @@ func (service UserServiceImpl) Create(ctx context.Context, user model.UserCreate
 	}
 	userEntity.SetTimes()
 
-	id, err = service.repository.Create(ctx, userEntity)
+	id, err = svc.repository.Create(ctx, userEntity)
 	if err != nil {
 		return 0, err
 	}
 	return id, nil
 }
 
-func (service UserServiceImpl) GetByID(ctx context.Context, id int) (user *model.UserResponse, err error) {
-	userEntity, err := service.repository.GetByID(ctx, id)
+func (svc UserServiceImpl) GetByID(ctx context.Context, id int) (user *model.UserResponse, err error) {
+	userEntity, err := svc.repository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fiber.NewError(fiber.StatusNotFound, "data not found")
@@ -87,8 +87,8 @@ func (service UserServiceImpl) GetByID(ctx context.Context, id int) (user *model
 	return user, nil
 }
 
-func (service UserServiceImpl) GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error) {
-	userEntity, err := service.repository.GetByEmail(ctx, email)
+func (svc UserServiceImpl) GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error) {
+	userEntity, err := svc.repository.GetByEmail(ctx, email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fiber.NewError(fiber.StatusNotFound, "data not found")
@@ -104,8 +104,8 @@ func (service UserServiceImpl) GetByEmail(ctx context.Context, email string) (us
 	return user, nil
 }
 
-func (service UserServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error) {
-	userEntities, total, err := service.repository.GetAll(ctx, filter)
+func (svc UserServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error) {
+	userEntities, total, err := svc.repository.GetAll(ctx, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -124,9 +124,9 @@ func (service UserServiceImpl) GetAll(ctx context.Context, filter base.RequestGe
 	return users, total, nil
 }
 
-func (service UserServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
+func (svc UserServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
 	isUserExist := func() bool {
-		getUser, getErr := service.repository.GetByID(ctx, user.ID)
+		getUser, getErr := svc.repository.GetByID(ctx, user.ID)
 		if getErr != nil {
 			return false
 		}
@@ -146,7 +146,7 @@ func (service UserServiceImpl) Update(ctx context.Context, user model.UserProfil
 	}
 	userEntity.SetUpdateTime()
 
-	err = service.repository.Update(ctx, userEntity)
+	err = svc.repository.Update(ctx, userEntity)
 	if err != nil {
 		return err
 	}
@@ -154,9 +154,9 @@ func (service UserServiceImpl) Update(ctx context.Context, user model.UserProfil
 	return nil
 }
 
-func (service UserServiceImpl) Delete(ctx context.Context, id int) (err error) {
+func (svc UserServiceImpl) Delete(ctx context.Context, id int) (err error) {
 	isUserExist := func() bool {
-		getUser, getErr := service.repository.GetByID(ctx, id)
+		getUser, getErr := svc.repository.GetByID(ctx, id)
 		if getErr != nil {
 			return false
 		}
@@ -170,7 +170,7 @@ func (service UserServiceImpl) Delete(ctx context.Context, id int) (err error) {
 		return fiber.NewError(fiber.StatusNotFound, "data not found")
 	}
 
-	err = service.repository.Delete(ctx, id)
+	err = svc.repository.Delete(ctx, id)
 	if err != nil {
 		return err
 	}

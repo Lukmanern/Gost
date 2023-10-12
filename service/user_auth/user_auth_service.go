@@ -1,4 +1,4 @@
-package service
+package svc
 
 import (
 	"context"
@@ -48,8 +48,8 @@ func NewUserAuthService() UserAuthService {
 	return userAuthService
 }
 
-func (service UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
-	userCheck, err := service.userRepository.GetByEmail(ctx, user.Email)
+func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
+	userCheck, err := svc.userRepository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return "", fiber.NewError(fiber.StatusNotFound, "data not found")
@@ -76,7 +76,7 @@ func (service UserAuthServiceImpl) Login(ctx context.Context, user model.UserLog
 
 	config := env.Configuration()
 	expired := time.Now().Add(config.AppAccessTokenTTL)
-	token, generetaErr := service.jwtHandler.GenerateJWT(userCheck.ID, user.Email, roleName, permissions, expired)
+	token, generetaErr := svc.jwtHandler.GenerateJWT(userCheck.ID, user.Email, roleName, permissions, expired)
 	if generetaErr != nil {
 		return "", fiber.NewError(fiber.StatusInternalServerError, "system error while generating token, please try again")
 	}
@@ -84,8 +84,8 @@ func (service UserAuthServiceImpl) Login(ctx context.Context, user model.UserLog
 	return token, nil
 }
 
-func (service UserAuthServiceImpl) Logout(c *fiber.Ctx) (err error) {
-	err = service.jwtHandler.InvalidateToken(c)
+func (svc UserAuthServiceImpl) Logout(c *fiber.Ctx) (err error) {
+	err = svc.jwtHandler.InvalidateToken(c)
 	if err != nil {
 		return errors.New("problem invalidating token")
 	}
@@ -93,12 +93,12 @@ func (service UserAuthServiceImpl) Logout(c *fiber.Ctx) (err error) {
 	return nil
 }
 
-func (service UserAuthServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
+func (svc UserAuthServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
 	return nil
 }
 
-func (service UserAuthServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
-	userCheck, err := service.userRepository.GetByID(ctx, user.ID)
+func (svc UserAuthServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
+	userCheck, err := svc.userRepository.GetByID(ctx, user.ID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, "data not found")
@@ -122,7 +122,7 @@ func (service UserAuthServiceImpl) UpdatePassword(ctx context.Context, user mode
 		return errors.New("something failed while hashing new data, please try again")
 	}
 
-	updateErr := service.userRepository.UpdatePassword(ctx, userCheck.ID, newPasswordHashed)
+	updateErr := svc.userRepository.UpdatePassword(ctx, userCheck.ID, newPasswordHashed)
 	if updateErr != nil {
 		return updateErr
 	}
@@ -130,8 +130,8 @@ func (service UserAuthServiceImpl) UpdatePassword(ctx context.Context, user mode
 	return nil
 }
 
-func (service UserAuthServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
-	user, err := service.userRepository.GetByID(ctx, id)
+func (svc UserAuthServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
+	user, err := svc.userRepository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return profile, fiber.NewError(fiber.StatusNotFound, "user not found")
@@ -155,9 +155,9 @@ func (service UserAuthServiceImpl) MyProfile(ctx context.Context, id int) (profi
 	return profile, nil
 }
 
-func (service UserAuthServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
+func (svc UserAuthServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
 	isUserExist := func() bool {
-		getUser, getErr := service.userRepository.GetByID(ctx, user.ID)
+		getUser, getErr := svc.userRepository.GetByID(ctx, user.ID)
 		if getErr != nil {
 			return false
 		}
@@ -177,7 +177,7 @@ func (service UserAuthServiceImpl) UpdateProfile(ctx context.Context, user model
 	}
 	userEntity.SetUpdateTime()
 
-	err = service.userRepository.Update(ctx, userEntity)
+	err = svc.userRepository.Update(ctx, userEntity)
 	if err != nil {
 		return err
 	}
