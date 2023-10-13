@@ -59,9 +59,7 @@ func (svc EmailServiceImpl) SendBulk(to []string, subject string, message string
 	smtpAddr := fmt.Sprintf("%s:%d", svc.Server, svc.Port)
 	auth := auth(svc.Email, svc.Password, svc.Server)
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
-	// toHeader := stringsvc.Join(to, ",")
 	body := "From: " + svc.Email + "\n" +
-		// 	"To: " + toHeader + "\n" +
 		"Subject: " + subject + "\n" + mime +
 		message
 	return smtp.SendMail(smtpAddr, auth, svc.Email, to, []byte(body))
