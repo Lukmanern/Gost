@@ -26,14 +26,14 @@ type RoleConnectToPermissions struct {
 
 // Permission
 type PermissionCreate struct {
-	Name        string `validate:"required,string,min=1,max=60" json:"name"`
-	Description string `validate:"required,string,min=1,max=100" json:"description"`
+	Name        string `validate:"required,min=1,max=60" json:"name"`
+	Description string `validate:"required,min=1,max=100" json:"description"`
 }
 
 type PermissionUpdate struct {
 	ID          int    `validate:"required,numeric,min=1" json:"id"`
-	Name        string `validate:"required,string,min=1,max=60" json:"name"`
-	Description string `validate:"required,string,min=1,max=100" json:"description"`
+	Name        string `validate:"required,min=1,max=60" json:"name"`
+	Description string `validate:"required,min=1,max=100" json:"description"`
 }
 
 type PermissionResponse struct {

@@ -16,3 +16,13 @@ type User struct {
 func (u *User) TableName() string {
 	return "users"
 }
+
+type UserHasRoles struct {
+	/*automated created by gorm*/
+	UserID int
+	RoleID int
+}
+
+func (u *UserHasRoles) TableName() string {
+	return "user_has_roles"
+}

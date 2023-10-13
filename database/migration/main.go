@@ -16,7 +16,9 @@ import (
 func AllTables() []interface{} {
 	return []any{
 		&entity.User{},
+		&entity.UserHasRoles{},
 		&entity.Role{},
+		&entity.RoleHasPermission{},
 		&entity.Permission{},
 
 		// Add more tables/structs here
@@ -57,17 +59,23 @@ func main() {
 	}
 
 	if !appInProduction {
-		// add permission and table
+		// seeding permission and role
+		for _, data := range rbac.AllRoles() {
+			time.Sleep(100 * time.Millisecond)
+			if createErr := db.Create(&data).Error; createErr != nil {
+				log.Panicf("Error while create Roles : %s", createErr)
+			}
+		}
+		time.Sleep(500 * time.Millisecond)
 		for _, data := range rbac.AllPermissions() {
 			time.Sleep(100 * time.Millisecond)
 			if createErr := db.Create(&data).Error; createErr != nil {
 				log.Panicf("Error while create Permissions : %s", createErr)
 			}
-		}
-		time.Sleep(500 * time.Millisecond)
-		for _, data := range rbac.AllRoles() {
-			time.Sleep(100 * time.Millisecond)
-			if createErr := db.Create(&data).Error; createErr != nil {
+			if createErr := db.Create(&entity.RoleHasPermission{
+				RoleID:       1,
+				PermissionID: data.ID,
+			}).Error; createErr != nil {
 				log.Panicf("Error while create Roles : %s", createErr)
 			}
 		}

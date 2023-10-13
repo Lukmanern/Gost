@@ -19,8 +19,7 @@ type UserPasswordUpdate struct {
 }
 
 type UserProfile struct {
-	Email       string
-	Name        string
-	Role        entity.Role
-	Permissions []entity.Permission
+	Email string
+	Name  string
+	Role  entity.Role
 }

@@ -41,37 +41,43 @@ func ResponseLoaded(c *fiber.Ctx, data interface{}) error {
 		c, fiber.StatusOK, true, "success get data", data)
 }
 
-// FormatResponseCreated formats a successful response with HTTP status 201.
+// FormatResponseCreated formats a successful
+// response with HTTP status 201.
 func ResponseCreated(c *fiber.Ctx, message string, data interface{}) error {
 	return formatResponse(
 		c, fiber.StatusCreated, true, message, data)
 }
 
-// ResponseNoContent formats a successful response with HTTP status 201.
+// ResponseNoContent formats a successful
+// response with HTTP status 204.
 func ResponseNoContent(c *fiber.Ctx) error {
 	c.Status(fiber.StatusNoContent)
 	return c.Send(nil)
 }
 
-// FormatResponseBadRequest formats a response with HTTP status 400.
+// FormatResponseBadRequest formats a
+// response with HTTP status 400.
 func ResponseBadRequest(c *fiber.Ctx, message string) error {
 	return formatResponse(
 		c, fiber.StatusBadRequest, false, message, nil)
 }
 
-// FormatResponseUnauthorized formats a response with HTTP status 401.
+// FormatResponseUnauthorized formats a
+// response with HTTP status 401.
 func ResponseUnauthorized(c *fiber.Ctx) error {
 	return formatResponse(
 		c, fiber.StatusUnauthorized, false, "unauthorized", nil)
 }
 
-// FormatResponseNotFound formats a response with HTTP status 404.
+// FormatResponseNotFound formats a
+// response with HTTP status 404.
 func ResponseNotFound(c *fiber.Ctx, message string) error {
 	return formatResponse(
 		c, fiber.StatusNotFound, false, message, nil)
 }
 
-// FormatResponseInternalServerError formats a response with HTTP status 500.
+// FormatResponseInternalServerError formats a
+// response with HTTP status 500.
 func ResponseInternalServerError(c *fiber.Ctx, message string) error {
 	return formatResponse(
 		c, fiber.StatusInternalServerError, false, message, nil)

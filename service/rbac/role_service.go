@@ -81,9 +81,9 @@ func (svc RoleServiceImpl) ConnectPermissions(ctx context.Context, data model.Ro
 		}
 	}
 
-	deleteErr := svc.DeleteRoleHasPermissions(ctx, data.RoleID)
-	if deleteErr != nil {
-		return deleteErr
+	connectErr := svc.repository.ConnectToPermission(ctx, data.RoleID, data.PermissionsID)
+	if connectErr != nil {
+		return connectErr
 	}
 	return nil
 }
@@ -168,24 +168,6 @@ func (svc RoleServiceImpl) Delete(ctx context.Context, id int) (err error) {
 		return fiber.NewError(fiber.StatusNotFound, "role not found")
 	}
 	err = svc.repository.Delete(ctx, id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (svc RoleServiceImpl) DeleteRoleHasPermissions(ctx context.Context, id int) (err error) {
-	role, getErr := svc.repository.GetByID(ctx, id)
-	if getErr != nil {
-		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "role not found")
-		}
-		return getErr
-	}
-	if role == nil {
-		return fiber.NewError(fiber.StatusNotFound, "role not found")
-	}
-	err = svc.repository.DeleteRoleHasPermissions(ctx, id)
 	if err != nil {
 		return err
 	}

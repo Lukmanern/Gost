@@ -12,12 +12,12 @@ import (
 
 type RoleRepository interface {
 	Create(ctx context.Context, role entity.Role, permissionsID []int) (id int, err error)
+	ConnectToPermission(ctx context.Context, roleID int, permissionsID []int) (err error)
 	GetByID(ctx context.Context, id int) (role *entity.Role, err error)
 	GetByName(ctx context.Context, name string) (role *entity.Role, err error)
 	GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error)
 	Update(ctx context.Context, role entity.Role) (err error)
 	Delete(ctx context.Context, id int) (err error)
-	DeleteRoleHasPermissions(ctx context.Context, id int) (err error)
 }
 
 type RoleRepositoryImpl struct {
@@ -69,9 +69,36 @@ func (repo RoleRepositoryImpl) Create(ctx context.Context, role entity.Role, per
 	return id, nil
 }
 
+func (repo RoleRepositoryImpl) ConnectToPermission(ctx context.Context, roleID int, permissionsID []int) (err error) {
+	err = repo.db.Transaction(func(tx *gorm.DB) error {
+		deleted := entity.RoleHasPermission{}
+		result := tx.Where("role_id = ?", roleID).Delete(&deleted)
+		if result.Error != nil {
+			tx.Rollback()
+			return result.Error
+		}
+
+		for _, permissionID := range permissionsID {
+			roleHasPermissionEntity := entity.RoleHasPermission{
+				RoleID:       roleID,
+				PermissionID: permissionID,
+			}
+			if err := tx.Create(&roleHasPermissionEntity).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (repo RoleRepositoryImpl) GetByID(ctx context.Context, id int) (role *entity.Role, err error) {
 	role = &entity.Role{}
-	result := repo.db.Where("id = ?", id).First(&role)
+	result := repo.db.Where("id = ?", id).Preload("Permissions").First(&role)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -80,7 +107,7 @@ func (repo RoleRepositoryImpl) GetByID(ctx context.Context, id int) (role *entit
 
 func (repo RoleRepositoryImpl) GetByName(ctx context.Context, name string) (role *entity.Role, err error) {
 	role = &entity.Role{}
-	result := repo.db.Where("name = ?", name).First(&role)
+	result := repo.db.Where("name = ?", name).Preload("Permissions").First(&role)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -109,7 +136,7 @@ func (repo RoleRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGe
 
 func (repo RoleRepositoryImpl) Update(ctx context.Context, role entity.Role) (err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
-		var oldData entity.Permission
+		var oldData entity.Role
 		result := tx.Where("id = ?", role.ID).First(&oldData)
 		if result.Error != nil {
 			tx.Rollback()
@@ -133,15 +160,6 @@ func (repo RoleRepositoryImpl) Update(ctx context.Context, role entity.Role) (er
 func (repo RoleRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
 	deleted := entity.Role{}
 	result := repo.db.Where("id = ?", id).Delete(&deleted)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
-}
-
-func (repo RoleRepositoryImpl) DeleteRoleHasPermissions(ctx context.Context, id int) (err error) {
-	deleted := entity.RoleHasPermission{}
-	result := repo.db.Where("role_id = ?", id).Delete(&deleted)
 	if result.Error != nil {
 		return result.Error
 	}

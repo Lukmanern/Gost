@@ -13,12 +13,12 @@ import (
 )
 
 type UserAuthController interface {
-	MyProfile(c *fiber.Ctx) error
 	Login(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
 	ForgetPassword(c *fiber.Ctx) error
 	UpdatePassword(c *fiber.Ctx) error
 	UpdateProfile(c *fiber.Ctx) error
+	MyProfile(c *fiber.Ctx) error
 }
 
 type UserAuthControllerImpl struct {
@@ -104,6 +104,11 @@ func (ctr UserAuthControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 }
 
 func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return base.ResponseUnauthorized(c)
+	}
+
 	var user model.UserPasswordUpdate
 	if err := c.BodyParser(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
@@ -135,11 +140,16 @@ func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 }
 
 func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return base.ResponseUnauthorized(c)
+	}
+
 	var user model.UserProfileUpdate
 	if err := c.BodyParser(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
 	}
-	user.ID = 1
+	user.ID = userClaims.ID
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
@@ -159,13 +169,13 @@ func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 }
 
 func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
-	user, ok := c.Locals("claims").(*middleware.Claims)
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok {
 		return base.ResponseBadRequest(c, "invalid token")
 	}
 
 	ctx := c.Context()
-	userProfile, getErr := ctr.service.MyProfile(ctx, user.ID)
+	userProfile, getErr := ctr.service.MyProfile(ctx, userClaims.ID)
 	if getErr != nil {
 		fiberErr, ok := getErr.(*fiber.Error)
 		if ok {

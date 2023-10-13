@@ -5,8 +5,8 @@ import "github.com/Lukmanern/gost/domain/entity"
 // for migration and seeder
 func AllRoles() []entity.Role {
 	roleNames := []string{
-		"user",
 		"admin",
+		"user",
 	}
 
 	roles := []entity.Role{}

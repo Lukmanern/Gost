@@ -23,8 +23,8 @@ type UserAuthService interface {
 	Logout(c *fiber.Ctx) (err error)
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
 	UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
-	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
+	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
 }
 
 type UserAuthServiceImpl struct {
@@ -143,13 +143,14 @@ func (svc UserAuthServiceImpl) MyProfile(ctx context.Context, id int) (profile m
 		return profile, fiber.NewError(fiber.StatusInternalServerError, "error while checking user")
 	}
 
-	// Todo get role and permissions
-
+	userRoles := entity.Role{}
+	if len(user.Roles) > 0 {
+		userRoles = user.Roles[0]
+	}
 	profile = model.UserProfile{
-		Name:        user.Name,
-		Email:       user.Email,
-		Role:        entity.Role{},
-		Permissions: []entity.Permission{},
+		Name:  user.Name,
+		Email: user.Email,
+		Role:  userRoles,
 	}
 
 	return profile, nil

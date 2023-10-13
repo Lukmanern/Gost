@@ -44,24 +44,30 @@ func NewUserRepository() UserRepository {
 
 func (repo UserRepositoryImpl) Create(ctx context.Context, user entity.User) (id int, err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
-		res := tx.Create(&user)
-		if res.Error != nil {
+		if res := tx.Create(&user); res.Error != nil {
 			tx.Rollback()
 			return res.Error
 		}
 		id = user.ID
+
+		if res := tx.Create(&entity.UserHasRoles{
+			UserID: id,
+			RoleID: 1,
+		}); res.Error != nil {
+			tx.Rollback()
+			return res.Error
+		}
 		return nil
 	})
 	if err != nil {
 		return 0, err
 	}
-
 	return id, nil
 }
 
 func (repo UserRepositoryImpl) GetByID(ctx context.Context, id int) (user *entity.User, err error) {
 	user = &entity.User{}
-	result := repo.db.Where("id = ?", id).First(&user)
+	result := repo.db.Where("id = ?", id).Preload("Roles.Permissions").First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}
