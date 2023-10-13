@@ -8,6 +8,8 @@ import (
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/domain/base"
@@ -57,7 +59,7 @@ func (svc UserServiceImpl) Create(ctx context.Context, user model.UserCreate) (i
 	}
 
 	userEntity := entity.User{
-		Name:     user.Name,
+		Name:     cases.Title(language.Und).String(user.Name),
 		Email:    user.Email,
 		Password: passwordHashed,
 	}
@@ -142,7 +144,7 @@ func (svc UserServiceImpl) Update(ctx context.Context, user model.UserProfileUpd
 
 	userEntity := entity.User{
 		ID:   user.ID,
-		Name: user.Name,
+		Name: cases.Title(language.Und).String(user.Name),
 	}
 	userEntity.SetUpdateTime()
 

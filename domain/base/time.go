@@ -2,18 +2,18 @@ package base
 
 import "time"
 
-type TimeFieds struct {
+type TimeFields struct {
 	CreatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"created_at"`
 	UpdatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"updated_at"`
 }
 
-func (att *TimeFieds) SetTimes() {
+func (att *TimeFields) SetTimes() {
 	timeNow := time.Now()
 	att.CreatedAt = &timeNow
 	att.UpdatedAt = &timeNow
 }
 
-func (att *TimeFieds) SetUpdateTime() {
+func (att *TimeFields) SetUpdateTime() {
 	timeNow := time.Now()
 	att.UpdatedAt = &timeNow
 }

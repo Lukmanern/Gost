@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/domain/entity"
@@ -25,6 +27,7 @@ type UserAuthService interface {
 	UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
 	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
+	Register(ctx context.Context, id int) (profile model.UserProfile, err error)
 }
 
 type UserAuthServiceImpl struct {
@@ -174,7 +177,7 @@ func (svc UserAuthServiceImpl) UpdateProfile(ctx context.Context, user model.Use
 
 	userEntity := entity.User{
 		ID:   user.ID,
-		Name: user.Name,
+		Name: cases.Title(language.Und).String(user.Name),
 	}
 	userEntity.SetUpdateTime()
 
@@ -183,4 +186,32 @@ func (svc UserAuthServiceImpl) UpdateProfile(ctx context.Context, user model.Use
 		return err
 	}
 	return nil
+}
+
+func (svc UserAuthServiceImpl) Register(ctx context.Context, id int) (profile model.UserProfile, err error) {
+	// Name: cases.Title(language.Und).String(user.Name),
+	// Title Casing string
+	user, err := svc.userRepository.GetByID(ctx, id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return profile, fiber.NewError(fiber.StatusNotFound, "user not found")
+		}
+
+		return profile, err
+	}
+	if user == nil {
+		return profile, fiber.NewError(fiber.StatusInternalServerError, "error while checking user")
+	}
+
+	userRoles := entity.Role{}
+	if len(user.Roles) > 0 {
+		userRoles = user.Roles[0]
+	}
+	profile = model.UserProfile{
+		Name:  user.Name,
+		Email: user.Email,
+		Role:  userRoles,
+	}
+
+	return profile, nil
 }

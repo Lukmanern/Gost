@@ -35,10 +35,21 @@ func Response(c *fiber.Ctx, statusCode int, success bool, message string, data i
 	return formatResponse(c, statusCode, success, message, data)
 }
 
-// FormatResponseLoaded formats a successful response with HTTP status 200.
+// FormatResponseLoaded formats a successful
+// response with HTTP status 200.
 func ResponseLoaded(c *fiber.Ctx, data interface{}) error {
 	return formatResponse(
 		c, fiber.StatusOK, true, "success get data", data)
+}
+
+// FormatResponseLoaded formats a successful
+// response with HTTP status 200.
+func ResponseUpdated(c *fiber.Ctx, message string) error {
+	if message == "" {
+		message = "data success updated"
+	}
+	return formatResponse(
+		c, fiber.StatusOK, true, message, nil)
 }
 
 // FormatResponseCreated formats a successful

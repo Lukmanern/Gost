@@ -1,3 +1,5 @@
+// used by user auth service
+
 package repository
 
 import (

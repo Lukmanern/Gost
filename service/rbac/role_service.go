@@ -2,14 +2,16 @@ package service
 
 import (
 	"context"
+	"strings"
 	"sync"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	repository "github.com/Lukmanern/gost/repository/rbac"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 type RoleService interface {
@@ -42,6 +44,7 @@ func NewRoleService(servicePermission PermissionService) RoleService {
 }
 
 func (svc RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (id int, err error) {
+	data.Name = strings.ToLower(data.Name)
 	for _, id := range data.PermissionsID {
 		permission, getErr := svc.servicePermission.GetByID(ctx, id)
 		if getErr != nil || permission == nil {
@@ -52,6 +55,7 @@ func (svc RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (i
 	if getErr == nil || role != nil {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "role name has been used")
 	}
+
 	entityRole := entity.Role{
 		Name:        data.Name,
 		Description: data.Description,
@@ -124,6 +128,7 @@ func (svc RoleServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll
 }
 
 func (svc RoleServiceImpl) Update(ctx context.Context, data model.RoleUpdate) (err error) {
+	data.Name = strings.ToLower(data.Name)
 	roleByName, getErr := svc.repository.GetByName(ctx, data.Name)
 	if getErr != nil && getErr != gorm.ErrRecordNotFound {
 		return getErr

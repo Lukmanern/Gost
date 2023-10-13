@@ -2,14 +2,16 @@ package service
 
 import (
 	"context"
+	"strings"
 	"sync"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	repository "github.com/Lukmanern/gost/repository/rbac"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 type PermissionService interface {
@@ -39,6 +41,8 @@ func NewPermissionService() PermissionService {
 }
 
 func (svc PermissionServiceImpl) Create(ctx context.Context, permission model.PermissionCreate) (id int, err error) {
+	permission.Name = strings.ToLower(permission.Name)
+
 	checkPermission, getErr := svc.repository.GetByName(ctx, permission.Name)
 	if getErr == nil || checkPermission != nil {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "permission name has been used")
@@ -97,6 +101,7 @@ func (svc PermissionServiceImpl) GetAll(ctx context.Context, filter base.Request
 }
 
 func (svc PermissionServiceImpl) Update(ctx context.Context, data model.PermissionUpdate) (err error) {
+	data.Name = strings.ToLower(data.Name)
 	permissionByName, getErr := svc.repository.GetByName(ctx, data.Name)
 	if getErr != nil && getErr != gorm.ErrRecordNotFound {
 		return getErr
