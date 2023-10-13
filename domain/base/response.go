@@ -93,3 +93,8 @@ func ResponseInternalServerError(c *fiber.Ctx, message string) error {
 	return formatResponse(
 		c, fiber.StatusInternalServerError, false, message, nil)
 }
+
+func ResponseErrorWithData(c *fiber.Ctx, message string, data interface{}) error {
+	return formatResponse(
+		c, fiber.StatusInternalServerError, false, message, data)
+}

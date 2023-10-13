@@ -1,6 +1,8 @@
 // don't use this for production
 // used for sending testing email in development
 
+// for dev : router -> email service (without controller)
+
 package application
 
 import (
@@ -18,11 +20,17 @@ var emailService service.EmailService
 
 func getEmailRouter(router fiber.Router) {
 	emailService = service.NewEmailService()
-	emailRoute := router.Group("email")
-	emailRoute.Post("send", func(c *fiber.Ctx) error {
-		err := emailService.Send("lukmanernandi16@gmail.com", "Testing Gost Project", simpleMessage)
+	emailRoutes := router.Group("email")
+	emailRoutes.Post("send-bulk", func(c *fiber.Ctx) error {
+		testEmails := []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com", "code_name_safe_in_unsafe@proton.me", "lukmanernandi16@gmail.com.", "unsurlukm an@gmail.com", "code _name_safe_in_unsafe@proton.me", "lukmanern*a)ndi16@gmail.com", "unsurlukman@gmail.com", "code_n}ame_safe_in_unsafe@proton.me"}
+		res, err := emailService.Send(testEmails, "Testing Gost Project", simpleMessage)
 		if err != nil {
-			return base.ResponseInternalServerError(c, "internal server error: "+err.Error())
+			return base.ResponseErrorWithData(c, "internal server error: "+err.Error(), fiber.Map{
+				"res": res,
+			})
+		}
+		if res == nil {
+			return base.ResponseInternalServerError(c, "internal server error: failed sending email")
 		}
 
 		return base.ResponseUpdated(c, "success sending message")

@@ -1,17 +1,19 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"net/mail"
 	"net/smtp"
 	"sync"
 
 	"github.com/Lukmanern/gost/internal/env"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type EmailService interface {
-	Send(to string, subject string, message string) (err error)
-	SendBulk(to []string, subject string, message string) (err error)
-	SendResetPassword(to string, subject string, message string) (err error)
+	Send(emails []string, subject string, message string) (res map[string]bool, err error)
 }
 
 type EmailServiceImpl struct {
@@ -40,38 +42,74 @@ func NewEmailService() EmailService {
 	return emailService
 }
 
-func auth(email, password, server string) (auth smtp.Auth) {
-	return smtp.PlainAuth("", email, password, server)
+func (svc EmailServiceImpl) Send(emails []string, subject string, message string) (map[string]bool, error) {
+	if validateErr := validateEmails(emails...); validateErr != nil {
+		return nil, validateErr
+	}
+
+	subject = cases.Title(language.Und).String(subject)
+	lenEmails := len(emails)
+	errorSends := make([]error, lenEmails)
+	var wg sync.WaitGroup
+
+	for i, email := range emails {
+		addr := svc.getSMTPAddr()
+		auth := svc.getAuth()
+		mime := svc.getMime()
+		body := "From: " + svc.Email + "\n" +
+			"To: " + email + "\n" +
+			"Subject: " + subject + "\n" + mime +
+			message
+
+		wg.Add(1)
+		go func(i int, email string) {
+			defer func() {
+				wg.Done()
+			}()
+
+			errSend := smtp.SendMail(addr, auth, svc.Email, []string{email}, []byte(body))
+			if errSend != nil {
+				errorSends[i] = errSend
+			}
+		}(i, email)
+	}
+	wg.Wait()
+
+	var hasError error = nil
+	res := make(map[string]bool, lenEmails)
+	for i, email := range emails {
+		if errorSends[i] != nil {
+			res[email] = false
+			hasError = errors.New("emails may have failed, check $res for detail, in $res true for success")
+			continue
+		}
+		res[email] = true
+	}
+
+	if hasError != nil {
+		return res, hasError
+	}
+	return res, nil
 }
 
-func (svc EmailServiceImpl) Send(to string, subject string, message string) (err error) {
-	smtpAddr := fmt.Sprintf("%s:%d", svc.Server, svc.Port)
-	auth := auth(svc.Email, svc.Password, svc.Server)
-	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
-	body := "From: " + svc.Email + "\n" +
-		"To: " + to + "\n" +
-		"Subject: " + subject + "\n" + mime +
-		message
-	return smtp.SendMail(smtpAddr, auth, svc.Email, []string{to}, []byte(body))
+func validateEmails(emails ...string) error {
+	for _, email := range emails {
+		_, err := mail.ParseAddress(email)
+		if err != nil {
+			return errors.New("one or more email/s is invalid " + email)
+		}
+	}
+	return nil
 }
 
-func (svc EmailServiceImpl) SendBulk(to []string, subject string, message string) (err error) {
-	smtpAddr := fmt.Sprintf("%s:%d", svc.Server, svc.Port)
-	auth := auth(svc.Email, svc.Password, svc.Server)
-	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
-	body := "From: " + svc.Email + "\n" +
-		"Subject: " + subject + "\n" + mime +
-		message
-	return smtp.SendMail(smtpAddr, auth, svc.Email, to, []byte(body))
+func (svc EmailServiceImpl) getAuth() smtp.Auth {
+	return smtp.PlainAuth("", svc.Email, svc.Password, svc.Server)
 }
 
-func (svc EmailServiceImpl) SendResetPassword(to string, subject string, message string) (err error) {
-	smtpAddr := fmt.Sprintf("%s:%d", svc.Server, svc.Port)
-	auth := auth(svc.Email, svc.Password, svc.Server)
-	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
-	body := "From: " + svc.Email + "\n" +
-		"To: " + to + "\n" +
-		"Subject: " + subject + "\n" + mime +
-		message
-	return smtp.SendMail(smtpAddr, auth, svc.Email, []string{to}, []byte(body))
+func (svc EmailServiceImpl) getSMTPAddr() string {
+	return fmt.Sprintf("%s:%d", svc.Server, svc.Port)
+}
+
+func (svc EmailServiceImpl) getMime() string {
+	return "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
 }
