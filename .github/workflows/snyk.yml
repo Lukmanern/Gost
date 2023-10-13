@@ -1,4 +1,4 @@
-name: Simple workflow for Golang using Snyk
+name: Golang Snyk
 
 on:
   push:
