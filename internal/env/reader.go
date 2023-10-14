@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -47,13 +48,15 @@ var (
 	PublicKeyReadOne  sync.Once
 	PrivateKeyReadOne sync.Once
 	cfgOnce           sync.Once
+
+	paths = []string{"", "./..", "./../..", "./../../.."}
 )
 
 func ReadConfig(filePath string) *Config {
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		log.Panicf(`.env file isn't exist/found: "%s"`, filePath)
-	}
 	cfgOnce.Do(func() {
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			log.Panicf(`.env file isn't exist/found at: "%s": %s`, filePath, err.Error())
+		}
 		envFile = &filePath
 		log.Printf(`Reading config file: "%s"`, *envFile)
 		err := cleanenv.ReadConfig(filePath, &cfg)
@@ -91,10 +94,18 @@ func (c Config) GetAppInProduction() bool {
 
 func (c Config) GetPublicKey() []byte {
 	PublicKeyReadOne.Do(func() {
-		if _, err := os.Stat(c.PublicKey); os.IsNotExist(err) {
-			log.Panicf(`Public-key (./keys/publickey.crt see .env file) file isn't exist/found: "%s"`, c.PublicKey)
+		var foundPath string
+		for _, path := range paths {
+			keyPath := filepath.Join(path, c.PublicKey)
+			if _, err := os.Stat(keyPath); err == nil {
+				foundPath = keyPath
+				break
+			}
 		}
-		signKey, err := os.ReadFile(c.PublicKey)
+		if foundPath == "" {
+			log.Panicf(`Publickey file isn't exist/found: "%s"`, c.PublicKey)
+		}
+		signKey, err := os.ReadFile(foundPath)
 		if err != nil {
 			log.Fatalf("%s", err.Error())
 		}
@@ -105,10 +116,18 @@ func (c Config) GetPublicKey() []byte {
 
 func (c Config) GetPrivateKey() []byte {
 	PrivateKeyReadOne.Do(func() {
-		if _, err := os.Stat(c.PrivateKey); os.IsNotExist(err) {
-			log.Panicf(`Private-key (./keys/private.key see .env file) file isn't exist/found: "%s"`, c.PrivateKey)
+		var foundPath string
+		for _, path := range paths {
+			keyPath := filepath.Join(path, c.PrivateKey)
+			if _, err := os.Stat(keyPath); err == nil {
+				foundPath = keyPath
+				break
+			}
 		}
-		signKey, err := os.ReadFile(c.PrivateKey)
+		if foundPath == "" {
+			log.Panicf(`Privatekey file isn't exist/found: "%s"`, c.PrivateKey)
+		}
+		signKey, err := os.ReadFile(foundPath)
 		if err != nil {
 			log.Fatalf("%s", err.Error())
 		}

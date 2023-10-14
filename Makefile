@@ -6,3 +6,6 @@ migrate:
 
 run:
 	go run .
+
+test-report:
+	go tool cover -html cover.out -o cover.html
