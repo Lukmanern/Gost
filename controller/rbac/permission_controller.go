@@ -9,6 +9,7 @@ import (
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/response"
 	service "github.com/Lukmanern/gost/service/rbac"
 )
 
@@ -41,11 +42,11 @@ func NewPermissionController(service service.PermissionService) PermissionContro
 func (ctr PermissionControllerImpl) Create(c *fiber.Ctx) error {
 	var permission model.PermissionCreate
 	if err := c.BodyParser(&permission); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&permission); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 
 	ctx := c.Context()
@@ -53,20 +54,20 @@ func (ctr PermissionControllerImpl) Create(c *fiber.Ctx) error {
 	if createErr != nil {
 		fiberErr, ok := createErr.(*fiber.Error)
 		if ok {
-			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseError(c, "internal server error: "+createErr.Error())
+		return response.Error(c, "internal server error: "+createErr.Error())
 	}
 	data := map[string]any{
 		"id": id,
 	}
-	return base.ResponseCreated(c, "success create data", data)
+	return response.SuccessCreated(c, data)
 }
 
 func (ctr PermissionControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return base.ResponseBadRequest(c, "invalid id")
+		return response.BadRequest(c, "invalid id")
 	}
 
 	ctx := c.Context()
@@ -74,12 +75,12 @@ func (ctr PermissionControllerImpl) Get(c *fiber.Ctx) error {
 	if getErr != nil {
 		fiberErr, ok := getErr.(*fiber.Error)
 		if ok {
-			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseError(c, "internal server error: "+getErr.Error())
+		return response.Error(c, "internal server error: "+getErr.Error())
 	}
 
-	return base.ResponseLoaded(c, permission)
+	return response.SuccessLoaded(c, permission)
 }
 
 func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
@@ -90,13 +91,13 @@ func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 		Sort:    c.Query("sort"),
 	}
 	if request.Page <= 0 || request.Limit <= 0 {
-		return base.ResponseBadRequest(c, "invalid page or limit value")
+		return response.BadRequest(c, "invalid page or limit value")
 	}
 
 	ctx := c.Context()
 	permissions, total, getErr := ctr.service.GetAll(ctx, request)
 	if getErr != nil {
-		return base.ResponseError(c, "internal server error: "+getErr.Error())
+		return response.Error(c, "internal server error: "+getErr.Error())
 	}
 
 	data := make([]interface{}, len(permissions))
@@ -104,7 +105,7 @@ func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 		data[i] = permissions[i]
 	}
 
-	response := base.GetAllResponse{
+	responseData := base.GetAllResponse{
 		Meta: base.PageMeta{
 			Total: total,
 			Pages: int(math.Ceil(float64(total) / float64(request.Limit))),
@@ -113,22 +114,22 @@ func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 		Data: data,
 	}
 
-	return base.ResponseLoaded(c, response)
+	return response.SuccessLoaded(c, responseData)
 }
 
 func (ctr PermissionControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return base.ResponseBadRequest(c, "invalid id")
+		return response.BadRequest(c, "invalid id")
 	}
 	var permission model.PermissionUpdate
 	if err := c.BodyParser(&permission); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	permission.ID = id
 	validate := validator.New()
 	if err := validate.Struct(&permission); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 
 	ctx := c.Context()
@@ -136,18 +137,18 @@ func (ctr PermissionControllerImpl) Update(c *fiber.Ctx) error {
 	if updateErr != nil {
 		fiberErr, ok := updateErr.(*fiber.Error)
 		if ok {
-			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseError(c, "internal server error: "+updateErr.Error())
+		return response.Error(c, "internal server error: "+updateErr.Error())
 	}
 
-	return base.ResponseNoContent(c)
+	return response.SuccessNoContent(c)
 }
 
 func (ctr PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return base.ResponseBadRequest(c, "invalid id")
+		return response.BadRequest(c, "invalid id")
 	}
 
 	ctx := c.Context()
@@ -155,10 +156,10 @@ func (ctr PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 	if deleteErr != nil {
 		fiberErr, ok := deleteErr.(*fiber.Error)
 		if ok {
-			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseError(c, "internal server error: "+deleteErr.Error())
+		return response.Error(c, "internal server error: "+deleteErr.Error())
 	}
 
-	return base.ResponseNoContent(c)
+	return response.SuccessNoContent(c)
 }

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -127,7 +127,7 @@ func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 		return j.publicKey, nil
 	})
 	if err != nil || !token.Valid {
-		return base.ResponseUnauthorized(c)
+		return response.Unauthorized(c)
 	}
 	c.Locals("claims", &claims)
 	return c.Next()
@@ -215,7 +215,7 @@ func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 func (j JWTHandler) HasPermission(c *fiber.Ctx, permissions ...string) error {
 	claims, ok := c.Locals("claims").(*Claims)
 	if !ok {
-		return base.ResponseUnauthorized(c)
+		return response.Unauthorized(c)
 	}
 	for _, permission := range permissions {
 		for _, authority := range claims.Permissions {
@@ -225,13 +225,13 @@ func (j JWTHandler) HasPermission(c *fiber.Ctx, permissions ...string) error {
 		}
 	}
 
-	return base.ResponseUnauthorized(c)
+	return response.Unauthorized(c)
 }
 
 func (j JWTHandler) HasRole(c *fiber.Ctx, roles ...string) error {
 	claims, ok := c.Locals("claims").(*Claims)
 	if !ok {
-		return base.ResponseUnauthorized(c)
+		return response.Unauthorized(c)
 	}
 	for _, role := range roles {
 		if role == claims.Role {
@@ -239,7 +239,7 @@ func (j JWTHandler) HasRole(c *fiber.Ctx, roles ...string) error {
 		}
 	}
 
-	return base.ResponseUnauthorized(c)
+	return response.Unauthorized(c)
 }
 
 // for handler or middleware

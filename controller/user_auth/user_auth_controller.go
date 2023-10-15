@@ -6,9 +6,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/middleware"
+	"github.com/Lukmanern/gost/internal/response"
 	service "github.com/Lukmanern/gost/service/user_auth"
 )
 
@@ -43,11 +43,11 @@ func NewUserAuthController(service service.UserAuthService) UserAuthController {
 func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 	var user model.UserLogin
 	if err := c.BodyParser(&user); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 
 	ctx := c.Context()
@@ -55,39 +55,39 @@ func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 	if loginErr != nil {
 		fiberErr, ok := loginErr.(*fiber.Error)
 		if ok {
-			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseError(c, "internal server error: "+loginErr.Error())
+		return response.Error(c, "internal server error: "+loginErr.Error())
 	}
 
 	data := map[string]any{
 		"token": token,
 	}
-	return base.Response(c, fiber.StatusOK, true, "success login", data)
+	return response.CreateResponse(c, fiber.StatusOK, true, "success login", data)
 }
 
 func (ctr UserAuthControllerImpl) Logout(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
-		return base.ResponseUnauthorized(c)
+		return response.Unauthorized(c)
 	}
 
 	logoutErr := ctr.service.Logout(c)
 	if logoutErr != nil {
-		return base.ResponseError(c, "internal server error: "+logoutErr.Error())
+		return response.Error(c, "internal server error: "+logoutErr.Error())
 	}
 
-	return base.Response(c, fiber.StatusOK, true, "success logout", nil)
+	return response.CreateResponse(c, fiber.StatusOK, true, "success logout", nil)
 }
 
 func (ctr UserAuthControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	var user model.UserForgetPassword
 	if err := c.BodyParser(&user); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 
 	ctx := c.Context()
@@ -95,36 +95,36 @@ func (ctr UserAuthControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	if forgetErr != nil {
 		fiberErr, ok := forgetErr.(*fiber.Error)
 		if ok {
-			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseError(c, "internal server error: "+forgetErr.Error())
+		return response.Error(c, "internal server error: "+forgetErr.Error())
 	}
 
 	message := "success sending link for reset password to email, check your email inbox"
-	return base.Response(c, fiber.StatusAccepted, true, message, nil)
+	return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
 }
 
 func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
-		return base.ResponseUnauthorized(c)
+		return response.Unauthorized(c)
 	}
 
 	var user model.UserPasswordUpdate
 	if err := c.BodyParser(&user); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	user.ID = userClaims.ID
 
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	if user.NewPassword != user.NewPasswordConfirm {
-		return base.ResponseBadRequest(c, "new password confirmation is wrong")
+		return response.BadRequest(c, "new password confirmation is wrong")
 	}
 	if user.NewPassword == user.OldPassword {
-		return base.ResponseBadRequest(c, "no new password, try another new password")
+		return response.BadRequest(c, "no new password, try another new password")
 	}
 
 	ctx := c.Context()
@@ -132,28 +132,28 @@ func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	if updateErr != nil {
 		fiberErr, ok := updateErr.(*fiber.Error)
 		if ok {
-			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseError(c, "internal server error: "+updateErr.Error())
+		return response.Error(c, "internal server error: "+updateErr.Error())
 	}
 
-	return base.ResponseNoContent(c)
+	return response.SuccessNoContent(c)
 }
 
 func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
-		return base.ResponseUnauthorized(c)
+		return response.Unauthorized(c)
 	}
 
 	var user model.UserProfileUpdate
 	if err := c.BodyParser(&user); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	user.ID = userClaims.ID
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 
 	ctx := c.Context()
@@ -161,18 +161,18 @@ func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	if updateErr != nil {
 		fiberErr, ok := updateErr.(*fiber.Error)
 		if ok {
-			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseError(c, "internal server error: "+updateErr.Error())
+		return response.Error(c, "internal server error: "+updateErr.Error())
 	}
 
-	return base.ResponseNoContent(c)
+	return response.SuccessNoContent(c)
 }
 
 func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok {
-		return base.ResponseBadRequest(c, "invalid token")
+		return response.BadRequest(c, "invalid token")
 	}
 
 	ctx := c.Context()
@@ -180,9 +180,9 @@ func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
 	if getErr != nil {
 		fiberErr, ok := getErr.(*fiber.Error)
 		if ok {
-			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseError(c, "internal server error: "+getErr.Error())
+		return response.Error(c, "internal server error: "+getErr.Error())
 	}
-	return base.ResponseLoaded(c, userProfile)
+	return response.SuccessLoaded(c, userProfile)
 }

@@ -15,9 +15,9 @@ func SuccessNoContent(c *fiber.Ctx) error {
 	return c.Send(nil)
 }
 
-// NewResponse generates a new response
+// CreateResponse generates a new response
 // with the given parameters.
-func NewResponse(c *fiber.Ctx, statusCode int, success bool, message string, data interface{}) error {
+func CreateResponse(c *fiber.Ctx, statusCode int, success bool, message string, data interface{}) error {
 	c.Status(statusCode)
 	return c.JSON(response{
 		Message: message,
@@ -29,42 +29,42 @@ func NewResponse(c *fiber.Ctx, statusCode int, success bool, message string, dat
 // SuccessLoaded formats a successful response
 // with HTTP status 200 and the provided data.
 func SuccessLoaded(c *fiber.Ctx, data interface{}) error {
-	return NewResponse(c, fiber.StatusOK, true, "Data successfully loaded", data)
+	return CreateResponse(c, fiber.StatusOK, true, "Data successfully loaded", data)
 }
 
 // SuccessCreated formats a successful response
 // with HTTP status 201 and the provided data.
 func SuccessCreated(c *fiber.Ctx, data interface{}) error {
-	return NewResponse(c, fiber.StatusCreated, true, "Data successfully created", data)
+	return CreateResponse(c, fiber.StatusCreated, true, "Data successfully created", data)
 }
 
 // BadRequest formats a response with HTTP
 // status 400 and the specified message.
 func BadRequest(c *fiber.Ctx, message string) error {
-	return NewResponse(c, fiber.StatusBadRequest, false, message, nil)
+	return CreateResponse(c, fiber.StatusBadRequest, false, message, nil)
 }
 
 // Unauthorized formats a response with
 // HTTP status 401 indicating unauthorized access.
 func Unauthorized(c *fiber.Ctx) error {
-	return NewResponse(c, fiber.StatusUnauthorized, false, "Unauthorized", nil)
+	return CreateResponse(c, fiber.StatusUnauthorized, false, "Unauthorized", nil)
 }
 
 // DataNotFound formats a response with
 // HTTP status 404 and the specified message.
 func DataNotFound(c *fiber.Ctx, message string) error {
-	return NewResponse(c, fiber.StatusNotFound, false, message, nil)
+	return CreateResponse(c, fiber.StatusNotFound, false, message, nil)
 }
 
 // Error formats an error response
 // with HTTP status 500 and the specified message.
 func Error(c *fiber.Ctx, message string) error {
-	return NewResponse(c, fiber.StatusInternalServerError, false, message, nil)
+	return CreateResponse(c, fiber.StatusInternalServerError, false, message, nil)
 }
 
 // ErrorWithData formats an error response
 // with HTTP status 500 and the specified
 // message and data.
 func ErrorWithData(c *fiber.Ctx, message string, data interface{}) error {
-	return NewResponse(c, fiber.StatusInternalServerError, false, message, data)
+	return CreateResponse(c, fiber.StatusInternalServerError, false, message, data)
 }

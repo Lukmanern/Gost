@@ -6,7 +6,7 @@
 package application
 
 import (
-	"github.com/Lukmanern/gost/domain/base"
+	"github.com/Lukmanern/gost/internal/response"
 	service "github.com/Lukmanern/gost/service/email"
 	"github.com/gofiber/fiber/v2"
 )
@@ -25,15 +25,15 @@ func getEmailRouter(router fiber.Router) {
 		testEmails := []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com", "code_name_safe_in_unsafe@proton.me", "lukmanernandi16@gmail.com.", "unsurlukm an@gmail.com", "code _name_safe_in_unsafe@proton.me", "lukmanern*a)ndi16@gmail.com", "unsurlukman@gmail.com", "code_n}ame_safe_in_unsafe@proton.me"}
 		res, err := emailService.Send(testEmails, "Testing Gost Project", simpleMessage)
 		if err != nil {
-			return base.ResponseErrorWithData(c, "internal server error: "+err.Error(), fiber.Map{
+			return response.ErrorWithData(c, "internal server error: "+err.Error(), fiber.Map{
 				"res": res,
 			})
 		}
 		if res == nil {
-			return base.ResponseError(c, "internal server error: failed sending email")
+			return response.Error(c, "internal server error: failed sending email")
 		}
 
 		message := "success sending emails"
-		return base.Response(c, fiber.StatusAccepted, true, message, nil)
+		return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
 	})
 }
