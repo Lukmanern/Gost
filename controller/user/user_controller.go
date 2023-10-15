@@ -48,7 +48,7 @@ func (ctr UserControllerImpl) Create(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+createErr.Error())
+		return base.ResponseError(c, "internal server error: "+createErr.Error())
 	}
 	data := map[string]any{
 		"id": id,
@@ -69,7 +69,7 @@ func (ctr UserControllerImpl) Get(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+getErr.Error())
+		return base.ResponseError(c, "internal server error: "+getErr.Error())
 	}
 
 	return base.ResponseLoaded(c, user)
@@ -89,7 +89,7 @@ func (ctr UserControllerImpl) GetAll(c *fiber.Ctx) error {
 	ctx := c.Context()
 	users, total, getErr := ctr.service.GetAll(ctx, request)
 	if getErr != nil {
-		return base.ResponseInternalServerError(c, "internal server error: "+getErr.Error())
+		return base.ResponseError(c, "internal server error: "+getErr.Error())
 	}
 
 	data := make([]interface{}, len(users))
@@ -131,7 +131,7 @@ func (ctr UserControllerImpl) Update(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+updateErr.Error())
+		return base.ResponseError(c, "internal server error: "+updateErr.Error())
 	}
 
 	return base.ResponseNoContent(c)
@@ -150,7 +150,7 @@ func (ctr UserControllerImpl) Delete(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+deleteErr.Error())
+		return base.ResponseError(c, "internal server error: "+deleteErr.Error())
 	}
 
 	return base.ResponseNoContent(c)

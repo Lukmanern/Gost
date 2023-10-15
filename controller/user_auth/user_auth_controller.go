@@ -57,7 +57,7 @@ func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+loginErr.Error())
+		return base.ResponseError(c, "internal server error: "+loginErr.Error())
 	}
 
 	data := map[string]any{
@@ -74,7 +74,7 @@ func (ctr UserAuthControllerImpl) Logout(c *fiber.Ctx) error {
 
 	logoutErr := ctr.service.Logout(c)
 	if logoutErr != nil {
-		return base.ResponseInternalServerError(c, "internal server error: "+logoutErr.Error())
+		return base.ResponseError(c, "internal server error: "+logoutErr.Error())
 	}
 
 	return base.Response(c, fiber.StatusOK, true, "success logout", nil)
@@ -97,10 +97,11 @@ func (ctr UserAuthControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+forgetErr.Error())
+		return base.ResponseError(c, "internal server error: "+forgetErr.Error())
 	}
 
-	return base.ResponseUpdated(c, "success sending link for reset password to email, check your email inbox")
+	message := "success sending link for reset password to email, check your email inbox"
+	return base.Response(c, fiber.StatusAccepted, true, message, nil)
 }
 
 func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
@@ -113,17 +114,17 @@ func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
 	}
-	// Todo implement jwt-context for get ID
-	user.ID = 1
+	user.ID = userClaims.ID
+
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
 		return base.ResponseBadRequest(c, "invalid json body: "+err.Error())
 	}
-	if user.NewPassword == user.OldPassword {
-		return base.ResponseBadRequest(c, "no new password, try another new password")
-	}
 	if user.NewPassword != user.NewPasswordConfirm {
 		return base.ResponseBadRequest(c, "new password confirmation is wrong")
+	}
+	if user.NewPassword == user.OldPassword {
+		return base.ResponseBadRequest(c, "no new password, try another new password")
 	}
 
 	ctx := c.Context()
@@ -133,10 +134,10 @@ func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+updateErr.Error())
+		return base.ResponseError(c, "internal server error: "+updateErr.Error())
 	}
 
-	return base.ResponseUpdated(c, "success update password")
+	return base.ResponseNoContent(c)
 }
 
 func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
@@ -162,10 +163,10 @@ func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+updateErr.Error())
+		return base.ResponseError(c, "internal server error: "+updateErr.Error())
 	}
 
-	return base.ResponseUpdated(c, "success update profile")
+	return base.ResponseNoContent(c)
 }
 
 func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
@@ -181,7 +182,7 @@ func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+getErr.Error())
+		return base.ResponseError(c, "internal server error: "+getErr.Error())
 	}
 	return base.ResponseLoaded(c, userProfile)
 }

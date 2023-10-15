@@ -1,5 +1,5 @@
 // don't use this for production
-// used for sending testing email in development
+// used for sending email in development
 
 // for dev : router -> email service (without controller)
 
@@ -30,9 +30,10 @@ func getEmailRouter(router fiber.Router) {
 			})
 		}
 		if res == nil {
-			return base.ResponseInternalServerError(c, "internal server error: failed sending email")
+			return base.ResponseError(c, "internal server error: failed sending email")
 		}
 
-		return base.ResponseUpdated(c, "success sending message")
+		message := "success sending emails"
+		return base.Response(c, fiber.StatusAccepted, true, message, nil)
 	})
 }

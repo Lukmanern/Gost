@@ -67,7 +67,7 @@ func (ctr RoleControllerImpl) Create(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+createErr.Error())
+		return base.ResponseError(c, "internal server error: "+createErr.Error())
 	}
 	data := map[string]any{
 		"id": id,
@@ -103,7 +103,7 @@ func (ctr RoleControllerImpl) Connect(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+connectErr.Error())
+		return base.ResponseError(c, "internal server error: "+connectErr.Error())
 	}
 
 	return base.ResponseCreated(c, "data success connected", nil)
@@ -122,7 +122,7 @@ func (ctr RoleControllerImpl) Get(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+getErr.Error())
+		return base.ResponseError(c, "internal server error: "+getErr.Error())
 	}
 
 	return base.ResponseLoaded(c, role)
@@ -142,7 +142,7 @@ func (ctr RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 	ctx := c.Context()
 	roles, total, getErr := ctr.service.GetAll(ctx, request)
 	if getErr != nil {
-		return base.ResponseInternalServerError(c, "internal server error: "+getErr.Error())
+		return base.ResponseError(c, "internal server error: "+getErr.Error())
 	}
 
 	data := make([]interface{}, len(roles))
@@ -184,7 +184,7 @@ func (ctr RoleControllerImpl) Update(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+updateErr.Error())
+		return base.ResponseError(c, "internal server error: "+updateErr.Error())
 	}
 
 	return base.ResponseNoContent(c)
@@ -203,7 +203,7 @@ func (ctr RoleControllerImpl) Delete(c *fiber.Ctx) error {
 		if ok {
 			return base.Response(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return base.ResponseInternalServerError(c, "internal server error: "+deleteErr.Error())
+		return base.ResponseError(c, "internal server error: "+deleteErr.Error())
 	}
 
 	return base.ResponseNoContent(c)

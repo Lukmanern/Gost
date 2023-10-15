@@ -42,16 +42,6 @@ func ResponseLoaded(c *fiber.Ctx, data interface{}) error {
 		c, fiber.StatusOK, true, "success get data", data)
 }
 
-// FormatResponseLoaded formats a successful
-// response with HTTP status 200.
-func ResponseUpdated(c *fiber.Ctx, message string) error {
-	if message == "" {
-		message = "data success updated"
-	}
-	return formatResponse(
-		c, fiber.StatusOK, true, message, nil)
-}
-
 // FormatResponseCreated formats a successful
 // response with HTTP status 201.
 func ResponseCreated(c *fiber.Ctx, message string, data interface{}) error {
@@ -87,13 +77,15 @@ func ResponseNotFound(c *fiber.Ctx, message string) error {
 		c, fiber.StatusNotFound, false, message, nil)
 }
 
-// FormatResponseInternalServerError formats a
+// ResponseError formats a
 // response with HTTP status 500.
-func ResponseInternalServerError(c *fiber.Ctx, message string) error {
+func ResponseError(c *fiber.Ctx, message string) error {
 	return formatResponse(
 		c, fiber.StatusInternalServerError, false, message, nil)
 }
 
+// ResponseErrorWithData formats a
+// response with HTTP status 500.
 func ResponseErrorWithData(c *fiber.Ctx, message string, data interface{}) error {
 	return formatResponse(
 		c, fiber.StatusInternalServerError, false, message, data)
