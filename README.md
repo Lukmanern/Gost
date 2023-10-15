@@ -7,3 +7,4 @@ Go-Fiber project starter, with jwt-auth and highly effective RBAC implementation
 1. Reset Password
 2. Email Confirmation For Registration
 3. Fixing RBAC
+4. Add Test file
