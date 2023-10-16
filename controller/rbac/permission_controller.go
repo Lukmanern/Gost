@@ -19,6 +19,8 @@ type PermissionController interface {
 	GetAll(c *fiber.Ctx) error
 	Update(c *fiber.Ctx) error
 	Delete(c *fiber.Ctx) error
+
+	TestBitfieldRBAC(c *fiber.Ctx) error
 }
 
 type PermissionControllerImpl struct {
@@ -162,4 +164,8 @@ func (ctr PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 	}
 
 	return response.SuccessNoContent(c)
+}
+
+func (ctr PermissionControllerImpl) TestBitfieldRBAC(c *fiber.Ctx) error {
+	return response.SuccessLoaded(c, nil)
 }
