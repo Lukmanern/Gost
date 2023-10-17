@@ -171,7 +171,7 @@ func (j JWTHandler) ExtractTokenMetadata(c *fiber.Ctx) (*Claims, error) {
 	}
 
 	// Setting and checking token and credentials.
-	claims, ok := token.Claims.(*jwt.MapClaims)
+	claims, ok := token.Claims.(*jwt.MapClaims) // Todo : MapClaims -> RegisteredClaims
 	if ok && token.Valid {
 		condensedClaims := *claims
 		// Expires time.
