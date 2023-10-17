@@ -37,7 +37,8 @@ func main() {
 	// Becoreful, delete entire
 	// Tables and datas of Your Database.
 	env.ReadConfig("./.env")
-	appInProduction := env.Configuration().GetAppInProduction()
+	config := env.Configuration()
+	appInProduction := config.GetAppInProduction()
 	if !appInProduction {
 		func() {
 			fmt.Print("\n\nWarning : DROPING ALL DB-TABLES AND RE-CREATE in 9 seconds (CTRL+C to stop)\n\n")

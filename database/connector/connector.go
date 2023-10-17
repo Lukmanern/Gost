@@ -25,7 +25,8 @@ func LoadDatabase() *gorm.DB {
 	gormDatabaseOnce.Do(func() {
 		// try to connect to database
 		env.ReadConfig("./.env")
-		dsn := env.Configuration().GetDatabaseURI()
+		config := env.Configuration()
+		dsn := config.GetDatabaseURI()
 		var conErr error
 
 		gormDatabase, conErr = gorm.Open(mysql.Open(dsn), &gorm.Config{})

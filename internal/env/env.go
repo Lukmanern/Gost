@@ -81,18 +81,18 @@ func Configuration() Config {
 	return cfg
 }
 
-func (c Config) GetDatabaseURI() string {
+func (c *Config) GetDatabaseURI() string {
 	c.DatabaseURI = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&multiStatements=true&parseTime=true",
 		c.DatabaseUser, c.DatabasePassword, c.DatabaseRootHost, c.DatabasePort, c.DatabaseName)
 
 	return c.DatabaseURI
 }
 
-func (c Config) GetAppInProduction() bool {
+func (c *Config) GetAppInProduction() bool {
 	return c.AppInProduction
 }
 
-func (c Config) GetPublicKey() []byte {
+func (c *Config) GetPublicKey() []byte {
 	PublicKeyReadOne.Do(func() {
 		var foundPath string
 		for _, path := range paths {
@@ -114,7 +114,7 @@ func (c Config) GetPublicKey() []byte {
 	return *PublicKey
 }
 
-func (c Config) GetPrivateKey() []byte {
+func (c *Config) GetPrivateKey() []byte {
 	PrivateKeyReadOne.Do(func() {
 		var foundPath string
 		for _, path := range paths {
@@ -136,7 +136,7 @@ func (c Config) GetPrivateKey() []byte {
 	return *PrivateKey
 }
 
-func (c Config) ShowConfig() {
+func (c *Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "AppName", c.AppName)
 	fmt.Printf("%-21s: %v\n", "AppInProduction", c.AppInProduction)
 	fmt.Printf("%-21s: %s\n", "AppKey", c.AppKey)
