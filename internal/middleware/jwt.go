@@ -55,6 +55,9 @@ func NewJWTHandler() *JWTHandler {
 
 // This func used for login.
 func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions []string, expired time.Time) (t string, err error) {
+	if email == "" || role == "" || len(permissions) < 1 {
+		return "", errors.New("email/ role/ permission too short or void")
+	}
 	// Create the Claims
 	claims := Claims{
 		ID:          id,
@@ -80,7 +83,8 @@ func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions []strin
 func (j *JWTHandler) GenerateJWTWithLabel(label string, expired time.Time) (t string, err error) {
 	lenLabel := len(label)
 	if lenLabel <= 2 || lenLabel > 50 {
-		return "", errors.New("label too small or to large (min:3 and max:50)")
+		errStr := "label too small or to large (min:3 and max:50)"
+		return "", errors.New(errStr)
 	}
 	// Create the Claims
 	claims := Claims{

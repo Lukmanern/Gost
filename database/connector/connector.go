@@ -59,14 +59,14 @@ func LoadRedisDatabase() *redis.Client {
 		config := env.Configuration()
 		opt, err := redis.ParseURL(config.RedisURI)
 		if err != nil {
-			log.Panicf("cannot connect to redis %s", err)
+			log.Panicf("can't connect to redis %s", err)
 		}
 
 		redisDatastore = redis.NewClient(opt)
 
-		_, err = redisDatastore.Ping().Result()
-		if err != nil {
-			log.Panicf("cannot ping to redis %T: %s", config.RedisURI, err)
+		_, pingErr := redisDatastore.Ping().Result()
+		if pingErr != nil {
+			log.Panicf("can't ping to redis %T: %s", config.RedisURI, pingErr)
 		}
 	})
 

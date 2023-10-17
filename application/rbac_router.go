@@ -42,6 +42,9 @@ func getRBACAuthRoutes(router fiber.Router) {
 	roleRouter.Put(":id", jwtHandler.CheckHasPermission(rbac.PermissionUpdateRole), roleController.Update)
 	roleRouter.Delete(":id", jwtHandler.CheckHasPermission(rbac.PermissionDeleteRole), roleController.Delete)
 
-	// Testing Route
-	permissionRouter.Get("bitfield/test", permissionController.TestBitfieldRBAC)
+	// Developement Process
+	devRouter := router.Group("development")
+	devRouter.Get("bitfield", permissionController.BitfieldTesting)
+	devRouter.Get("ping/mysql", permissionController.PingMySQL)
+	devRouter.Get("ping/redis", permissionController.PingRedis)
 }
