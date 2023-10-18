@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -32,7 +31,6 @@ func init() {
 }
 
 func createOnePermission(t *testing.T, namePrefix string) *entity.Permission {
-	// create permission
 	permission := entity.Permission{
 		Name:        "valid-permission-name-" + namePrefix,
 		Description: "valid-permission-description-" + namePrefix,
@@ -50,19 +48,7 @@ func createOnePermission(t *testing.T, namePrefix string) *entity.Permission {
 }
 
 func TestNewPermissionRepository(t *testing.T) {
-	tests := []struct {
-		name string
-		want PermissionRepository
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewPermissionRepository(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewPermissionRepository() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	_ = NewPermissionRepository()
 }
 
 func TestPermissionRepositoryImpl_Create(t *testing.T) {
@@ -79,18 +65,25 @@ func TestPermissionRepositoryImpl_Create(t *testing.T) {
 		permission entity.Permission
 	}
 	tests := []struct {
-		name    string
-		repo    PermissionRepositoryImpl
-		args    args
-		wantErr bool
+		name      string
+		repo      PermissionRepositoryImpl
+		args      args
+		wantErr   bool
+		wantPanic bool
 	}{
 		{
-			name:    "error while creating with the same name",
-			wantErr: true,
+			name:      "error while creating with the same name",
+			wantErr:   true,
+			wantPanic: true,
 			args: args{
 				ctx: ctx,
 				permission: entity.Permission{
-					Name: permission.Name,
+					Name:        permission.Name,
+					Description: "",
+					TimeFields: base.TimeFields{
+						CreatedAt: &timeNow,
+						UpdatedAt: &timeNow,
+					},
 				},
 			},
 		},
@@ -98,7 +91,7 @@ func TestPermissionRepositoryImpl_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
-				if r := recover(); r == nil {
+				if r := recover(); r == nil && tt.wantPanic {
 					t.Errorf("create() do not panic")
 				}
 			}()
@@ -107,8 +100,8 @@ func TestPermissionRepositoryImpl_Create(t *testing.T) {
 				t.Errorf("PermissionRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotId >= 0 {
-				t.Error("id should more than zero")
+			if gotId <= 0 {
+				t.Errorf("ID should be positive")
 			}
 		})
 	}
