@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -65,6 +66,14 @@ func TestNewPermissionRepository(t *testing.T) {
 }
 
 func TestPermissionRepositoryImpl_Create(t *testing.T) {
+	permission := createOnePermission(t, "create-same-name")
+	if permission == nil {
+		t.Error("failed creating permission : permission is nil")
+	}
+	defer func() {
+		permissionRepoImpl.Delete(ctx, permission.ID)
+	}()
+
 	type args struct {
 		ctx        context.Context
 		permission entity.Permission
@@ -73,27 +82,40 @@ func TestPermissionRepositoryImpl_Create(t *testing.T) {
 		name    string
 		repo    PermissionRepositoryImpl
 		args    args
-		wantId  int
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "error while creating with the same name",
+			wantErr: true,
+			args: args{
+				ctx: ctx,
+				permission: entity.Permission{
+					Name: permission.Name,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("create() do not panic")
+				}
+			}()
 			gotId, err := tt.repo.Create(tt.args.ctx, tt.args.permission)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PermissionRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotId != tt.wantId {
-				t.Errorf("PermissionRepositoryImpl.Create() = %v, want %v", gotId, tt.wantId)
+			if gotId >= 0 {
+				t.Error("id should more than zero")
 			}
 		})
 	}
 }
 
 func TestPermissionRepositoryImpl_GetByID(t *testing.T) {
-	permission := createOnePermission(t, "0043")
+	permission := createOnePermission(t, "TestGetByID")
 	if permission == nil {
 		t.Error("failed creating permission : permission is nil")
 	}
@@ -106,13 +128,29 @@ func TestPermissionRepositoryImpl_GetByID(t *testing.T) {
 		id  int
 	}
 	tests := []struct {
-		name           string
-		repo           PermissionRepositoryImpl
-		args           args
-		wantPermission *entity.Permission
-		wantErr        bool
+		name    string
+		repo    PermissionRepositoryImpl
+		args    args
+		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success get permission by valid id",
+			repo: permissionRepoImpl,
+			args: args{
+				ctx: ctx,
+				id:  permission.ID,
+			},
+			wantErr: false,
+		},
+		{
+			name: "failed get permission by invalid id",
+			repo: permissionRepoImpl,
+			args: args{
+				ctx: ctx,
+				id:  -10,
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -121,14 +159,22 @@ func TestPermissionRepositoryImpl_GetByID(t *testing.T) {
 				t.Errorf("PermissionRepositoryImpl.GetByID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotPermission, tt.wantPermission) {
-				t.Errorf("PermissionRepositoryImpl.GetByID() = %v, want %v", gotPermission, tt.wantPermission)
+			if !tt.wantErr && gotPermission == nil {
+				t.Error("permission should not nil")
 			}
 		})
 	}
 }
 
 func TestPermissionRepositoryImpl_GetByName(t *testing.T) {
+	permission := createOnePermission(t, "TestGetByName")
+	if permission == nil {
+		t.Error("failed creating permission : permission is nil")
+	}
+	defer func() {
+		permissionRepoImpl.Delete(ctx, permission.ID)
+	}()
+
 	type args struct {
 		ctx  context.Context
 		name string
@@ -140,36 +186,88 @@ func TestPermissionRepositoryImpl_GetByName(t *testing.T) {
 		wantPermission *entity.Permission
 		wantErr        bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success get permission by valid id",
+			repo: permissionRepoImpl,
+			args: args{
+				ctx:  ctx,
+				name: permission.Name,
+			},
+			wantErr: false,
+		},
+		{
+			name: "failed get permission by invalid id",
+			repo: permissionRepoImpl,
+			args: args{
+				ctx:  ctx,
+				name: "unknown name",
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotPermission, err := tt.repo.GetByName(tt.args.ctx, tt.args.name)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("PermissionRepositoryImpl.GetByName() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("PermissionRepositoryImpl.GetByID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotPermission, tt.wantPermission) {
-				t.Errorf("PermissionRepositoryImpl.GetByName() = %v, want %v", gotPermission, tt.wantPermission)
+			if !tt.wantErr && gotPermission == nil {
+				t.Error("permission should not nil")
 			}
 		})
 	}
 }
 
 func TestPermissionRepositoryImpl_GetAll(t *testing.T) {
+	permissions := make([]entity.Permission, 0)
+	for i := 0; i < 10; i++ {
+		permission := createOnePermission(t, "TestGetAll-"+strconv.Itoa(i))
+		if permission == nil {
+			continue
+		}
+		defer func() {
+			permissionRepoImpl.Delete(ctx, permission.ID)
+		}()
+
+		permissions = append(permissions, *permission)
+	}
+	lenPermissions := len(permissions)
+
 	type args struct {
 		ctx    context.Context
 		filter base.RequestGetAll
 	}
 	tests := []struct {
-		name            string
-		repo            PermissionRepositoryImpl
-		args            args
-		wantPermissions []entity.Permission
-		wantTotal       int
-		wantErr         bool
+		name    string
+		repo    PermissionRepositoryImpl
+		args    args
+		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success get all",
+			repo: permissionRepoImpl,
+			args: args{
+				ctx: ctx,
+				filter: base.RequestGetAll{
+					Limit: 1000,
+					Page:  1,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "success get all",
+			repo: permissionRepoImpl,
+			args: args{
+				ctx: ctx,
+				filter: base.RequestGetAll{
+					Limit: 1,
+					Page:  1,
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -178,17 +276,28 @@ func TestPermissionRepositoryImpl_GetAll(t *testing.T) {
 				t.Errorf("PermissionRepositoryImpl.GetAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotPermissions, tt.wantPermissions) {
-				t.Errorf("PermissionRepositoryImpl.GetAll() gotPermissions = %v, want %v", gotPermissions, tt.wantPermissions)
+			if tt.args.filter.Limit > lenPermissions && len(gotPermissions) < lenPermissions {
+				t.Error("permissions should be $lenPermissions or more")
 			}
-			if gotTotal != tt.wantTotal {
-				t.Errorf("PermissionRepositoryImpl.GetAll() gotTotal = %v, want %v", gotTotal, tt.wantTotal)
+			if tt.args.filter.Limit > lenPermissions && gotTotal < lenPermissions {
+				t.Error("total permissions should be $lenPermissions or more")
+			}
+			if tt.args.filter.Limit < lenPermissions && len(gotPermissions) > lenPermissions {
+				t.Error("permissions should be less than $lenPermission")
 			}
 		})
 	}
 }
 
 func TestPermissionRepositoryImpl_Update(t *testing.T) {
+	permission := createOnePermission(t, "TestUpdateByID")
+	if permission == nil {
+		t.Error("failed creating permission : permission is nil")
+	}
+	defer func() {
+		permissionRepoImpl.Delete(ctx, permission.ID)
+	}()
+
 	type args struct {
 		ctx        context.Context
 		permission entity.Permission
@@ -196,21 +305,63 @@ func TestPermissionRepositoryImpl_Update(t *testing.T) {
 	tests := []struct {
 		name    string
 		repo    PermissionRepositoryImpl
-		args    args
 		wantErr bool
+		args    args
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "success update name and desc",
+			repo:    permissionRepoImpl,
+			wantErr: false,
+			args: args{
+				ctx: ctx,
+				permission: entity.Permission{
+					ID:          permission.ID,
+					Name:        "updated name",
+					Description: "updated description",
+				},
+			},
+		},
+		{
+			name:    "failed update name and desc with invalid id",
+			repo:    permissionRepoImpl,
+			wantErr: true,
+			args: args{
+				ctx: ctx,
+				permission: entity.Permission{
+					ID:          -10,
+					Name:        "updated name",
+					Description: "updated description",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.repo.Update(tt.args.ctx, tt.args.permission); (err != nil) != tt.wantErr {
 				t.Errorf("PermissionRepositoryImpl.Update() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			p, err := tt.repo.GetByID(tt.args.ctx, permission.ID)
+			if err != nil {
+				t.Error("error while getting permission")
+			}
+			if p.Name != tt.args.permission.Name || p.Description != tt.args.permission.Description {
+				t.Error("name and description failed to update")
 			}
 		})
 	}
 }
 
 func TestPermissionRepositoryImpl_Delete(t *testing.T) {
+	permission := createOnePermission(t, "TestDeleteByID")
+	if permission == nil {
+		t.Error("failed creating permission : permission is nil")
+	}
+	defer func() {
+		permissionRepoImpl.Delete(ctx, permission.ID)
+	}()
+
 	type args struct {
 		ctx context.Context
 		id  int
@@ -221,12 +372,29 @@ func TestPermissionRepositoryImpl_Delete(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "success update permission",
+			repo:    permissionRepoImpl,
+			wantErr: false,
+			args: args{
+				ctx: ctx,
+				id:  permission.ID,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.repo.Delete(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("PermissionRepositoryImpl.Delete() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			permission, err := tt.repo.GetByID(tt.args.ctx, tt.args.id)
+			if !tt.wantErr && err == nil {
+				t.Error("should error")
+			}
+			if !tt.wantErr && permission != nil {
+				t.Error("permission should nil")
 			}
 		})
 	}

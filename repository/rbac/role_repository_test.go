@@ -4,10 +4,29 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/internal/env"
 )
+
+var (
+	roleRepoImpl RoleRepositoryImpl
+)
+
+func init() {
+	filePath := "./../../.env"
+	env.ReadConfig(filePath)
+	timeNow = time.Now()
+	ctx = context.Background()
+	roleRepoImpl = RoleRepositoryImpl{
+		roleTableName: roleTableName,
+		db:            connector.LoadDatabase(),
+	}
+
+}
 
 func TestNewRoleRepository(t *testing.T) {
 	tests := []struct {

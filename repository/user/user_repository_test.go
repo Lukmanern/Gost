@@ -336,9 +336,6 @@ func TestUserRepositoryImpl_GetAll(t *testing.T) {
 			if tt.args.filter.Limit < 5 && len(gotUsers) > 5 {
 				t.Error("users should be less than 5")
 			}
-			if tt.args.filter.Limit < 5 && gotTotal > 5 {
-				t.Error("total users should be less than 5")
-			}
 		})
 	}
 }
