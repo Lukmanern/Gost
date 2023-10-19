@@ -96,9 +96,9 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getDevRouter(router)   // don't use this for production, you can comment this line
-	getUserRoutes(router)  // don't use this for production, you can comment this line
-	getEmailRouter(router) // don't use this for production, you can comment this line
+	getDevRouter(router)   // don't use for production
+	getUserRoutes(router)  // don't use for production
+	getEmailRouter(router) // don't use for production
 
 	getUserAuthRoutes(router)
 	getRBACAuthRoutes(router)
