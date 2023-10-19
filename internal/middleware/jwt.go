@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/response"
+	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -17,6 +19,7 @@ import (
 type JWTHandler struct {
 	publicKey  *rsa.PublicKey
 	privateKey *rsa.PrivateKey
+	cache      *redis.Client
 }
 
 type Claims struct {
@@ -43,12 +46,16 @@ func NewJWTHandler() *JWTHandler {
 	if privateKeyErr != nil {
 		log.Fatalln("jwt private key parser failed: please check in log file at ./log/log-files")
 	}
+	newJWTHandler.cache = connector.LoadRedisDatabase()
 
 	if newJWTHandler.privateKey == nil {
-		log.Fatalln("jwt private keys are missed")
+		log.Fatalln("jwt private keys are missed (nil)")
 	}
 	if newJWTHandler.publicKey == nil {
-		log.Fatalln("jwt public keys are missed")
+		log.Fatalln("jwt public keys are missed (nil)")
+	}
+	if newJWTHandler.cache == nil {
+		log.Fatalln("jwt redis cache are missed (nil)")
 	}
 	return &newJWTHandler
 }
@@ -117,11 +124,26 @@ func (j JWTHandler) InvalidateToken(c *fiber.Ctx) error {
 	if err != nil || !token.Valid {
 		return fiber.NewError(fiber.StatusUnauthorized, "unauthenticated")
 	}
+	status := j.cache.Set(cookie, cookie, time.Until(time.Unix(claims.ExpiresAt.Unix(), 0)))
+	if status.Err() != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "problem blacklisting token")
+	}
 	return nil
+}
+
+func (j JWTHandler) IsBlacklisted(cookie string) bool {
+	status := j.cache.Get(cookie)
+
+	val, _ := status.Result()
+
+	return val != ""
 }
 
 func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 	cookie := extractToken(c)
+	if j.IsBlacklisted(cookie) {
+		return fiber.NewError(fiber.StatusUnauthorized, "unauthenticated")
+	}
 	claims := Claims{}
 	token, err := jwt.ParseWithClaims(cookie, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
 		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
@@ -131,7 +153,7 @@ func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 		return j.publicKey, nil
 	})
 	if err != nil || !token.Valid {
-		return response.Unauthorized(c)
+		return fiber.NewError(fiber.StatusUnauthorized, "unauthenticated")
 	}
 	c.Locals("claims", &claims)
 	return c.Next()

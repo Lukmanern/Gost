@@ -1,6 +1,10 @@
 package response
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"strings"
+
+	"github.com/gofiber/fiber/v2"
+)
 
 type response struct {
 	Message string      `json:"message"`
@@ -20,7 +24,7 @@ func SuccessNoContent(c *fiber.Ctx) error {
 func CreateResponse(c *fiber.Ctx, statusCode int, success bool, message string, data interface{}) error {
 	c.Status(statusCode)
 	return c.JSON(response{
-		Message: message,
+		Message: strings.ToLower(message),
 		Success: success,
 		Data:    data,
 	})
@@ -29,13 +33,13 @@ func CreateResponse(c *fiber.Ctx, statusCode int, success bool, message string, 
 // SuccessLoaded formats a successful response
 // with HTTP status 200 and the provided data.
 func SuccessLoaded(c *fiber.Ctx, data interface{}) error {
-	return CreateResponse(c, fiber.StatusOK, true, "Data successfully loaded", data)
+	return CreateResponse(c, fiber.StatusOK, true, "data successfully loaded", data)
 }
 
 // SuccessCreated formats a successful response
 // with HTTP status 201 and the provided data.
 func SuccessCreated(c *fiber.Ctx, data interface{}) error {
-	return CreateResponse(c, fiber.StatusCreated, true, "Data successfully created", data)
+	return CreateResponse(c, fiber.StatusCreated, true, "data successfully created", data)
 }
 
 // BadRequest formats a response with HTTP
@@ -47,7 +51,7 @@ func BadRequest(c *fiber.Ctx, message string) error {
 // Unauthorized formats a response with
 // HTTP status 401 indicating unauthorized access.
 func Unauthorized(c *fiber.Ctx) error {
-	return CreateResponse(c, fiber.StatusUnauthorized, false, "Unauthorized", nil)
+	return CreateResponse(c, fiber.StatusUnauthorized, false, "unauthorized", nil)
 }
 
 // DataNotFound formats a response with
