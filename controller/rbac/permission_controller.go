@@ -7,7 +7,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/response"
@@ -20,11 +19,6 @@ type PermissionController interface {
 	GetAll(c *fiber.Ctx) error
 	Update(c *fiber.Ctx) error
 	Delete(c *fiber.Ctx) error
-
-	// Developement Process
-	BitfieldTesting(c *fiber.Ctx) error
-	PingMySQL(c *fiber.Ctx) error
-	PingRedis(c *fiber.Ctx) error
 }
 
 type PermissionControllerImpl struct {
@@ -168,37 +162,4 @@ func (ctr PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 	}
 
 	return response.SuccessNoContent(c)
-}
-
-// Developement Process
-func (ctr PermissionControllerImpl) BitfieldTesting(c *fiber.Ctx) error {
-	return response.CreateResponse(c, fiber.StatusOK, true, "Success Bitfield Dev", nil)
-}
-
-func (ctr PermissionControllerImpl) PingMySQL(c *fiber.Ctx) error {
-	db := connector.LoadDatabase()
-	sqldb, sqlErr := db.DB()
-	if sqlErr != nil {
-		return response.Error(c, "failed get sql-db")
-	}
-	for i := 0; i < 5; i++ {
-		pingErr := sqldb.Ping()
-		if pingErr != nil {
-			return response.Error(c, "failed to ping-sql-db")
-		}
-	}
-
-	return response.CreateResponse(c, fiber.StatusOK, true, "success ping-sql-db", nil)
-}
-
-func (ctr PermissionControllerImpl) PingRedis(c *fiber.Ctx) error {
-	rds := connector.LoadRedisDatabase()
-	for i := 0; i < 5; i++ {
-		status := rds.Ping()
-		if status.Err() != nil {
-			return response.Error(c, "failed to ping-redis")
-		}
-	}
-
-	return response.CreateResponse(c, fiber.StatusOK, true, "success ping-redis", nil)
 }

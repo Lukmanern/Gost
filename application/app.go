@@ -64,7 +64,6 @@ func checkingEnv() {
 
 func RunApp() {
 	checkingEnv()
-
 	router.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 	}))
@@ -97,8 +96,10 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
+	getDevRouter(router)   // don't use this for production, you can comment this line
 	getUserRoutes(router)  // don't use this for production, you can comment this line
 	getEmailRouter(router) // don't use this for production, you can comment this line
+
 	getUserAuthRoutes(router)
 	getRBACAuthRoutes(router)
 
