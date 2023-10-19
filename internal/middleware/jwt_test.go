@@ -137,6 +137,40 @@ func TestJWTHandler_InvalidateToken(t *testing.T) {
 	}
 }
 
+func TestJWTHandler_IsBlacklisted(t *testing.T) {
+	jwtHandler := NewJWTHandler()
+	cookie, err := jwtHandler.GenerateJWT(1000,
+		"example@email.com12x", "example-role",
+		[]string{"exm-pr"}, time.Now().Add(1*time.Hour))
+	if err != nil {
+		t.Error("generate cookie/token should not error")
+	}
+
+	type args struct {
+		cookie string
+	}
+	tests := []struct {
+		name string
+		j    JWTHandler
+		args args
+		want bool
+	}{
+		{
+			name: "check : false blacklisted",
+			j:    *jwtHandler,
+			args: args{cookie: cookie},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.j.IsBlacklisted(tt.args.cookie); got != tt.want {
+				t.Errorf("JWTHandler.IsBlacklisted() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestJWTHandler_IsAuthenticated(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
