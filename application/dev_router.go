@@ -15,5 +15,5 @@ func getDevRouter(router fiber.Router) {
 	devRouter.Get("ping/mysql", devController.PingDatabase)
 	devRouter.Get("ping/redis", devController.PingRedis)
 	devRouter.Get("panic", devController.Panic)
-	devRouter.Get("new-jwt", devController.Panic)
+	devRouter.Get("new-jwt", devController.NewJWT)
 }

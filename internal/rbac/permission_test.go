@@ -28,3 +28,28 @@ func TestCountPermissions(t *testing.T) {
 		t.Error("should equal len, non-unique permission detected")
 	}
 }
+
+func Test_AllPermissionsIDHashMap(t *testing.T) {
+	hashMap := AllPermissionsIDHashMap()
+	if len(hashMap) < 1 {
+		t.Error("len of $hashMap should more than one")
+	}
+	func() {
+		v, ok := hashMap[-1]
+		if ok {
+			t.Error("should not ok")
+		}
+		if v == 1 {
+			t.Error("should not equal to one")
+		}
+	}()
+	func() {
+		v, ok := hashMap[1]
+		if !ok {
+			t.Error("should ok")
+		}
+		if v != 1 {
+			t.Error("should equal to one")
+		}
+	}()
+}

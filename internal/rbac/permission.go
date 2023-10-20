@@ -2,6 +2,16 @@ package rbac
 
 import "github.com/Lukmanern/gost/domain/entity"
 
+func AllPermissionsIDHashMap() map[int]uint8 {
+	hashMap := make(map[int]uint8, 0)
+	permissions := AllPermissions() // you can all-permissions from database also
+
+	for i := range permissions {
+		hashMap[i+1] = 0b01
+	}
+	return hashMap
+}
+
 // for migration and seeder
 func AllPermissions() []entity.Permission {
 	permissionNames := []string{
