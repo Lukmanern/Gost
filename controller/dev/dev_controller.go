@@ -2,8 +2,10 @@ package controller
 
 import (
 	"sync"
+	"time"
 
 	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
 )
@@ -13,6 +15,8 @@ type DevController interface {
 	PingDatabase(c *fiber.Ctx) error
 	PingRedis(c *fiber.Ctx) error
 	Panic(c *fiber.Ctx) error
+	NewJWT(c *fiber.Ctx) error
+	ValidateNewJWT(c *fiber.Ctx) error
 }
 
 type DevControllerImpl struct{}
@@ -71,5 +75,32 @@ func (ctr DevControllerImpl) Panic(c *fiber.Ctx) error {
 		}
 		return nil
 	}()
-	panic("Panic message") // should string
+	panic("Panic message") // message should string
+}
+
+func (ctr DevControllerImpl) NewJWT(c *fiber.Ctx) error {
+	defer func() error {
+		r := recover()
+		if r != nil {
+			return response.Error(c, "message panic: "+r.(string))
+		}
+		return nil
+	}()
+
+	newJWTHanlder := rbac.NewJWTHandler()
+	idHashMap := rbac.AllPermissionsIDHashMap()
+	token, err := newJWTHanlder.GenerateJWT(1, "example@gost.project", "example-role", idHashMap, time.Now().Add(14420*time.Hour))
+	if err != nil {
+		response.ErrorWithData(c, "internal server error : "+err.Error(), fiber.Map{
+			"token": token,
+		})
+	}
+	result := fiber.Map{
+		"token": token,
+	}
+	return response.CreateResponse(c, fiber.StatusOK, true, "success generate jwt", result)
+}
+
+func (ctr DevControllerImpl) ValidateNewJWT(c *fiber.Ctx) error {
+	panic(9)
 }
