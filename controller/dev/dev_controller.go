@@ -13,6 +13,7 @@ type DevController interface {
 	PingDatabase(c *fiber.Ctx) error
 	PingRedis(c *fiber.Ctx) error
 	Panic(c *fiber.Ctx) error
+	NewJWT(c *fiber.Ctx) error
 }
 
 type DevControllerImpl struct{}
@@ -71,5 +72,16 @@ func (ctr DevControllerImpl) Panic(c *fiber.Ctx) error {
 		}
 		return nil
 	}()
-	panic("Panic message") // should string
+	panic("Panic message") // message should string
+}
+
+func (ctr DevControllerImpl) NewJWT(c *fiber.Ctx) error {
+	defer func() error {
+		r := recover()
+		if r != nil {
+			return response.Error(c, "message panic: "+r.(string))
+		}
+		return nil
+	}()
+	panic("Testing New JWT") // message should string
 }
