@@ -1,5 +1,5 @@
 test:
-	go test -timeout 30s -coverprofile=cover.out ./...
+	go test -timeout 60s -coverprofile=cover.out ./...
 
 migrate:
 	go run database/migration/main.go

@@ -11,20 +11,6 @@ import (
 	"github.com/Lukmanern/gost/internal/rbac"
 )
 
-// Don't forget to Add Your new
-// Table Here : must sorted .
-func AllTables() []interface{} {
-	return []any{
-		&entity.User{},
-		&entity.UserHasRoles{},
-		&entity.Role{},
-		&entity.RoleHasPermission{},
-		&entity.Permission{},
-
-		// Add more tables/structs here
-	}
-}
-
 // Becareful using this
 // This will delete entire DB Tables,
 // and recreate from beginning
@@ -37,12 +23,13 @@ func main() {
 	// Becoreful, delete entire
 	// Tables and datas of Your Database.
 	env.ReadConfig("./.env")
-	appInProduction := env.Configuration().GetAppInProduction()
+	config := env.Configuration()
+	appInProduction := config.GetAppInProduction()
 	if !appInProduction {
 		func() {
 			fmt.Print("\n\nWarning : DROPING ALL DB-TABLES AND RE-CREATE in 9 seconds (CTRL+C to stop)\n\n")
 			time.Sleep(9 * time.Second)
-			tables := AllTables()
+			tables := entity.AllTables()
 			deleteErr := db.Migrator().DropTable(tables...)
 			if deleteErr != nil {
 				log.Panicf("Error while deleting tables DB : %s", deleteErr)
@@ -51,7 +38,7 @@ func main() {
 	}
 
 	migrateErr := db.AutoMigrate(
-		AllTables()...,
+		entity.AllTables()...,
 	)
 	if migrateErr != nil {
 		log.Panicf("Error while migration DB : %s", migrateErr)

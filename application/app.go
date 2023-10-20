@@ -13,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/internal/env"
 )
 
 var (
@@ -45,13 +46,27 @@ var (
 	})
 )
 
-func RunApp() {
-	connector.LoadDatabase()
+func checkingEnv() {
+	// checking for .env and
+	// keys files are exist.
+	env.ReadConfig("./.env")
+	c := env.Configuration()
+	dbURI := c.GetDatabaseURI()
+	privKey := c.GetPrivateKey()
+	pubKey := c.GetPublicKey()
+	if dbURI == "" || privKey == nil || pubKey == nil {
+		log.Fatal("Database URI or keys aren't valid")
+	}
 
+	connector.LoadDatabase()
+	connector.LoadRedisDatabase()
+}
+
+func RunApp() {
+	checkingEnv()
 	router.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 	}))
-
 	router.Use(logger.New())
 	// Custom File Writer
 	_ = os.MkdirAll("./log", os.ModePerm)
@@ -81,8 +96,10 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getUserRoutes(router)  // don't use this for production, you can comment this line
-	getEmailRouter(router) // don't use this for production, you can comment this line
+	getDevRouter(router)   // don't use for production
+	getUserRoutes(router)  // don't use for production
+	getEmailRouter(router) // don't use for production
+
 	getUserAuthRoutes(router)
 	getRBACAuthRoutes(router)
 

@@ -10,17 +10,18 @@ type Role struct {
 	base.TimeFields
 }
 
-func (r *Role) TableName() string {
+func (e *Role) TableName() string {
 	return "roles"
 }
 
 type RoleHasPermission struct {
-	/*automated created by gorm*/
-	RoleID       int
-	PermissionID int
+	RoleID       int        `json:"role_id"`
+	Role         Role       `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"role"`
+	PermissionID int        `json:"permission_id"`
+	Permission   Permission `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"permission"`
 }
 
-func (r *RoleHasPermission) TableName() string {
+func (e *RoleHasPermission) TableName() string {
 	return "role_has_permissions"
 }
 
@@ -31,6 +32,6 @@ type Permission struct {
 	base.TimeFields
 }
 
-func (r *Permission) TableName() string {
+func (e *Permission) TableName() string {
 	return "permissions"
 }

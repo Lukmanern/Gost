@@ -25,7 +25,8 @@ func LoadDatabase() *gorm.DB {
 	gormDatabaseOnce.Do(func() {
 		// try to connect to database
 		env.ReadConfig("./.env")
-		dsn := env.Configuration().GetDatabaseURI()
+		config := env.Configuration()
+		dsn := config.GetDatabaseURI()
 		var conErr error
 
 		gormDatabase, conErr = gorm.Open(mysql.Open(dsn), &gorm.Config{})
@@ -58,14 +59,14 @@ func LoadRedisDatabase() *redis.Client {
 		config := env.Configuration()
 		opt, err := redis.ParseURL(config.RedisURI)
 		if err != nil {
-			log.Panicf("cannot connect to redis %s", err)
+			log.Panicf("can't connect to redis %s", err)
 		}
 
 		redisDatastore = redis.NewClient(opt)
 
-		_, err = redisDatastore.Ping().Result()
-		if err != nil {
-			log.Panicf("cannot ping to redis %T: %s", config.RedisURI, err)
+		_, pingErr := redisDatastore.Ping().Result()
+		if pingErr != nil {
+			log.Panicf("can't ping to redis %T: %s", config.RedisURI, pingErr)
 		}
 	})
 

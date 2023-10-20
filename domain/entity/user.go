@@ -11,16 +11,17 @@ type User struct {
 	base.TimeFields
 }
 
-func (u *User) TableName() string {
+func (e *User) TableName() string {
 	return "users"
 }
 
 type UserHasRoles struct {
-	/*automated created by gorm*/
-	UserID int
-	RoleID int
+	UserID int  `json:"role_id"`
+	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user"`
+	RoleID int  `json:"permission_id"`
+	Role   Role `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"role"`
 }
 
-func (u *UserHasRoles) TableName() string {
+func (e *UserHasRoles) TableName() string {
 	return "user_has_roles"
 }
