@@ -41,6 +41,7 @@ func NewUserAuthController(service service.UserAuthService) UserAuthController {
 }
 
 func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
+	// Todo : implement Max Retry/Jail in Login -> caching using Redis
 	var user model.UserLogin
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
