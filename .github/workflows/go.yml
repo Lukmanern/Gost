@@ -29,5 +29,25 @@ jobs:
       - name: Display Go version
         run: go version
 
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Run staticcheck
+        run: staticcheck ./...
+
+      - name: Install golint
+        run: go install golang.org/x/lint/golint@latest
+
+      - name: Run golint
+        run: golint ./...
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Tidy
+        run: |
+          rm -f go.sum
+          go mod tidy
+
       - name: Build
         run: go build -o main main.go
