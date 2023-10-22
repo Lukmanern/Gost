@@ -19,3 +19,4 @@ Go-Fiber project starter, with jwt-auth and highly effective RBAC implementation
 2. https://last9.io/blog/deployment-readiness-checklists/
 3. https://github.com/gorrion-io/production-readiness-checklist/
 4. https://www.cockroachlabs.com/docs/cockroachcloud/production-checklist/
+5. https://www.alexedwards.net/blog/ci-with-go-and-github-actions
