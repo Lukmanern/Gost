@@ -35,7 +35,7 @@ func Test_AllPermissionsIDHashMap(t *testing.T) {
 		t.Error("len of $hashMap should more than one")
 	}
 	func() {
-		v, ok := hashMap[-1]
+		v, ok := hashMap[0]
 		if ok {
 			t.Error("should not ok")
 		}

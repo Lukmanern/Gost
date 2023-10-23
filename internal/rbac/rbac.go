@@ -22,13 +22,13 @@ type Claims struct {
 	ID          int           `json:"id"`
 	Email       string        `json:"email"`
 	Role        string        `json:"role"`
-	Permissions map[int]uint8 `json:"permissions"`
+	Permissions PermissionMap `json:"permissions"`
 	Label       *string       `json:"label"`
 	jwt.RegisteredClaims
 }
 
 // This func used for login.
-func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions map[int]uint8, expired time.Time) (t string, err error) {
+func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions PermissionMap, expired time.Time) (t string, err error) {
 	if email == "" || role == "" || len(permissions) < 1 {
 		return "", errors.New("email/ role/ permission too short or void")
 	}
