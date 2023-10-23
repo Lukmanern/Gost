@@ -4,7 +4,7 @@ import "github.com/Lukmanern/gost/domain/entity"
 
 type PermissionMap = map[uint8]uint8
 
-func AllPermissionsIDHashMap() PermissionMap {
+func PermissionsHashMap() PermissionMap {
 	hashMap := make(PermissionMap, 0)
 	// you can get all-permissions from database also
 	permissions := AllPermissions()

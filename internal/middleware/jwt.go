@@ -10,6 +10,7 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
@@ -23,11 +24,11 @@ type JWTHandler struct {
 }
 
 type Claims struct {
-	ID          int      `json:"id"`
-	Email       string   `json:"email"`
-	Role        string   `json:"role"`
-	Permissions []string `json:"permissions"`
-	Label       *string  `json:"label"`
+	ID          int                `json:"id"`
+	Email       string             `json:"email"`
+	Role        string             `json:"role"`
+	Permissions rbac.PermissionMap `json:"permissions"`
+	Label       *string            `json:"label"`
 	jwt.RegisteredClaims
 }
 
@@ -61,7 +62,7 @@ func NewJWTHandler() *JWTHandler {
 }
 
 // This func used for login.
-func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions []string, expired time.Time) (t string, err error) {
+func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions rbac.PermissionMap, expired time.Time) (t string, err error) {
 	if email == "" || role == "" || len(permissions) < 1 {
 		return "", errors.New("email/ role/ permission too short or void")
 	}
@@ -239,17 +240,17 @@ func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 }
 
 func (j JWTHandler) HasPermission(c *fiber.Ctx, permissions ...string) error {
-	claims, ok := c.Locals("claims").(*Claims)
+	_, ok := c.Locals("claims").(*Claims)
 	if !ok {
 		return response.Unauthorized(c)
 	}
-	for _, permission := range permissions {
-		for _, authority := range claims.Permissions {
-			if permission == authority {
-				return c.Next()
-			}
-		}
-	}
+	// for _, permission := range permissions {
+	// 	for _, authority := range claims.Permissions {
+	// 		if permission == authority {
+	// 			return c.Next()
+	// 		}
+	// 	}
+	// }
 
 	return response.Unauthorized(c)
 }

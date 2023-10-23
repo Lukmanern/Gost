@@ -72,10 +72,7 @@ func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) 
 		return "", fiber.NewError(fiber.StatusBadRequest, "wrong password")
 	}
 
-	permissions := []string{}
-	for _, permissionEntity := range rbac.AllPermissions() {
-		permissions = append(permissions, permissionEntity.Name)
-	}
+	permissions := rbac.PermissionsHashMap()
 	log.Println("------------------\nlen(permissions) : ", len(permissions))
 	roleName := rbac.AllRoles()[1].Name
 

@@ -88,7 +88,7 @@ func (ctr DevControllerImpl) NewJWT(c *fiber.Ctx) error {
 	}()
 
 	newJWTHanlder := rbac.NewJWTHandler()
-	idHashMap := rbac.AllPermissionsIDHashMap()
+	idHashMap := rbac.PermissionsHashMap()
 	token, err := newJWTHanlder.GenerateJWT(1, "example@gost.project", "example-role", idHashMap, time.Now().Add(14420*time.Hour))
 	if err != nil {
 		response.ErrorWithData(c, "internal server error : "+err.Error(), fiber.Map{
