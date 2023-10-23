@@ -6,7 +6,8 @@ type PermissionMap = map[uint8]uint8
 
 func AllPermissionsIDHashMap() PermissionMap {
 	hashMap := make(PermissionMap, 0)
-	permissions := AllPermissions() // you can all-permissions from database also
+	// you can get all-permissions from database also
+	permissions := AllPermissions()
 
 	for i := range permissions {
 		hashMap[uint8(i+1)] = 0b01
