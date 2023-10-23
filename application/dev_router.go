@@ -1,12 +1,18 @@
 package application
 
 import (
-	controller "github.com/Lukmanern/gost/controller/dev"
-	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/Lukmanern/gost/internal/middleware"
+
+	controller "github.com/Lukmanern/gost/controller/dev"
+	service "github.com/Lukmanern/gost/service/email"
 )
 
-var devController controller.DevController
+var (
+	emailService  service.EmailService
+	devController controller.DevController
+)
 
 func getDevRouter(router fiber.Router) {
 	jwtHandler := middleware.NewJWTHandler()
@@ -22,4 +28,9 @@ func getDevRouter(router fiber.Router) {
 	// userAuthRoute.Use(jwtHandler.IsAuthenticated)
 	devAuthRoute := devRouter.Use(jwtHandler.IsAuthenticated)
 	devAuthRoute.Get("validate-jwt", devController.ValidateNewJWT)
+
+	// dev email
+	emailService = service.NewEmailService()
+	emailRoutes := router.Group("email")
+	emailRoutes.Post("send-bulk", emailService.Handler)
 }

@@ -100,9 +100,8 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getDevRouter(router)   // don't use for production
-	getUserRoutes(router)  // don't use for production
-	getEmailRouter(router) // don't use for production
+	getDevRouter(router)  // don't use for production
+	getUserRoutes(router) // don't use for production
 
 	getUserAuthRoutes(router)
 	getRBACAuthRoutes(router)

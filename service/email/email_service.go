@@ -8,12 +8,15 @@ import (
 	"sync"
 
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/response"
+	"github.com/gofiber/fiber/v2"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
 type EmailService interface {
 	Send(emails []string, subject string, message string) (res map[string]bool, err error)
+	Handler(c *fiber.Ctx) (err error)
 }
 
 type EmailServiceImpl struct {
@@ -40,6 +43,27 @@ func NewEmailService() EmailService {
 	})
 
 	return emailService
+}
+
+const simpleMessage = `Lorem ipsum, dolor sit amet consectetur adipisicing elit. Ad consequuntur 
+similique voluptatibus ab enim harum dolor, sit, corporis repellendus culpa cum, quasi corrupti! 
+Impedit inventore cum optio quas, nisi aliquid ullam omnis voluptas, architecto deserunt, sint 
+tempora? Iure ea alias recusandae sunt ad, vero laudantium esse.`
+
+func (svc EmailServiceImpl) Handler(c *fiber.Ctx) (err error) {
+	testEmails := []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com", "code_name_safe_in_unsafe@proton.me", "lukmanernandi16@gmail.com.", "unsurlukm an@gmail.com", "code _name_safe_in_unsafe@proton.me", "lukmanern*a)ndi16@gmail.com", "unsurlukman@gmail.com", "code_n}ame_safe_in_unsafe@proton.me"}
+	res, err := svc.Send(testEmails, "Testing Gost Project", simpleMessage)
+	if err != nil {
+		return response.ErrorWithData(c, "internal server error: "+err.Error(), fiber.Map{
+			"res": res,
+		})
+	}
+	if res == nil {
+		return response.Error(c, "internal server error: failed sending email")
+	}
+
+	message := "success sending emails"
+	return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
 }
 
 func (svc EmailServiceImpl) Send(emails []string, subject string, message string) (map[string]bool, error) {
