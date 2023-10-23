@@ -26,20 +26,20 @@ func getRBACAuthRoutes(router fiber.Router) {
 	permissionRouter := router.Group("permission").Use(jwtHandler.IsAuthenticated)
 
 	// create-permission is unused
-	permissionRouter.Post("", jwtHandler.CheckHasPermission(rbac.PermissionCreatePermission), permissionController.Create)
-	permissionRouter.Get("", jwtHandler.CheckHasPermission(rbac.PermissionViewPermission), permissionController.GetAll)
-	permissionRouter.Get(":id", jwtHandler.CheckHasPermission(rbac.PermissionViewPermission), permissionController.Get)
-	permissionRouter.Put(":id", jwtHandler.CheckHasPermission(rbac.PermissionUpdatePermission), permissionController.Update)
-	permissionRouter.Delete(":id", jwtHandler.CheckHasPermission(rbac.PermissionDeletePermission), permissionController.Delete)
+	permissionRouter.Post("", jwtHandler.CheckHasPermissions(rbac.PermissionCreatePermission), permissionController.Create)
+	permissionRouter.Get("", jwtHandler.CheckHasPermissions(rbac.PermissionViewPermission), permissionController.GetAll)
+	permissionRouter.Get(":id", jwtHandler.CheckHasPermissions(rbac.PermissionViewPermission), permissionController.Get)
+	permissionRouter.Put(":id", jwtHandler.CheckHasPermissions(rbac.PermissionUpdatePermission), permissionController.Update)
+	permissionRouter.Delete(":id", jwtHandler.CheckHasPermissions(rbac.PermissionDeletePermission), permissionController.Delete)
 
 	roleService = service.NewRoleService(permissionService)
 	roleController = controller.NewRoleController(roleService)
 	roleRouter := router.Group("role").Use(jwtHandler.IsAuthenticated)
 
-	roleRouter.Post("", jwtHandler.CheckHasPermission(rbac.PermissionCreateRole), roleController.Create)
-	roleRouter.Post("connect", jwtHandler.CheckHasPermission(rbac.PermissionCreateRole), roleController.Connect)
-	roleRouter.Get("", jwtHandler.CheckHasPermission(rbac.PermissionViewRole), roleController.GetAll)
-	roleRouter.Get(":id", jwtHandler.CheckHasPermission(rbac.PermissionViewRole), roleController.Get)
-	roleRouter.Put(":id", jwtHandler.CheckHasPermission(rbac.PermissionUpdateRole), roleController.Update)
-	roleRouter.Delete(":id", jwtHandler.CheckHasPermission(rbac.PermissionDeleteRole), roleController.Delete)
+	roleRouter.Post("", jwtHandler.CheckHasPermissions(rbac.PermissionCreateRole), roleController.Create)
+	roleRouter.Post("connect", jwtHandler.CheckHasPermissions(rbac.PermissionCreateRole), roleController.Connect)
+	roleRouter.Get("", jwtHandler.CheckHasPermissions(rbac.PermissionViewRole), roleController.GetAll)
+	roleRouter.Get(":id", jwtHandler.CheckHasPermissions(rbac.PermissionViewRole), roleController.Get)
+	roleRouter.Put(":id", jwtHandler.CheckHasPermissions(rbac.PermissionUpdateRole), roleController.Update)
+	roleRouter.Delete(":id", jwtHandler.CheckHasPermissions(rbac.PermissionDeleteRole), roleController.Delete)
 }

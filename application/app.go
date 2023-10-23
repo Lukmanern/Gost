@@ -14,6 +14,7 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/rbac"
 )
 
 var (
@@ -46,9 +47,8 @@ var (
 	})
 )
 
-func checkingEnv() {
-	// checking for .env and
-	// keys files are exist.
+func setup() {
+	// Check env and database
 	env.ReadConfig("./.env")
 	c := env.Configuration()
 	dbURI := c.GetDatabaseURI()
@@ -60,10 +60,14 @@ func checkingEnv() {
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
+
+	// dump all permissions into hashMap
+	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
+	rbac.PermissionHashMap = rbac.PermissionsHashMap()
 }
 
 func RunApp() {
-	checkingEnv()
+	setup()
 	router.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 	}))

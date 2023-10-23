@@ -17,16 +17,18 @@ var (
 	PermissionNameHashMap PermissionNameMap
 )
 
+// Run once at app.go setupfunc
 func PermissionsHashMap() PermissionMap {
 	PermissionHashMap := make(PermissionMap, 0)
 	permissions := AllPermissions()
 	for i := range permissions {
-		PermissionHashMap[uint8(i+1)] = 0b01
+		PermissionHashMap[uint8(i+1)] = 0b_0001
 	}
 
 	return PermissionHashMap
 }
 
+// Run once at app.go setupfunc
 func PermissionNamesHashMap() PermissionNameMap {
 	allPermissions := AllPermissions()
 	if len(allPermissions) > 255 {
