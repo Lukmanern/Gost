@@ -4,6 +4,7 @@ type UserCreate struct {
 	Name     string `validate:"required,min=5,max=60" json:"name"`
 	Email    string `validate:"required,email,min=5,max=60" json:"email"`
 	Password string `validate:"required,min=8,max=30" json:"password"`
+	IsAdmin  bool   `validate:"boolean" json:"is_admin"`
 }
 
 type UserResponse struct {

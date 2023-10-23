@@ -14,7 +14,7 @@ import (
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, user entity.User) (id int, err error)
+	Create(ctx context.Context, user entity.User, roleID int) (id int, err error)
 	GetByID(ctx context.Context, id int) (user *entity.User, err error)
 	GetByEmail(ctx context.Context, email string) (user *entity.User, err error)
 	GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.User, total int, err error)
@@ -44,7 +44,7 @@ func NewUserRepository() UserRepository {
 	return userRepositoryImpl
 }
 
-func (repo UserRepositoryImpl) Create(ctx context.Context, user entity.User) (id int, err error) {
+func (repo UserRepositoryImpl) Create(ctx context.Context, user entity.User, roleID int) (id int, err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		if res := tx.Create(&user); res.Error != nil {
 			tx.Rollback()
@@ -54,7 +54,7 @@ func (repo UserRepositoryImpl) Create(ctx context.Context, user entity.User) (id
 
 		if res := tx.Create(&entity.UserHasRoles{
 			UserID: id,
-			RoleID: 1,
+			RoleID: roleID,
 		}); res.Error != nil {
 			tx.Rollback()
 			return res.Error

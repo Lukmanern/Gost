@@ -3,7 +3,6 @@ package svc
 import (
 	"context"
 	"errors"
-	"log"
 	"sync"
 	"time"
 
@@ -73,7 +72,6 @@ func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) 
 	}
 
 	permissions := rbac.PermissionsHashMap()
-	log.Println("------------------\nlen(permissions) : ", len(permissions))
 	roleName := rbac.AllRoles()[1].Name
 
 	config := env.Configuration()

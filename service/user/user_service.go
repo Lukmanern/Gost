@@ -48,8 +48,8 @@ func NewUserService() UserService {
 }
 
 func (svc UserServiceImpl) Create(ctx context.Context, user model.UserCreate) (id int, err error) {
-	userCheck, err := svc.GetByEmail(ctx, user.Email)
-	if err == nil || userCheck != nil {
+	userCheck, getErr := svc.GetByEmail(ctx, user.Email)
+	if getErr == nil || userCheck != nil {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "email has been used")
 	}
 
@@ -65,10 +65,16 @@ func (svc UserServiceImpl) Create(ctx context.Context, user model.UserCreate) (i
 	}
 	userEntity.SetTimes()
 
-	id, err = svc.repository.Create(ctx, userEntity)
+	roleID := entity.USER
+	if user.IsAdmin {
+		roleID = entity.ADMIN
+	}
+
+	id, err = svc.repository.Create(ctx, userEntity, roleID)
 	if err != nil {
 		return 0, err
 	}
+
 	return id, nil
 }
 
