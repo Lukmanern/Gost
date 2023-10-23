@@ -80,7 +80,7 @@ func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) 
 	expired := time.Now().Add(config.AppAccessTokenTTL)
 	token, generetaErr := svc.jwtHandler.GenerateJWT(userEntity.ID, user.Email, userRole.Name, permissionMapID, expired)
 	if generetaErr != nil {
-		return "", fiber.NewError(fiber.StatusInternalServerError, "system error while generating token, please try again")
+		return "", fiber.NewError(fiber.StatusInternalServerError, "system error while generating token ("+generetaErr.Error()+")")
 	}
 	if len(token) > 2800 {
 		return "", errors.New("token is too large, more than 2800 characters (too large for http header)")

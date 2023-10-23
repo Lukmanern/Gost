@@ -59,11 +59,21 @@ func main() {
 			if createErr := db.Create(&data).Error; createErr != nil {
 				log.Panicf("Error while create Permissions : %s", createErr)
 			}
-			if createErr := db.Create(&entity.RoleHasPermission{
-				RoleID:       1,
-				PermissionID: data.ID,
-			}).Error; createErr != nil {
-				log.Panicf("Error while create Roles : %s", createErr)
+			if data.ID <= 20 {
+				if createErr := db.Create(&entity.RoleHasPermission{
+					RoleID:       1,
+					PermissionID: data.ID,
+				}).Error; createErr != nil {
+					log.Panicf("Error while create Roles : %s", createErr)
+				}
+			}
+			if data.ID > 20 {
+				if createErr := db.Create(&entity.RoleHasPermission{
+					RoleID:       2,
+					PermissionID: data.ID,
+				}).Error; createErr != nil {
+					log.Panicf("Error while create Roles : %s", createErr)
+				}
 			}
 		}
 	}
