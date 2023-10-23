@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
@@ -102,5 +104,18 @@ func (ctr DevControllerImpl) NewJWT(c *fiber.Ctx) error {
 }
 
 func (ctr DevControllerImpl) ValidateNewJWT(c *fiber.Ctx) error {
-	panic(9)
+	claims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok {
+		return response.CreateResponse(c, 500, false, "not contains claims", claims)
+	}
+
+	checkClaims, ok := claims.Permissions[1]
+	if !ok || checkClaims == 0 {
+		return response.Error(c, "claims doesn't have key 1 : "+strconv.Itoa(int(checkClaims)))
+	}
+
+	return response.SuccessCreated(c, fiber.Map{
+		"1":      checkClaims,
+		"claims": claims,
+	})
 }

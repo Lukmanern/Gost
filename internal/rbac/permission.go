@@ -1,18 +1,49 @@
 package rbac
 
-import "github.com/Lukmanern/gost/domain/entity"
+import (
+	"log"
+	"sync"
 
+	"github.com/Lukmanern/gost/domain/entity"
+)
+
+// uint8 is the lowest memory cost in Golang
 type PermissionMap = map[uint8]uint8
 
-func PermissionsHashMap() PermissionMap {
-	hashMap := make(PermissionMap, 0)
-	// you can get all-permissions from database also
-	permissions := AllPermissions()
+var (
+	PermissionHashMap     PermissionMap
+	PermissionHashMapOnce sync.Once
 
-	for i := range permissions {
-		hashMap[uint8(i+1)] = 0b01
-	}
-	return hashMap
+	PermissionNameHashMap     map[string]uint8
+	PermissionNameHashMapOnce sync.Once
+)
+
+func PermissionsHashMap() PermissionMap {
+	PermissionHashMapOnce.Do(func() {
+		// you can get all-permissions from database also
+		PermissionHashMap := make(PermissionMap, 0)
+		permissions := AllPermissions()
+		for i := range permissions {
+			PermissionHashMap[uint8(i+1)] = 0b01
+		}
+	})
+
+	return PermissionHashMap
+}
+
+func PermissionNamesHashMap() map[string]uint8 {
+	PermissionNameHashMapOnce.Do(func() {
+		allPermissions := AllPermissions()
+		if len(allPermissions) > 255 {
+			log.Fatal("permissions in uint8 should less than 255")
+		}
+		PermissionNameHashMap := make(map[string]uint8)
+		for i, permission := range allPermissions {
+			PermissionNameHashMap[permission.Name] = uint8(i + 1)
+		}
+	})
+
+	return PermissionNameHashMap
 }
 
 // for migration and seeder

@@ -239,6 +239,7 @@ func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 	return token, nil
 }
 
+// type PermissionMap = map[uint8]uint8
 func (j JWTHandler) HasPermission(c *fiber.Ctx, permissions ...string) error {
 	_, ok := c.Locals("claims").(*Claims)
 	if !ok {
