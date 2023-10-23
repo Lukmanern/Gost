@@ -15,8 +15,8 @@ import (
 )
 
 type EmailService interface {
-	Send(emails []string, subject string, message string) (res map[string]bool, err error)
 	Handler(c *fiber.Ctx) (err error)
+	Send(emails []string, subject string, message string) (res map[string]bool, err error)
 }
 
 type EmailServiceImpl struct {
@@ -50,8 +50,12 @@ similique voluptatibus ab enim harum dolor, sit, corporis repellendus culpa cum,
 Impedit inventore cum optio quas, nisi aliquid ullam omnis voluptas, architecto deserunt, sint 
 tempora? Iure ea alias recusandae sunt ad, vero laudantium esse.`
 
+var testEmails = []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com", "code_name_safe_in_unsafe@proton.me",
+	"lukmanernandi16@gmail.com.", "unsurlukm an@gmail.com", "code _name_safe_in_unsafe@proton.me", "lukmanern*a)ndi16@gmail.com",
+	"unsurlukman@gmail.com", "code_n}ame_safe_in_unsafe@proton.me",
+}
+
 func (svc EmailServiceImpl) Handler(c *fiber.Ctx) (err error) {
-	testEmails := []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com", "code_name_safe_in_unsafe@proton.me", "lukmanernandi16@gmail.com.", "unsurlukm an@gmail.com", "code _name_safe_in_unsafe@proton.me", "lukmanern*a)ndi16@gmail.com", "unsurlukman@gmail.com", "code_n}ame_safe_in_unsafe@proton.me"}
 	res, err := svc.Send(testEmails, "Testing Gost Project", simpleMessage)
 	if err != nil {
 		return response.ErrorWithData(c, "internal server error: "+err.Error(), fiber.Map{
@@ -64,6 +68,18 @@ func (svc EmailServiceImpl) Handler(c *fiber.Ctx) (err error) {
 
 	message := "success sending emails"
 	return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
+}
+
+func (svc EmailServiceImpl) getAuth() smtp.Auth {
+	return smtp.PlainAuth("", svc.Email, svc.Password, svc.Server)
+}
+
+func (svc EmailServiceImpl) getSMTPAddr() string {
+	return fmt.Sprintf("%s:%d", svc.Server, svc.Port)
+}
+
+func (svc EmailServiceImpl) getMime() string {
+	return "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
 }
 
 func (svc EmailServiceImpl) Send(emails []string, subject string, message string) (map[string]bool, error) {
@@ -124,16 +140,4 @@ func validateEmails(emails ...string) error {
 		}
 	}
 	return nil
-}
-
-func (svc EmailServiceImpl) getAuth() smtp.Auth {
-	return smtp.PlainAuth("", svc.Email, svc.Password, svc.Server)
-}
-
-func (svc EmailServiceImpl) getSMTPAddr() string {
-	return fmt.Sprintf("%s:%d", svc.Server, svc.Port)
-}
-
-func (svc EmailServiceImpl) getMime() string {
-	return "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
 }
