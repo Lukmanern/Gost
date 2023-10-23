@@ -62,7 +62,8 @@ func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 	}
 
 	data := map[string]any{
-		"token": token,
+		"token":        token,
+		"token-length": len(token),
 	}
 	return response.CreateResponse(c, fiber.StatusOK, true, "success login", data)
 }

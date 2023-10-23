@@ -60,7 +60,7 @@ func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) 
 		return "", err
 	}
 	if userCheck == nil {
-		return "", fiber.NewError(fiber.StatusNotFound, "user not found")
+		return "", fiber.NewError(fiber.StatusNotFound, "data not found")
 	}
 
 	res, verfiryErr := hash.Verify(userCheck.Password, user.Password)
@@ -71,6 +71,7 @@ func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) 
 		return "", fiber.NewError(fiber.StatusBadRequest, "wrong password")
 	}
 
+	// Todo : should query to DB
 	permissions := rbac.PermissionsHashMap()
 	roleName := rbac.AllRoles()[1].Name
 
@@ -79,6 +80,9 @@ func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) 
 	token, generetaErr := svc.jwtHandler.GenerateJWT(userCheck.ID, user.Email, roleName, permissions, expired)
 	if generetaErr != nil {
 		return "", fiber.NewError(fiber.StatusInternalServerError, "system error while generating token, please try again")
+	}
+	if len(token) > 2800 {
+		return "", errors.New("token is too large, more than 2800 characters (too large for http header)")
 	}
 
 	return token, nil
