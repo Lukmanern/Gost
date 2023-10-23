@@ -240,23 +240,22 @@ func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 }
 
 // type PermissionMap = map[uint8]uint8
-func (j JWTHandler) HasPermission(c *fiber.Ctx, permissions ...string) error {
+func (j JWTHandler) HasPermission(c *fiber.Ctx, permission string) error {
 	claims, ok := c.Locals("claims").(*Claims)
 	if !ok {
 		return response.Unauthorized(c)
 	}
-	permissionID := claims.Permissions
-	for _, permission := range permissions {
-		id, ok1 := rbac.PermissionNameHashMap[permission]
-		if !ok1 || id < 1 {
-			return response.Unauthorized(c)
-		}
-		value, ok2 := permissionID[id]
-		if !ok2 || value < 1 {
-			return response.Unauthorized(c)
-		}
-	}
 
+	// O(n) checking
+	permissionMapID := claims.Permissions
+	id, ok1 := rbac.PermissionNameHashMap[permission]
+	if !ok1 || id < 1 {
+		return response.Unauthorized(c)
+	}
+	valueOne, ok2 := permissionMapID[id]
+	if !ok2 || valueOne != 1 {
+		return response.Unauthorized(c)
+	}
 	return c.Next()
 }
 
@@ -269,9 +268,9 @@ func (j JWTHandler) HasRole(c *fiber.Ctx, role string) error {
 }
 
 // for handler or middleware
-func (j JWTHandler) CheckHasPermissions(permissions ...string) func(c *fiber.Ctx) error {
+func (j JWTHandler) CheckHasPermission(permissions string) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		return j.HasPermission(c, permissions...)
+		return j.HasPermission(c, permissions)
 	}
 }
 
