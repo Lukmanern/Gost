@@ -66,7 +66,7 @@ func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions rbac.Pe
 	if email == "" || role == "" || len(permissions) < 1 {
 		return "", errors.New("email/ role/ permission too short or void")
 	}
-	// Create the Claims
+	// Create Claims
 	claims := Claims{
 		ID:          id,
 		Email:       email,
@@ -246,7 +246,7 @@ func (j JWTHandler) HasPermission(c *fiber.Ctx, permission string) error {
 		return response.Unauthorized(c)
 	}
 
-	// O(n) checking
+	// O(1) checking
 	permissionMapID := claims.Permissions
 	id, ok1 := rbac.PermissionNameHashMap[permission]
 	if !ok1 || id < 1 {

@@ -52,18 +52,18 @@ func NewUserAuthService() UserAuthService {
 }
 
 func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
-	userCheck, err := svc.userRepository.GetByEmail(ctx, user.Email)
+	userEntity, err := svc.userRepository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return "", fiber.NewError(fiber.StatusNotFound, "data not found")
 		}
 		return "", err
 	}
-	if userCheck == nil {
+	if userEntity == nil {
 		return "", fiber.NewError(fiber.StatusNotFound, "data not found")
 	}
 
-	res, verfiryErr := hash.Verify(userCheck.Password, user.Password)
+	res, verfiryErr := hash.Verify(userEntity.Password, user.Password)
 	if verfiryErr != nil {
 		return "", verfiryErr
 	}
@@ -71,13 +71,14 @@ func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) 
 		return "", fiber.NewError(fiber.StatusBadRequest, "wrong password")
 	}
 
-	// Todo : should query to DB
-	permissions := rbac.PermissionsHashMap()
-	roleName := rbac.AllRoles()[1].Name
-
+	userRole := userEntity.Roles[0]
+	permissionMapID := make(rbac.PermissionMap, 0)
+	for _, permission := range userRole.Permissions {
+		permissionMapID[uint8(permission.ID)] = 0b_0001
+	}
 	config := env.Configuration()
 	expired := time.Now().Add(config.AppAccessTokenTTL)
-	token, generetaErr := svc.jwtHandler.GenerateJWT(userCheck.ID, user.Email, roleName, permissions, expired)
+	token, generetaErr := svc.jwtHandler.GenerateJWT(userEntity.ID, user.Email, userRole.Name, permissionMapID, expired)
 	if generetaErr != nil {
 		return "", fiber.NewError(fiber.StatusInternalServerError, "system error while generating token, please try again")
 	}

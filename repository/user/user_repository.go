@@ -78,7 +78,7 @@ func (repo UserRepositoryImpl) GetByID(ctx context.Context, id int) (user *entit
 
 func (repo UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (user *entity.User, err error) {
 	user = &entity.User{}
-	result := repo.db.Where("email = ?", email).First(&user)
+	result := repo.db.Where("email = ?", email).Preload("Roles.Permissions").First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}
