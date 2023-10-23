@@ -2,46 +2,40 @@ package rbac
 
 import (
 	"log"
-	"sync"
 
 	"github.com/Lukmanern/gost/domain/entity"
 )
 
 // uint8 is the lowest memory cost in Golang
-type PermissionMap = map[uint8]uint8
+type (
+	PermissionMap     = map[uint8]uint8
+	PermissionNameMap = map[string]uint8
+)
 
 var (
 	PermissionHashMap     PermissionMap
-	PermissionHashMapOnce sync.Once
-
-	PermissionNameHashMap     map[string]uint8
-	PermissionNameHashMapOnce sync.Once
+	PermissionNameHashMap PermissionNameMap
 )
 
 func PermissionsHashMap() PermissionMap {
-	PermissionHashMapOnce.Do(func() {
-		// you can get all-permissions from database also
-		PermissionHashMap := make(PermissionMap, 0)
-		permissions := AllPermissions()
-		for i := range permissions {
-			PermissionHashMap[uint8(i+1)] = 0b01
-		}
-	})
+	PermissionHashMap := make(PermissionMap, 0)
+	permissions := AllPermissions()
+	for i := range permissions {
+		PermissionHashMap[uint8(i+1)] = 0b01
+	}
 
 	return PermissionHashMap
 }
 
-func PermissionNamesHashMap() map[string]uint8 {
-	PermissionNameHashMapOnce.Do(func() {
-		allPermissions := AllPermissions()
-		if len(allPermissions) > 255 {
-			log.Fatal("permissions in uint8 should less than 255")
-		}
-		PermissionNameHashMap := make(map[string]uint8)
-		for i, permission := range allPermissions {
-			PermissionNameHashMap[permission.Name] = uint8(i + 1)
-		}
-	})
+func PermissionNamesHashMap() PermissionNameMap {
+	allPermissions := AllPermissions()
+	if len(allPermissions) > 255 {
+		log.Fatal("permissions in uint8 should less than 255")
+	}
+	PermissionNameHashMap := make(PermissionNameMap)
+	for i, permission := range allPermissions {
+		PermissionNameHashMap[permission.Name] = uint8(i + 1)
+	}
 
 	return PermissionNameHashMap
 }
