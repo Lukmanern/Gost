@@ -74,7 +74,7 @@ func Test_CountRoles(t *testing.T) {
 	for _, role := range AllRoles() {
 		hashMapRoles[role.Name] += 1
 		if hashMapRoles[role.Name] > 1 {
-			t.Error("should 1, not more, non-unique role detected : ", role.Name)
+			t.Error("should 1, not more, non-unique role (role:name) detected : ", role.Name)
 		}
 	}
 
