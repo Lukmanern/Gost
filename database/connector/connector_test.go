@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/Lukmanern/gost/internal/env"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 func init() {

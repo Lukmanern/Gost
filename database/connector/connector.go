@@ -18,7 +18,7 @@ var (
 	redisDatastoreOnce sync.Once
 )
 
-// MySQL
+// SQL Database
 func LoadDatabase() *gorm.DB {
 	gormDatabaseOnce.Do(func() {
 		// try to read env

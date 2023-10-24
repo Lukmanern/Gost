@@ -19,7 +19,7 @@ func getDevRouter(router fiber.Router) {
 	devController = controller.NewDevControllerImpl()
 	// Developement 'helper' Process
 	devRouter := router.Group("development")
-	devRouter.Get("ping/mysql", devController.PingDatabase)
+	devRouter.Get("ping/db", devController.PingDatabase)
 	devRouter.Get("ping/redis", devController.PingRedis)
 	devRouter.Get("panic", devController.Panic)
 	devRouter.Get("new-jwt", devController.NewJWT)

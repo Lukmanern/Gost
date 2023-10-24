@@ -4,16 +4,16 @@
 
 1. Email Confirmation For Forget Password
 2. Email Confirmation For Registration
-3. Migrate from MySQL to Supabase PostgreSQL
 
 ### Done / OnTest
 
 1. Reset Password
-2. Add more test for controller and service
-3. add Max Retry/Jail in Login
-4. Modify Middleware Test
-5. Add Test file
-6. Fixing RBAC
+2. Migrate from MySQL to Supabase PostgreSQL
+3. Add more test for controller and service
+4. add Max Retry/Jail in Login
+5. Modify Middleware Test
+6. Add Test file
+7. Fixing RBAC
 
 ### Read List
 
