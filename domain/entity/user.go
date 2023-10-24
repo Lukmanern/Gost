@@ -7,6 +7,7 @@ type User struct {
 	Name     string `gorm:"type:varchar(255) not null" json:"name"`
 	Email    string `gorm:"type:varchar(100) not null unique" json:"email"`
 	Password string `gorm:"type:varchar(255) not null" json:"password"`
+	IsActive bool   `gorm:"type:boolean" json:"is_active"`
 	Roles    []Role `gorm:"many2many:user_has_roles" json:"roles"`
 	base.TimeFields
 }
