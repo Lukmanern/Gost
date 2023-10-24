@@ -17,14 +17,14 @@ type Config struct {
 	AppKey            string        `env:"APP_SECRET_KEY"`
 	AppAccessTokenTTL time.Duration `env:"APP_ACCESS_TOKEN_TTL"`
 	AppPort           int           `env:"APP_PORT"`
+	AppTimeZone       string        `env:"APP_TIME_ZONE"`
 
-	DatabaseRootHost     string `env:"DB_HOST"`
-	DatabaseRootPassword string `env:"DB_ROOT_PASSWORD"`
-	DatabasePort         string `env:"DB_PORT"`
-	DatabaseUser         string `env:"DB_USERNAME"`
-	DatabasePassword     string `env:"DB_PASSWORD"`
-	DatabaseName         string `env:"DB_DATABASE"`
-	DatabaseURI          string
+	DatabaseHost     string `env:"DB_HOST"`
+	DatabasePort     string `env:"DB_PORT"`
+	DatabaseUser     string `env:"DB_USERNAME"`
+	DatabasePassword string `env:"DB_PASSWORD"`
+	DatabaseName     string `env:"DB_DATABASE"`
+	DatabaseURI      string
 
 	RedisURI string `env:"REDIS_URI"`
 
@@ -82,8 +82,9 @@ func Configuration() Config {
 }
 
 func (c *Config) GetDatabaseURI() string {
-	c.DatabaseURI = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&multiStatements=true&parseTime=true",
-		c.DatabaseUser, c.DatabasePassword, c.DatabaseRootHost, c.DatabasePort, c.DatabaseName)
+	c.DatabaseURI = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=%s",
+		c.DatabaseHost, c.DatabaseUser, c.DatabasePassword, c.DatabaseName, c.DatabasePort, c.AppTimeZone,
+	)
 
 	return c.DatabaseURI
 }
@@ -143,8 +144,7 @@ func (c *Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "AppAccessTokenTTL", c.AppAccessTokenTTL)
 	fmt.Printf("%-21s: %d\n", "AppPort", c.AppPort)
 
-	fmt.Printf("%-21s: %s\n", "DatabaseRootHost", c.DatabaseRootHost)
-	fmt.Printf("%-21s: %s\n", "DatabaseRootPassword", c.DatabaseRootPassword)
+	fmt.Printf("%-21s: %s\n", "DatabaseHost", c.DatabaseHost)
 	fmt.Printf("%-21s: %s\n", "DatabasePort", c.DatabasePort)
 	fmt.Printf("%-21s: %s\n", "DatabaseUser", c.DatabaseUser)
 	fmt.Printf("%-21s: %s\n", "DatabasePassword", c.DatabasePassword)

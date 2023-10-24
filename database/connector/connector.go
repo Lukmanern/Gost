@@ -6,10 +6,8 @@ import (
 
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/go-redis/redis"
-	_ "github.com/go-sql-driver/mysql"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 var (
@@ -23,25 +21,28 @@ var (
 // MySQL
 func LoadDatabase() *gorm.DB {
 	gormDatabaseOnce.Do(func() {
-		// try to connect to database
+		// try to read env
 		env.ReadConfig("./.env")
 		config := env.Configuration()
 		dsn := config.GetDatabaseURI()
-		var conErr error
 
-		gormDatabase, conErr = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		// try to connect to database
+		var conErr error
+		gormDatabase, conErr = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if conErr != nil {
-			log.Panicf("can't connect to database %s", conErr)
+			panic("panic while try to connect : " + conErr.Error())
 		}
 		if gormDatabase == nil {
-			log.Panic("database is null")
+			panic("error : database is nil")
 		}
-		gormDatabase.Logger = logger.Default.LogMode(logger.Info)
 
-		// try to ping the database
+		// try to ping database
 		database, sqlErr := gormDatabase.DB()
 		if sqlErr != nil {
 			log.Panicf("can't get sql-db : %s", sqlErr)
+		}
+		if database == nil {
+			log.Panicf("can't get sql-db : database is nil")
 		}
 		pingErr := database.Ping()
 		if pingErr != nil {
