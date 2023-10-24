@@ -24,8 +24,7 @@ import (
 )
 
 type UserAuthService interface {
-	GetFailedLoginCounter(userIP string) (counter int, err error)
-	IncrementFailedLoginCounter(userIP string) (counter int, err error)
+	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
@@ -58,21 +57,22 @@ func NewUserAuthService() UserAuthService {
 	return userAuthService
 }
 
-func (svc UserAuthServiceImpl) GetFailedLoginCounter(userIP string) (counter int, err error) {
+func (svc UserAuthServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
 	key := "failed-login-" + userIP
 	getStatus := svc.redis.Get(key)
-	counter, _ = strconv.Atoi(getStatus.String())
-	return counter, nil
-}
-
-func (svc UserAuthServiceImpl) IncrementFailedLoginCounter(userIP string) (counter int, err error) {
-	key := "failed-login-" + userIP
-	getStatus := svc.redis.Get(key)
-	counter, _ = strconv.Atoi(getStatus.String())
-	counter = counter + 1
-	redisSetStatus := svc.redis.Set(key, counter, 50*time.Minute)
-	if redisSetStatus.Err() != nil {
-		return 0, errors.New("storing data to redis")
+	if getStatus.Err() != nil {
+		return 0, errors.New("error while getting data from redis")
+	}
+	counter, err = strconv.Atoi(getStatus.Val())
+	if err != nil {
+		return 0, err
+	}
+	if increment {
+		counter++
+		setStatus := svc.redis.Set(key, counter, 50*time.Minute)
+		if setStatus.Err() != nil {
+			return 0, errors.New("error while storing data to redis")
+		}
 	}
 
 	return counter, nil
