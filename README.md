@@ -4,18 +4,18 @@ Go-Fiber project starter, with jwt-auth and highly effective RBAC implementation
 
 ### Todo
 
-1. Reset Password
+1. Email Confirmation For Forget Password
 2. Email Confirmation For Registration
-3. critical add Max Retry/Jail in Login
-4. Implement : https://roadmap.sh/best-practices/api-security
-5. Migrate to Supabase Postgresql
+3. Migrate from MySQL to Supabase PostgreSQL
 
 ### Done
 
-3. Add more test for controller and service
-1. Modify Middleware Test
-1. Add Test file
-1. Fixing RBAC
+1. Reset Password
+2. Add more test for controller and service
+3. critical add Max Retry/Jail in Login
+4. Modify Middleware Test
+5. Add Test file
+6. Fixing RBAC
 
 ### Read List
 
@@ -24,3 +24,4 @@ Go-Fiber project starter, with jwt-auth and highly effective RBAC implementation
 3. https://github.com/gorrion-io/production-readiness-checklist/
 4. https://www.cockroachlabs.com/docs/cockroachcloud/production-checklist/
 5. https://www.alexedwards.net/blog/ci-with-go-and-github-actions
+6. https://roadmap.sh/best-practices/api-security/
