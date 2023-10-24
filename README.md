@@ -6,13 +6,16 @@ Go-Fiber project starter, with jwt-auth and highly effective RBAC implementation
 
 1. Reset Password
 2. Email Confirmation For Registration
-3. Fixing RBAC
-4. Add Test file
-5. Modify Middleware Test
-6. Add more test for controller and service
-7. critical add Max Retry/Jail in Login
-8. Implement : https://roadmap.sh/best-practices/api-security
-9. Migrate to Supabase Postgresql
+3. critical add Max Retry/Jail in Login
+4. Implement : https://roadmap.sh/best-practices/api-security
+5. Migrate to Supabase Postgresql
+
+### Done
+
+3. Add more test for controller and service
+1. Modify Middleware Test
+1. Add Test file
+1. Fixing RBAC
 
 ### Read List
 
