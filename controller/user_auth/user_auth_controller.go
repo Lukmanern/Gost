@@ -42,11 +42,12 @@ func NewUserAuthController(service service.UserAuthService) UserAuthController {
 }
 
 func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
-	// Todo : implement Max Retry/Jail in Login -> caching using Redis
 	var user model.UserLogin
+	// user.IP = c.IP() // Todo : update it in production
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
+
 	userIP := net.ParseIP(user.IP)
 	if userIP == nil {
 		return response.BadRequest(c, "invalid json body: invalid user ip address")
