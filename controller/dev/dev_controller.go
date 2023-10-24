@@ -13,12 +13,17 @@ import (
 )
 
 type DevController interface {
-	BitfieldTesting(c *fiber.Ctx) error
+	// Database
 	PingDatabase(c *fiber.Ctx) error
 	PingRedis(c *fiber.Ctx) error
+	// Handler
 	Panic(c *fiber.Ctx) error
+	// JWT
 	NewJWT(c *fiber.Ctx) error
 	ValidateNewJWT(c *fiber.Ctx) error
+	// Redis
+	StoringToRedis(c *fiber.Ctx) error
+	GetFromRedis(c *fiber.Ctx) error
 }
 
 type DevControllerImpl struct{}
@@ -34,11 +39,6 @@ func NewDevControllerImpl() DevController {
 	})
 
 	return devImpl
-}
-
-// DevControllerelopement Process
-func (ctr DevControllerImpl) BitfieldTesting(c *fiber.Ctx) error {
-	return response.CreateResponse(c, fiber.StatusOK, true, "Success Bitfield DevController", nil)
 }
 
 func (ctr DevControllerImpl) PingDatabase(c *fiber.Ctx) error {
@@ -58,9 +58,9 @@ func (ctr DevControllerImpl) PingDatabase(c *fiber.Ctx) error {
 }
 
 func (ctr DevControllerImpl) PingRedis(c *fiber.Ctx) error {
-	rds := connector.LoadRedisDatabase()
+	redis := connector.LoadRedisDatabase()
 	for i := 0; i < 5; i++ {
-		status := rds.Ping()
+		status := redis.Ping()
 		if status.Err() != nil {
 			return response.Error(c, "failed to ping-redis")
 		}
@@ -89,7 +89,7 @@ func (ctr DevControllerImpl) NewJWT(c *fiber.Ctx) error {
 		return nil
 	}()
 
-	newJWTHanlder := rbac.NewJWTHandler()
+	newJWTHanlder := middleware.NewJWTHandler()
 	idHashMap := rbac.PermissionsHashMap()
 	token, err := newJWTHanlder.GenerateJWT(1, "example@gost.project", "example-role", idHashMap, time.Now().Add(14420*time.Hour))
 	if err != nil {
@@ -118,4 +118,34 @@ func (ctr DevControllerImpl) ValidateNewJWT(c *fiber.Ctx) error {
 		"1":      checkClaims,
 		"claims": claims,
 	})
+}
+
+func (ctr DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
+	redis := connector.LoadRedisDatabase()
+	if redis == nil {
+		return response.Error(c, "redis nil value")
+	}
+	redisStatus := redis.Set("example-key", "example-value", 50*time.Minute)
+	if redisStatus.Err() != nil {
+		return response.Error(c, "redis status error ("+redisStatus.Err().Error()+")")
+	}
+
+	return response.SuccessCreated(c, nil)
+}
+
+func (ctr DevControllerImpl) GetFromRedis(c *fiber.Ctx) error {
+	redis := connector.LoadRedisDatabase()
+	if redis == nil {
+		return response.Error(c, "redis nil value")
+	}
+	redisStatus := redis.Get("example-key")
+	if redisStatus.Err() != nil {
+		return response.Error(c, "redis status error ("+redisStatus.Err().Error()+")")
+	}
+	res, resErr := redisStatus.Result()
+	if resErr != nil {
+		return response.Error(c, "redis result error ("+resErr.Error()+")")
+	}
+
+	return response.SuccessCreated(c, res)
 }
