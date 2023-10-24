@@ -32,6 +32,7 @@ type UserAuthService interface {
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
 	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
 	Register(ctx context.Context, id int) (profile model.UserProfile, err error)
+	DeleteUser(ctx context.Context, id int) (err error)
 }
 
 type UserAuthServiceImpl struct {
@@ -82,6 +83,10 @@ func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) 
 	}
 	if userEntity == nil {
 		return "", fiber.NewError(fiber.StatusNotFound, "data not found")
+	}
+	if !userEntity.IsActive {
+		errMsg := "Your account is already exist in our system. But it's still inactive, please check Your email inbox to activated-it"
+		return "", fiber.NewError(fiber.StatusBadRequest, errMsg)
 	}
 
 	res, verfiryErr := hash.Verify(userEntity.Password, user.Password)
@@ -237,4 +242,8 @@ func (svc UserAuthServiceImpl) Register(ctx context.Context, id int) (profile mo
 	}
 
 	return profile, nil
+}
+
+func (svc UserAuthServiceImpl) DeleteUser(ctx context.Context, id int) (err error) {
+	return
 }

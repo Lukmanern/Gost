@@ -4,6 +4,7 @@
 
 1. Email Confirmation For Forget Password
 2. Email Confirmation For Registration
+3. User request to delete the account
 
 ### Done / OnTest
 
