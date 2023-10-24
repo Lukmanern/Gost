@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"net"
 	"sync"
 
 	"github.com/go-playground/validator/v10"
@@ -50,10 +51,23 @@ func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 	if err := validate.Struct(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
+	userIP := net.ParseIP(user.IP)
+	if userIP == nil {
+		return response.BadRequest(c, "invalid json body: invalid user ip address")
+	}
+
+	// user -> login
+	// di cek udah 5x apa-belum
+	// kalo belum lanjut
+	// kalo udah 5 langsung failed
 
 	ctx := c.Context()
 	token, loginErr := ctr.service.Login(ctx, user)
 	if loginErr != nil {
+		counter, _ := ctr.service.StoringFailedLogin(userIP.String())
+		if counter >= 5 {
+
+		}
 		fiberErr, ok := loginErr.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)

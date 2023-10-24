@@ -3,14 +3,17 @@ package svc
 import (
 	"context"
 	"errors"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"gorm.io/gorm"
 
+	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
@@ -21,6 +24,8 @@ import (
 )
 
 type UserAuthService interface {
+	GetCounterFailedLogin(userIP string) (counter int, err error)
+	StoringFailedLogin(userIP string) (counter int, err error)
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
@@ -33,6 +38,7 @@ type UserAuthService interface {
 type UserAuthServiceImpl struct {
 	userRepository userRepository.UserRepository
 	jwtHandler     *middleware.JWTHandler
+	redis          *redis.Client
 }
 
 var (
@@ -45,10 +51,61 @@ func NewUserAuthService() UserAuthService {
 		userAuthService = &UserAuthServiceImpl{
 			userRepository: userRepository.NewUserRepository(),
 			jwtHandler:     middleware.NewJWTHandler(),
+			redis:          connector.LoadRedisDatabase(),
 		}
 	})
 
 	return userAuthService
+}
+
+func (svc UserAuthServiceImpl) GetCounterFailedLogin(userIP string) (counter int, err error) {
+	if svc.redis == nil {
+		return 0, errors.New("failed connect to redis, please try again")
+	}
+
+	key := "failed-login-" + userIP
+	getStatus := svc.redis.Get(key)
+	if getStatus.Err() != nil {
+		return 0, errors.New("storing data to redis")
+	}
+	if getStatus != nil {
+		counter, _ = strconv.Atoi(getStatus.String())
+		if counter >= 4 {
+			return 5, nil
+		}
+	}
+	counter += 1
+	redisSetStatus := svc.redis.Set(key, counter, 50*time.Minute)
+	if redisSetStatus.Err() != nil {
+		return 0, errors.New("storing data to redis")
+	}
+
+	return counter, nil
+}
+
+func (svc UserAuthServiceImpl) StoringFailedLogin(userIP string) (counter int, err error) {
+	if svc.redis == nil {
+		return 0, errors.New("failed connect to redis, please try again")
+	}
+
+	key := "failed-login-" + userIP
+	getStatus := svc.redis.Get(key)
+	if getStatus.Err() != nil {
+		return 0, errors.New("storing data to redis")
+	}
+	if getStatus != nil {
+		counter, _ = strconv.Atoi(getStatus.String())
+		if counter >= 4 {
+			return 5, nil
+		}
+	}
+	counter += 1
+	redisSetStatus := svc.redis.Set(key, counter, 50*time.Minute)
+	if redisSetStatus.Err() != nil {
+		return 0, errors.New("storing data to redis")
+	}
+
+	return counter, nil
 }
 
 func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {

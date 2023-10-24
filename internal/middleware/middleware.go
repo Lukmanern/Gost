@@ -186,36 +186,6 @@ func (j JWTHandler) ValidateWithClaim(token string) (claim jwt.MapClaims, err er
 	return claims, nil
 }
 
-// ExtractTokenMetadata func to extract metadata from JWT.
-func (j JWTHandler) ExtractTokenMetadata(c *fiber.Ctx) (*Claims, error) {
-	token, err := j.verifyToken(c)
-	if err != nil {
-		return nil, err
-	}
-
-	// Setting and checking token and credentials.
-	claims, ok := token.Claims.(*jwt.MapClaims) // Todo : MapClaims -> RegisteredClaims
-	if ok && token.Valid {
-		condensedClaims := *claims
-		// Expires time.
-		expires := condensedClaims["exp"]
-		expiresTime, ok := expires.(time.Time)
-		if !ok {
-			return nil, err
-		}
-
-		return &Claims{
-			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: &jwt.NumericDate{Time: expiresTime},
-				NotBefore: &jwt.NumericDate{Time: time.Now()},
-			},
-			Email: condensedClaims["email"].(string),
-		}, nil
-	}
-
-	return nil, err
-}
-
 func extractToken(c *fiber.Ctx) string {
 	bearerToken := c.Get("Authorization")
 	// Normally Authorization HTTP header.
@@ -279,4 +249,34 @@ func (j JWTHandler) CheckHasRole(role string) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		return j.HasRole(c, role)
 	}
+}
+
+// ExtractTokenMetadata func to extract metadata from JWT.
+func (j JWTHandler) ExtractTokenMetadata(c *fiber.Ctx) (*Claims, error) {
+	token, err := j.verifyToken(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// Setting and checking token and credentials.
+	claims, ok := token.Claims.(*jwt.MapClaims) // Todo : MapClaims -> RegisteredClaims
+	if ok && token.Valid {
+		condensedClaims := *claims
+		// Expires time.
+		expires := condensedClaims["exp"]
+		expiresTime, ok := expires.(time.Time)
+		if !ok {
+			return nil, err
+		}
+
+		return &Claims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: &jwt.NumericDate{Time: expiresTime},
+				NotBefore: &jwt.NumericDate{Time: time.Now()},
+			},
+			Email: condensedClaims["email"].(string),
+		}, nil
+	}
+
+	return nil, err
 }
