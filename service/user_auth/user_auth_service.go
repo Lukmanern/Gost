@@ -3,15 +3,17 @@ package svc
 import (
 	"context"
 	"errors"
-	"log"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"gorm.io/gorm"
 
+	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
@@ -22,6 +24,7 @@ import (
 )
 
 type UserAuthService interface {
+	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
@@ -34,6 +37,7 @@ type UserAuthService interface {
 type UserAuthServiceImpl struct {
 	userRepository userRepository.UserRepository
 	jwtHandler     *middleware.JWTHandler
+	redis          *redis.Client
 }
 
 var (
@@ -46,25 +50,41 @@ func NewUserAuthService() UserAuthService {
 		userAuthService = &UserAuthServiceImpl{
 			userRepository: userRepository.NewUserRepository(),
 			jwtHandler:     middleware.NewJWTHandler(),
+			redis:          connector.LoadRedisDatabase(),
 		}
 	})
 
 	return userAuthService
 }
 
+func (svc UserAuthServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
+	key := "failed-login-" + userIP
+	getStatus := svc.redis.Get(key)
+	counter, _ = strconv.Atoi(getStatus.Val())
+	if increment {
+		counter++
+		setStatus := svc.redis.Set(key, counter, 50*time.Minute)
+		if setStatus.Err() != nil {
+			return 0, errors.New("storing data to redis")
+		}
+	}
+
+	return counter, nil
+}
+
 func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
-	userCheck, err := svc.userRepository.GetByEmail(ctx, user.Email)
+	userEntity, err := svc.userRepository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return "", fiber.NewError(fiber.StatusNotFound, "data not found")
 		}
 		return "", err
 	}
-	if userCheck == nil {
-		return "", fiber.NewError(fiber.StatusNotFound, "user not found")
+	if userEntity == nil {
+		return "", fiber.NewError(fiber.StatusNotFound, "data not found")
 	}
 
-	res, verfiryErr := hash.Verify(userCheck.Password, user.Password)
+	res, verfiryErr := hash.Verify(userEntity.Password, user.Password)
 	if verfiryErr != nil {
 		return "", verfiryErr
 	}
@@ -72,18 +92,19 @@ func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) 
 		return "", fiber.NewError(fiber.StatusBadRequest, "wrong password")
 	}
 
-	permissions := []string{}
-	for _, permissionEntity := range rbac.AllPermissions() {
-		permissions = append(permissions, permissionEntity.Name)
+	userRole := userEntity.Roles[0]
+	permissionMapID := make(rbac.PermissionMap, 0)
+	for _, permission := range userRole.Permissions {
+		permissionMapID[uint8(permission.ID)] = 0b_0001
 	}
-	log.Println("------------------\nlen(permissions) : ", len(permissions))
-	roleName := rbac.AllRoles()[1].Name
-
 	config := env.Configuration()
 	expired := time.Now().Add(config.AppAccessTokenTTL)
-	token, generetaErr := svc.jwtHandler.GenerateJWT(userCheck.ID, user.Email, roleName, permissions, expired)
+	token, generetaErr := svc.jwtHandler.GenerateJWT(userEntity.ID, user.Email, userRole.Name, permissionMapID, expired)
 	if generetaErr != nil {
-		return "", fiber.NewError(fiber.StatusInternalServerError, "system error while generating token, please try again")
+		return "", fiber.NewError(fiber.StatusInternalServerError, "system error while generating token ("+generetaErr.Error()+")")
+	}
+	if len(token) > 2800 {
+		return "", errors.New("token is too large, more than 2800 characters (too large for http header)")
 	}
 
 	return token, nil

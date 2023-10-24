@@ -1,17 +1,53 @@
 package rbac
 
-import "github.com/Lukmanern/gost/domain/entity"
+import (
+	"log"
 
-func AllPermissionsIDHashMap() map[int]uint8 {
-	hashMap := make(map[int]uint8, 0)
-	permissions := AllPermissions() // you can all-permissions from database also
+	"github.com/Lukmanern/gost/domain/entity"
+)
 
+// uint8 is the lowest memory cost in Golang
+// maximum value length is 255
+type (
+	PermissionMap     = map[uint8]uint8
+	PermissionNameMap = map[string]uint8
+)
+
+var (
+	PermissionHashMap     PermissionMap
+	PermissionNameHashMap PermissionNameMap
+)
+
+// Run once at app.go setupfunc
+func PermissionsHashMap() PermissionMap {
+	PermissionHashMap := make(PermissionMap, 0)
+	permissions := AllPermissions()
 	for i := range permissions {
-		hashMap[i+1] = 0b01
+		PermissionHashMap[uint8(i+1)] = 0b_0001
 	}
-	return hashMap
+
+	return PermissionHashMap
 }
 
+// Run once at app.go setupfunc
+func PermissionNamesHashMap() PermissionNameMap {
+	allPermissions := AllPermissions()
+	if len(allPermissions) > 255 {
+		// if you want make more than 255 permissions/ access
+		// you can modified type:PermissionMap and using
+		// uint16 instead of uint8
+		log.Fatal("permissions in uint8 should less than 255")
+	}
+	PermissionNameHashMap := make(PermissionNameMap)
+	for i, permission := range allPermissions {
+		PermissionNameHashMap[permission.Name] = uint8(i + 1)
+	}
+
+	return PermissionNameHashMap
+}
+
+// you should add all your
+// permissions to this func
 // for migration and seeder
 func AllPermissions() []entity.Permission {
 	permissionNames := []string{

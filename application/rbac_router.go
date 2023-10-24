@@ -25,6 +25,7 @@ func getRBACAuthRoutes(router fiber.Router) {
 	permissionController = controller.NewPermissionController(permissionService)
 	permissionRouter := router.Group("permission").Use(jwtHandler.IsAuthenticated)
 
+	// create-permission is unused
 	permissionRouter.Post("", jwtHandler.CheckHasPermission(rbac.PermissionCreatePermission), permissionController.Create)
 	permissionRouter.Get("", jwtHandler.CheckHasPermission(rbac.PermissionViewPermission), permissionController.GetAll)
 	permissionRouter.Get(":id", jwtHandler.CheckHasPermission(rbac.PermissionViewPermission), permissionController.Get)

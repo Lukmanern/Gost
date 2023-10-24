@@ -5,8 +5,10 @@ import "github.com/Lukmanern/gost/domain/entity"
 // for migration and seeder
 func AllRoles() []entity.Role {
 	roleNames := []string{
-		"admin",
-		"user",
+		RoleAdmin,
+		RoleUser,
+		// ...
+		// add more here
 	}
 
 	roles := []entity.Role{}
@@ -20,3 +22,10 @@ func AllRoles() []entity.Role {
 
 	return roles
 }
+
+const (
+	RoleUser  = "user"
+	RoleAdmin = "admin"
+	// ...
+	// add more here
+)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
@@ -23,11 +24,11 @@ type JWTHandler struct {
 }
 
 type Claims struct {
-	ID          int      `json:"id"`
-	Email       string   `json:"email"`
-	Role        string   `json:"role"`
-	Permissions []string `json:"permissions"`
-	Label       *string  `json:"label"`
+	ID          int                `json:"id"`
+	Email       string             `json:"email"`
+	Role        string             `json:"role"`
+	Permissions rbac.PermissionMap `json:"permissions"`
+	Label       *string            `json:"label"`
 	jwt.RegisteredClaims
 }
 
@@ -61,11 +62,11 @@ func NewJWTHandler() *JWTHandler {
 }
 
 // This func used for login.
-func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions []string, expired time.Time) (t string, err error) {
+func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions rbac.PermissionMap, expired time.Time) (t string, err error) {
 	if email == "" || role == "" || len(permissions) < 1 {
 		return "", errors.New("email/ role/ permission too short or void")
 	}
-	// Create the Claims
+	// Create Claims
 	claims := Claims{
 		ID:          id,
 		Email:       email,
@@ -185,6 +186,71 @@ func (j JWTHandler) ValidateWithClaim(token string) (claim jwt.MapClaims, err er
 	return claims, nil
 }
 
+func extractToken(c *fiber.Ctx) string {
+	bearerToken := c.Get("Authorization")
+	// Normally Authorization HTTP header.
+	onlyToken := strings.Split(bearerToken, " ")
+	if len(onlyToken) == 2 {
+		return onlyToken[1]
+	}
+
+	return ""
+}
+
+func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
+	tokenString := extractToken(c)
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
+		return j.publicKey, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}
+
+// type PermissionMap = map[uint8]uint8
+func (j JWTHandler) HasPermission(c *fiber.Ctx, permission string) error {
+	claims, ok := c.Locals("claims").(*Claims)
+	if !ok {
+		return response.Unauthorized(c)
+	}
+
+	// O(1) checking
+	permissionMapID := claims.Permissions
+	id, ok1 := rbac.PermissionNameHashMap[permission]
+	if !ok1 || id < 1 {
+		return response.Unauthorized(c)
+	}
+	valueOne, ok2 := permissionMapID[id]
+	if !ok2 || valueOne != 1 {
+		return response.Unauthorized(c)
+	}
+	return c.Next()
+}
+
+func (j JWTHandler) HasRole(c *fiber.Ctx, role string) error {
+	claims, ok := c.Locals("claims").(*Claims)
+	if !ok || role != claims.Role {
+		return response.Unauthorized(c)
+	}
+	return c.Next()
+}
+
+// for handler or middleware
+func (j JWTHandler) CheckHasPermission(permissions string) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		return j.HasPermission(c, permissions)
+	}
+}
+
+// for handler or middleware
+func (j JWTHandler) CheckHasRole(role string) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		return j.HasRole(c, role)
+	}
+}
+
 // ExtractTokenMetadata func to extract metadata from JWT.
 func (j JWTHandler) ExtractTokenMetadata(c *fiber.Ctx) (*Claims, error) {
 	token, err := j.verifyToken(c)
@@ -213,71 +279,4 @@ func (j JWTHandler) ExtractTokenMetadata(c *fiber.Ctx) (*Claims, error) {
 	}
 
 	return nil, err
-}
-
-func extractToken(c *fiber.Ctx) string {
-	bearerToken := c.Get("Authorization")
-	// Normally Authorization HTTP header.
-	onlyToken := strings.Split(bearerToken, " ")
-	if len(onlyToken) == 2 {
-		return onlyToken[1]
-	}
-
-	return ""
-}
-
-func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
-	tokenString := extractToken(c)
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
-		return j.publicKey, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return token, nil
-}
-
-func (j JWTHandler) HasPermission(c *fiber.Ctx, permissions ...string) error {
-	claims, ok := c.Locals("claims").(*Claims)
-	if !ok {
-		return response.Unauthorized(c)
-	}
-	for _, permission := range permissions {
-		for _, authority := range claims.Permissions {
-			if permission == authority {
-				return c.Next()
-			}
-		}
-	}
-
-	return response.Unauthorized(c)
-}
-
-func (j JWTHandler) HasRole(c *fiber.Ctx, roles ...string) error {
-	claims, ok := c.Locals("claims").(*Claims)
-	if !ok {
-		return response.Unauthorized(c)
-	}
-	for _, role := range roles {
-		if role == claims.Role {
-			return c.Next()
-		}
-	}
-
-	return response.Unauthorized(c)
-}
-
-// for handler or middleware
-func (j JWTHandler) CheckHasPermission(permissions ...string) func(c *fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		return j.HasPermission(c, permissions...)
-	}
-}
-
-// for handler or middleware
-func (j JWTHandler) CheckHasRole(roles ...string) func(c *fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		return j.HasRole(c, roles...)
-	}
 }

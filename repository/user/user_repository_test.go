@@ -83,12 +83,12 @@ func TestUserRepositoryImpl_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if !tt.wantPanic {
-				gotId, err := tt.repo.Create(tt.args.ctx, tt.args.user)
+				gotId, err := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("UserRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				} else {
-					gotId2, err2 := tt.repo.Create(tt.args.ctx, tt.args.user)
+					gotId2, err2 := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
 					if err2 == nil || gotId2 != 0 {
 						t.Error("should be error, couse email is already used")
 					}
@@ -102,7 +102,7 @@ func TestUserRepositoryImpl_Create(t *testing.T) {
 					t.Errorf("create() do not panic")
 				}
 			}()
-			userID, err := tt.repo.Create(tt.args.ctx, tt.args.user)
+			userID, err := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UserRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -127,7 +127,7 @@ func TestUserRepositoryImpl_GetByID(t *testing.T) {
 		userTableName: userTableName,
 		db:            connector.LoadDatabase(),
 	}
-	id, createErr := userRepositoryImpl.Create(ctx, user)
+	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
 	if createErr != nil {
 		t.Errorf("error while creating user")
 	}
@@ -198,7 +198,7 @@ func TestUserRepositoryImpl_GetByEmail(t *testing.T) {
 		userTableName: userTableName,
 		db:            connector.LoadDatabase(),
 	}
-	id, createErr := userRepositoryImpl.Create(ctx, user)
+	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
 	if createErr != nil {
 		t.Errorf("error while creating user")
 	}
@@ -271,7 +271,7 @@ func TestUserRepositoryImpl_GetAll(t *testing.T) {
 				UpdatedAt: &timeNow,
 			},
 		}
-		newUserID, createErr := userRepositoryImpl.Create(ctx, user)
+		newUserID, createErr := userRepositoryImpl.Create(ctx, user, 1)
 		if createErr != nil {
 			t.Errorf("error while creating user :" + id)
 		}
@@ -355,7 +355,7 @@ func TestUserRepositoryImpl_Update(t *testing.T) {
 		userTableName: userTableName,
 		db:            connector.LoadDatabase(),
 	}
-	id, createErr := userRepositoryImpl.Create(ctx, user)
+	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
 	if createErr != nil {
 		t.Errorf("error while creating user")
 	}
@@ -435,7 +435,7 @@ func TestUserRepositoryImpl_UpdatePassword(t *testing.T) {
 		userTableName: userTableName,
 		db:            connector.LoadDatabase(),
 	}
-	id, createErr := userRepositoryImpl.Create(ctx, user)
+	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
 	if createErr != nil {
 		t.Errorf("error while creating user")
 	}

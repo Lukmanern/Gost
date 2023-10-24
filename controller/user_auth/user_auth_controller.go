@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"net"
 	"sync"
 
 	"github.com/go-playground/validator/v10"
@@ -41,11 +42,22 @@ func NewUserAuthController(service service.UserAuthService) UserAuthController {
 }
 
 func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
-	// Todo : implement Max Retry/Jail in Login -> caching using Redis
 	var user model.UserLogin
+	// user.IP = c.IP() // Todo : update it in production
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
+
+	userIP := net.ParseIP(user.IP)
+	if userIP == nil {
+		return response.BadRequest(c, "invalid json body: invalid user ip address")
+	}
+	counter, _ := ctr.service.FailedLoginCounter(userIP.String(), false)
+	ipBlockMsg := "Your IP has been blocked by system. Please try again in 1 or 2 Hour"
+	if counter >= 5 {
+		return response.CreateResponse(c, fiber.StatusBadRequest, false, ipBlockMsg, nil)
+	}
+
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -54,6 +66,10 @@ func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 	ctx := c.Context()
 	token, loginErr := ctr.service.Login(ctx, user)
 	if loginErr != nil {
+		counter, _ := ctr.service.FailedLoginCounter(userIP.String(), true)
+		if counter >= 5 {
+			return response.CreateResponse(c, fiber.StatusBadRequest, false, ipBlockMsg, nil)
+		}
 		fiberErr, ok := loginErr.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
@@ -62,7 +78,8 @@ func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 	}
 
 	data := map[string]any{
-		"token": token,
+		"token":        token,
+		"token-length": len(token),
 	}
 	return response.CreateResponse(c, fiber.StatusOK, true, "success login", data)
 }

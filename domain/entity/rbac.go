@@ -2,6 +2,14 @@ package entity
 
 import "github.com/Lukmanern/gost/domain/base"
 
+// This vars used in userServiceLayer
+const (
+	ADMIN = 1
+	USER  = 2
+	// ...
+	// Add your own roleID
+)
+
 type Role struct {
 	ID          int          `gorm:"type:bigint(20) unsigned not null;autoIncrement;primaryKey" json:"id"`
 	Name        string       `gorm:"type:varchar(255) not null unique" json:"name"`
