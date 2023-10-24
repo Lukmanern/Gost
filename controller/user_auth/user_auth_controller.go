@@ -56,17 +56,19 @@ func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid json body: invalid user ip address")
 	}
 
-	// user -> login
-	// di cek udah 5x apa-belum
-	// kalo belum lanjut
-	// kalo udah 5 langsung failed
+	counter, _ := ctr.service.GetFailedLoginCounter(userIP.String())
+	if counter >= 5 {
+		ipBlockMsg := "Your IP has been blocked by system. Please try again in 1 or 2 Hour"
+		return response.CreateResponse(c, fiber.StatusBadRequest, false, ipBlockMsg, nil)
+	}
 
 	ctx := c.Context()
 	token, loginErr := ctr.service.Login(ctx, user)
 	if loginErr != nil {
-		counter, _ := ctr.service.StoringFailedLogin(userIP.String())
+		counter, _ := ctr.service.IncrementFailedLoginCounter(userIP.String())
 		if counter >= 5 {
-
+			ipBlockMsg := "Your IP has been blocked by system. Please try again in 1 or 2 Hour"
+			return response.CreateResponse(c, fiber.StatusBadRequest, false, ipBlockMsg, nil)
 		}
 		fiberErr, ok := loginErr.(*fiber.Error)
 		if ok {

@@ -24,8 +24,8 @@ import (
 )
 
 type UserAuthService interface {
-	GetCounterFailedLogin(userIP string) (counter int, err error)
-	StoringFailedLogin(userIP string) (counter int, err error)
+	GetFailedLoginCounter(userIP string) (counter int, err error)
+	IncrementFailedLoginCounter(userIP string) (counter int, err error)
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
@@ -58,36 +58,17 @@ func NewUserAuthService() UserAuthService {
 	return userAuthService
 }
 
-func (svc UserAuthServiceImpl) GetCounterFailedLogin(userIP string) (counter int, err error) {
-	if svc.redis == nil {
-		return 0, errors.New("failed connect to redis, please try again")
-	}
-
+func (svc UserAuthServiceImpl) GetFailedLoginCounter(userIP string) (counter int, err error) {
 	key := "failed-login-" + userIP
 	getStatus := svc.redis.Get(key)
 	if getStatus.Err() != nil {
-		return 0, errors.New("storing data to redis")
+		return 0, errors.New("failed getting data from redis")
 	}
-	if getStatus != nil {
-		counter, _ = strconv.Atoi(getStatus.String())
-		if counter >= 4 {
-			return 5, nil
-		}
-	}
-	counter += 1
-	redisSetStatus := svc.redis.Set(key, counter, 50*time.Minute)
-	if redisSetStatus.Err() != nil {
-		return 0, errors.New("storing data to redis")
-	}
-
+	counter, _ = strconv.Atoi(getStatus.String())
 	return counter, nil
 }
 
-func (svc UserAuthServiceImpl) StoringFailedLogin(userIP string) (counter int, err error) {
-	if svc.redis == nil {
-		return 0, errors.New("failed connect to redis, please try again")
-	}
-
+func (svc UserAuthServiceImpl) IncrementFailedLoginCounter(userIP string) (counter int, err error) {
 	key := "failed-login-" + userIP
 	getStatus := svc.redis.Get(key)
 	if getStatus.Err() != nil {
@@ -95,7 +76,7 @@ func (svc UserAuthServiceImpl) StoringFailedLogin(userIP string) (counter int, e
 	}
 	if getStatus != nil {
 		counter, _ = strconv.Atoi(getStatus.String())
-		if counter >= 4 {
+		if counter >= 5 {
 			return 5, nil
 		}
 	}
