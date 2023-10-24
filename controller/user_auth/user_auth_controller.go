@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"net"
 	"sync"
 
@@ -56,16 +57,18 @@ func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid json body: invalid user ip address")
 	}
 
-	counter, _ := ctr.service.GetFailedLoginCounter(userIP.String())
+	counter, redisErr := ctr.service.GetFailedLoginCounter(userIP.String())
 	if counter >= 5 {
 		ipBlockMsg := "Your IP has been blocked by system. Please try again in 1 or 2 Hour"
 		return response.CreateResponse(c, fiber.StatusBadRequest, false, ipBlockMsg, nil)
 	}
 
+	log.Println("noterr", userIP.String(), "----", counter, "-----", redisErr)
 	ctx := c.Context()
 	token, loginErr := ctr.service.Login(ctx, user)
 	if loginErr != nil {
-		counter, _ := ctr.service.IncrementFailedLoginCounter(userIP.String())
+		counter, redisErr := ctr.service.IncrementFailedLoginCounter(userIP.String())
+		log.Println("in-err", userIP.String(), "----", counter, "-----", redisErr)
 		if counter >= 5 {
 			ipBlockMsg := "Your IP has been blocked by system. Please try again in 1 or 2 Hour"
 			return response.CreateResponse(c, fiber.StatusBadRequest, false, ipBlockMsg, nil)

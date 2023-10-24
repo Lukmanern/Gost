@@ -61,9 +61,6 @@ func NewUserAuthService() UserAuthService {
 func (svc UserAuthServiceImpl) GetFailedLoginCounter(userIP string) (counter int, err error) {
 	key := "failed-login-" + userIP
 	getStatus := svc.redis.Get(key)
-	if getStatus.Err() != nil {
-		return 0, errors.New("failed getting data from redis")
-	}
 	counter, _ = strconv.Atoi(getStatus.String())
 	return counter, nil
 }
@@ -71,16 +68,8 @@ func (svc UserAuthServiceImpl) GetFailedLoginCounter(userIP string) (counter int
 func (svc UserAuthServiceImpl) IncrementFailedLoginCounter(userIP string) (counter int, err error) {
 	key := "failed-login-" + userIP
 	getStatus := svc.redis.Get(key)
-	if getStatus.Err() != nil {
-		return 0, errors.New("storing data to redis")
-	}
-	if getStatus != nil {
-		counter, _ = strconv.Atoi(getStatus.String())
-		if counter >= 5 {
-			return 5, nil
-		}
-	}
-	counter += 1
+	counter, _ = strconv.Atoi(getStatus.String())
+	counter = counter + 1
 	redisSetStatus := svc.redis.Set(key, counter, 50*time.Minute)
 	if redisSetStatus.Err() != nil {
 		return 0, errors.New("storing data to redis")

@@ -5,7 +5,7 @@ import "github.com/Lukmanern/gost/domain/entity"
 type UserLogin struct {
 	Email    string `validate:"required,email,min=5,max=60" json:"email"`
 	Password string `validate:"required,min=8,max=30" json:"password"`
-	IP       string `validate:"required,min=4,max:20" json:"ip"`
+	IP       string `validate:"required,min=4,max=20" json:"ip"`
 }
 
 type UserForgetPassword struct {
