@@ -118,10 +118,6 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 	if userEntity == nil {
 		return "", fiber.NewError(fiber.StatusNotFound, "data not found")
 	}
-	if !userEntity.IsActive {
-		errMsg := "Your account is already exist in our system. But it's still inactive, please check Your email inbox to activated-it"
-		return "", fiber.NewError(fiber.StatusBadRequest, errMsg)
-	}
 
 	res, verfiryErr := hash.Verify(userEntity.Password, user.Password)
 	if verfiryErr != nil {
@@ -129,6 +125,10 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 	}
 	if !res {
 		return "", fiber.NewError(fiber.StatusBadRequest, "wrong password")
+	}
+	if userEntity.ActivatedAt == nil {
+		errMsg := "Your account is already exist in our system. But it's still inactive, please check Your email inbox to activated-it"
+		return "", fiber.NewError(fiber.StatusBadRequest, errMsg)
 	}
 
 	userRole := userEntity.Roles[0]
