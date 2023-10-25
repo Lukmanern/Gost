@@ -1,4 +1,6 @@
 // don't use this for production
+// use this file just for testing
+// and testing management.
 
 package controller
 
@@ -11,7 +13,7 @@ import (
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/response"
-	service "github.com/Lukmanern/gost/service/user"
+	service "github.com/Lukmanern/gost/service/user_dev"
 )
 
 type UserController interface {
@@ -23,10 +25,10 @@ type UserController interface {
 }
 
 type UserControllerImpl struct {
-	service service.UserService
+	service service.UserDevService
 }
 
-func NewUserController(userService service.UserService) UserController {
+func NewUserController(userService service.UserDevService) UserController {
 	return &UserControllerImpl{
 		service: userService,
 	}

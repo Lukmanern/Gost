@@ -1,4 +1,6 @@
 // don't use this for production
+// use this file just for testing
+// and testing management.
 
 package service
 
@@ -19,7 +21,7 @@ import (
 	repository "github.com/Lukmanern/gost/repository/user"
 )
 
-type UserService interface {
+type UserDevService interface {
 	Create(ctx context.Context, user model.UserCreate) (id int, err error)
 	GetByID(ctx context.Context, id int) (user *model.UserResponse, err error)
 	GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error)
@@ -28,18 +30,18 @@ type UserService interface {
 	Delete(ctx context.Context, id int) (err error)
 }
 
-type UserServiceImpl struct {
+type UserDevServiceImpl struct {
 	repository repository.UserRepository
 }
 
 var (
-	userService     *UserServiceImpl
+	userService     *UserDevServiceImpl
 	userServiceOnce sync.Once
 )
 
-func NewUserService() UserService {
+func NewUserDevService() UserDevService {
 	userServiceOnce.Do(func() {
-		userService = &UserServiceImpl{
+		userService = &UserDevServiceImpl{
 			repository: repository.NewUserRepository(),
 		}
 	})
@@ -47,7 +49,7 @@ func NewUserService() UserService {
 	return userService
 }
 
-func (svc UserServiceImpl) Create(ctx context.Context, user model.UserCreate) (id int, err error) {
+func (svc UserDevServiceImpl) Create(ctx context.Context, user model.UserCreate) (id int, err error) {
 	userCheck, getErr := svc.GetByEmail(ctx, user.Email)
 	if getErr == nil || userCheck != nil {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "email has been used")
@@ -78,7 +80,7 @@ func (svc UserServiceImpl) Create(ctx context.Context, user model.UserCreate) (i
 	return id, nil
 }
 
-func (svc UserServiceImpl) GetByID(ctx context.Context, id int) (user *model.UserResponse, err error) {
+func (svc UserDevServiceImpl) GetByID(ctx context.Context, id int) (user *model.UserResponse, err error) {
 	userEntity, err := svc.repository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -95,7 +97,7 @@ func (svc UserServiceImpl) GetByID(ctx context.Context, id int) (user *model.Use
 	return user, nil
 }
 
-func (svc UserServiceImpl) GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error) {
+func (svc UserDevServiceImpl) GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error) {
 	userEntity, err := svc.repository.GetByEmail(ctx, email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -112,7 +114,7 @@ func (svc UserServiceImpl) GetByEmail(ctx context.Context, email string) (user *
 	return user, nil
 }
 
-func (svc UserServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error) {
+func (svc UserDevServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error) {
 	userEntities, total, err := svc.repository.GetAll(ctx, filter)
 	if err != nil {
 		return nil, 0, err
@@ -132,7 +134,7 @@ func (svc UserServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll
 	return users, total, nil
 }
 
-func (svc UserServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
+func (svc UserDevServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
 	isUserExist := func() bool {
 		getUser, getErr := svc.repository.GetByID(ctx, user.ID)
 		if getErr != nil {
@@ -162,7 +164,7 @@ func (svc UserServiceImpl) Update(ctx context.Context, user model.UserProfileUpd
 	return nil
 }
 
-func (svc UserServiceImpl) Delete(ctx context.Context, id int) (err error) {
+func (svc UserDevServiceImpl) Delete(ctx context.Context, id int) (err error) {
 	isUserExist := func() bool {
 		getUser, getErr := svc.repository.GetByID(ctx, id)
 		if getErr != nil {

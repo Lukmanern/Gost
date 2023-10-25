@@ -2,6 +2,12 @@ package model
 
 import "github.com/Lukmanern/gost/domain/entity"
 
+type UserRegister struct {
+	Name     string `validate:"required,min=2,max=60" json:"name"`
+	Email    string `validate:"required,email,min=5,max=60" json:"email"`
+	Password string `validate:"required,min=8,max=30" json:"password"`
+}
+
 type UserLogin struct {
 	Email    string `validate:"required,email,min=5,max=60" json:"email"`
 	Password string `validate:"required,min=8,max=30" json:"password"`

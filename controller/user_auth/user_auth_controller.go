@@ -14,6 +14,8 @@ import (
 )
 
 type UserAuthController interface {
+	Register(c *fiber.Ctx) error
+	Verification(c *fiber.Ctx) error
 	Login(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
 	ForgetPassword(c *fiber.Ctx) error
@@ -39,6 +41,35 @@ func NewUserAuthController(service service.UserAuthService) UserAuthController {
 	})
 
 	return userAuthController
+}
+
+func (ctr UserAuthControllerImpl) Register(c *fiber.Ctx) error {
+	var user model.UserRegister
+	if err := c.BodyParser(&user); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+	validate := validator.New()
+	if err := validate.Struct(&user); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+
+	ctx := c.Context()
+	id, regisErr := ctr.service.Register(ctx, user)
+	if regisErr != nil {
+		fiberErr, ok := regisErr.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return response.Error(c, "internal server error: "+regisErr.Error())
+	}
+	data := map[string]any{
+		"id": id,
+	}
+	return response.SuccessCreated(c, data)
+}
+
+func (ctr UserAuthControllerImpl) Verification(c *fiber.Ctx) error {
+	panic("impl me")
 }
 
 func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {

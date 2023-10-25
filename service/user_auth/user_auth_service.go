@@ -24,6 +24,7 @@ import (
 )
 
 type UserAuthService interface {
+	Register(ctx context.Context, user model.UserRegister) (id int, err error)
 	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
@@ -31,7 +32,6 @@ type UserAuthService interface {
 	UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
 	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
-	Register(ctx context.Context, id int) (profile model.UserProfile, err error)
 	DeleteUser(ctx context.Context, id int) (err error)
 }
 
@@ -56,6 +56,10 @@ func NewUserAuthService() UserAuthService {
 	})
 
 	return userAuthService
+}
+
+func (svc UserAuthServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {
+	panic("impl me")
 }
 
 func (svc UserAuthServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
@@ -214,34 +218,6 @@ func (svc UserAuthServiceImpl) UpdateProfile(ctx context.Context, user model.Use
 		return err
 	}
 	return nil
-}
-
-func (svc UserAuthServiceImpl) Register(ctx context.Context, id int) (profile model.UserProfile, err error) {
-	// Name: cases.Title(language.Und).String(user.Name),
-	// Title Casing string
-	user, err := svc.userRepository.GetByID(ctx, id)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return profile, fiber.NewError(fiber.StatusNotFound, "user not found")
-		}
-
-		return profile, err
-	}
-	if user == nil {
-		return profile, fiber.NewError(fiber.StatusInternalServerError, "error while checking user")
-	}
-
-	userRoles := entity.Role{}
-	if len(user.Roles) > 0 {
-		userRoles = user.Roles[0]
-	}
-	profile = model.UserProfile{
-		Name:  user.Name,
-		Email: user.Email,
-		Role:  userRoles,
-	}
-
-	return profile, nil
 }
 
 func (svc UserAuthServiceImpl) DeleteUser(ctx context.Context, id int) (err error) {
