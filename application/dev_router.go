@@ -1,3 +1,7 @@
+// don't use this for production
+// use this file just for testing
+// and testing management.
+
 package application
 
 import (
@@ -32,5 +36,5 @@ func getDevRouter(router fiber.Router) {
 	// dev email
 	emailService = service.NewEmailService()
 	emailRoutes := router.Group("email")
-	emailRoutes.Post("send-bulk", emailService.Handler)
+	emailRoutes.Post("send-bulk", emailService.TestingHandler)
 }

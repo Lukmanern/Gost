@@ -7,12 +7,13 @@ import (
 )
 
 type User struct {
-	ID          int        `gorm:"type:serial;primaryKey" json:"id"`
-	Name        string     `gorm:"type:varchar(255) not null" json:"name"`
-	Email       string     `gorm:"type:varchar(100) not null unique" json:"email"`
-	Password    string     `gorm:"type:varchar(255) not null" json:"password"`
-	ActivatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"activated_at"`
-	Roles       []Role     `gorm:"many2many:user_has_roles" json:"roles"`
+	ID               int        `gorm:"type:serial;primaryKey" json:"id"`
+	Name             string     `gorm:"type:varchar(100) not null" json:"name"`
+	Email            string     `gorm:"type:varchar(100) not null unique" json:"email"`
+	Password         string     `gorm:"type:varchar(255) not null" json:"password"`
+	VerificationCode *string    `gorm:"type:varchar(100) null" json:"verification_code"`
+	ActivatedAt      *time.Time `gorm:"type:timestamp null;default:null" json:"activated_at"`
+	Roles            []Role     `gorm:"many2many:user_has_roles" json:"roles"`
 	base.TimeFields
 }
 

@@ -17,6 +17,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user entity.User, roleID int) (id int, err error)
 	GetByID(ctx context.Context, id int) (user *entity.User, err error)
 	GetByEmail(ctx context.Context, email string) (user *entity.User, err error)
+	GetByConditions(ctx context.Context, conds map[string]any) (user *entity.User, err error)
 	GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.User, total int, err error)
 	Update(ctx context.Context, user entity.User) (err error)
 	Delete(ctx context.Context, id int) (err error)
@@ -79,6 +80,20 @@ func (repo UserRepositoryImpl) GetByID(ctx context.Context, id int) (user *entit
 func (repo UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (user *entity.User, err error) {
 	user = &entity.User{}
 	result := repo.db.Where("email = ?", email).Preload("Roles.Permissions").First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return user, nil
+}
+
+func (repo UserRepositoryImpl) GetByConditions(ctx context.Context, conds map[string]any) (user *entity.User, err error) {
+	// this func is vunarable
+	user = &entity.User{}
+	query := repo.db
+	for con, val := range conds {
+		query = query.Where(con+" ?", val)
+	}
+	result := query.Preload("Roles.Permissions").First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}

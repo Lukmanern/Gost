@@ -6,6 +6,7 @@ type UserRegister struct {
 	Name     string `validate:"required,min=2,max=60" json:"name"`
 	Email    string `validate:"required,email,min=5,max=60" json:"email"`
 	Password string `validate:"required,min=8,max=30" json:"password"`
+	RoleID   int    `validate:"required,numeric,min=1" json:"role_id"`
 }
 
 type UserLogin struct {

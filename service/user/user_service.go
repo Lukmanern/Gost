@@ -3,6 +3,7 @@ package svc
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
+	emailService "github.com/Lukmanern/gost/service/email"
 	roleService "github.com/Lukmanern/gost/service/rbac"
 )
 
@@ -38,10 +40,11 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	repository repository.UserRepository
-	roleSvc    roleService.RoleService
-	jwtHandler *middleware.JWTHandler
-	redis      *redis.Client
+	repository   repository.UserRepository
+	roleService  roleService.RoleService
+	emailService emailService.EmailService
+	jwtHandler   *middleware.JWTHandler
+	redis        *redis.Client
 }
 
 var (
@@ -52,10 +55,11 @@ var (
 func NewUserService(roleService roleService.RoleService) UserService {
 	userAuthServiceOnce.Do(func() {
 		userAuthService = &UserServiceImpl{
-			repository: repository.NewUserRepository(),
-			roleSvc:    roleService,
-			jwtHandler: middleware.NewJWTHandler(),
-			redis:      connector.LoadRedisDatabase(),
+			repository:   repository.NewUserRepository(),
+			roleService:  roleService,
+			emailService: emailService.NewEmailService(),
+			jwtHandler:   middleware.NewJWTHandler(),
+			redis:        connector.LoadRedisDatabase(),
 		}
 	})
 
@@ -64,28 +68,64 @@ func NewUserService(roleService roleService.RoleService) UserService {
 
 func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {
 	// search email
-	userByEmail, getErr := svc.repository.GetByEmail(ctx, user.Email)
-	if getErr == nil || userByEmail != nil {
+	userByEmail, getUserErr := svc.repository.GetByEmail(ctx, user.Email)
+	if getUserErr == nil || userByEmail != nil {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "email has been used")
 	}
 
 	// search role
+	roleByID, getRoleErr := svc.roleService.GetByID(ctx, user.RoleID)
+	if getRoleErr != nil || roleByID == nil {
+		return 0, fiber.NewError(fiber.StatusNotFound, "role not found")
+	}
 
+	// create verification code
 	// generate password and
 	// create user entity
-	passwordHashed, hashErr := hash.Generate(user.Password)
-	if hashErr != nil {
-		return 0, errors.New("something failed while hashing data, please try again")
+	var (
+		passwordHashed, vCode string
+		hashErr               error
+		counter               int = 0
+	)
+	for {
+		vCode = randomString(7) + randomString(7) + randomString(7)
+		userGetByCode, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
+			"verification_code =": vCode,
+		})
+		if getByCodeErr != nil || userGetByCode == nil {
+			break
+		}
+		counter += 1
+		if counter >= 150 {
+			return 0, errors.New("failed generating verification code")
+		}
+	}
+	counter = 0
+	for {
+		passwordHashed, hashErr = hash.Generate(user.Password)
+		if hashErr == nil {
+			break
+		}
+		counter += 1
+		if counter >= 150 {
+			return 0, errors.New("failed hashing user password")
+		}
 	}
 
 	userEntity := entity.User{
-		Name:     cases.Title(language.Und).String(user.Name),
-		Email:    user.Email,
-		Password: passwordHashed,
+		Name:             cases.Title(language.Und).String(user.Name),
+		Email:            user.Email,
+		Password:         passwordHashed,
+		VerificationCode: &vCode,
+		ActivatedAt:      nil,
 	}
 	userEntity.SetTimes()
+	id, err = svc.repository.Create(ctx, userEntity, user.RoleID)
+	if err != nil {
+		return 0, err
+	}
 
-	panic("impl me")
+	return id, nil
 }
 
 func (cvs UserServiceImpl) Verification(ctx context.Context, verifyCode string) (err error) {
@@ -252,4 +292,13 @@ func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserPro
 
 func (svc UserServiceImpl) DeleteUser(ctx context.Context, id int) (err error) {
 	return
+}
+
+func randomString(n int) string {
+	letterBytes := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }

@@ -15,7 +15,7 @@ import (
 )
 
 type EmailService interface {
-	Handler(c *fiber.Ctx) (err error)
+	TestingHandler(c *fiber.Ctx) (err error)
 	Send(emails []string, subject string, message string) (res map[string]bool, err error)
 }
 
@@ -55,7 +55,7 @@ var testEmails = []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com", 
 	"unsurlukman@gmail.com", "code_n}ame_safe_in_unsafe@proton.me",
 }
 
-func (svc EmailServiceImpl) Handler(c *fiber.Ctx) (err error) {
+func (svc EmailServiceImpl) TestingHandler(c *fiber.Ctx) (err error) {
 	res, err := svc.Send(testEmails, "Testing Gost Project", simpleMessage)
 	if err != nil {
 		return response.ErrorWithData(c, "internal server error: "+err.Error(), fiber.Map{
