@@ -17,9 +17,10 @@ type UserController interface {
 	Register(c *fiber.Ctx) error
 	AccountActivation(c *fiber.Ctx) error
 	DeleteAccountActivation(c *fiber.Ctx) error
+	ForgetPassword(c *fiber.Ctx) error
+	ResetPassword(c *fiber.Ctx) error
 	Login(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
-	ForgetPassword(c *fiber.Ctx) error
 	UpdatePassword(c *fiber.Ctx) error
 	UpdateProfile(c *fiber.Ctx) error
 	MyProfile(c *fiber.Ctx) error
@@ -168,6 +169,30 @@ func (ctr UserControllerImpl) Logout(c *fiber.Ctx) error {
 }
 
 func (ctr UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
+	var user model.UserForgetPassword
+	if err := c.BodyParser(&user); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+	validate := validator.New()
+	if err := validate.Struct(&user); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+
+	ctx := c.Context()
+	forgetErr := ctr.service.ForgetPassword(ctx, user)
+	if forgetErr != nil {
+		fiberErr, ok := forgetErr.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return response.Error(c, "internal server error: "+forgetErr.Error())
+	}
+
+	message := "success sending link for reset password to email, check your email inbox"
+	return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
+}
+
+func (ctr UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 	var user model.UserForgetPassword
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())

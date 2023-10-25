@@ -82,14 +82,14 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 
 	// create verification code
 	var (
-		passwordHashed, vCode string
-		hashErr               error
-		counter               int = 0
+		passwordHashed, verifCode string
+		hashErr                   error
+		counter                   int = 0
 	)
 	for {
-		vCode = randomString(7) + randomString(7) + randomString(7)
+		verifCode = randomString(7) + randomString(7) + randomString(7)
 		userGetByCode, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
-			"verification_code =": vCode,
+			"verification_code =": verifCode,
 		})
 		if getByCodeErr != nil || userGetByCode == nil {
 			break
@@ -116,7 +116,7 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 		Name:             cases.Title(language.Und).String(user.Name),
 		Email:            user.Email,
 		Password:         passwordHashed,
-		VerificationCode: &vCode,
+		VerificationCode: &verifCode,
 		ActivatedAt:      nil,
 	}
 	userEntity.SetTimes()
@@ -133,17 +133,17 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
 	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
 	message += "\n\n\n\r" // should printed as enter or <br />
-	message += ` Activation Link : <a href=http://localhost:9009/user/verification/` + vCode + `"> Verify Now </a> or http://localhost:9009/user/verification/` + vCode
+	message += ` Activation Link : <a href=http://localhost:9009/user/verification/` + verifCode + `"> Verify Now </a> or http://localhost:9009/user/verification/` + verifCode
 	message += "\n\n\n\r" // should printed as enter or <br />
-	message += ` Request Delete Link : <a href=http://localhost:9009/user/request-delete/` + vCode + `"> Verify Now </a> or http://localhost:9009/user/request-delete/` + vCode
+	message += ` Request Delete Link : <a href=http://localhost:9009/user/request-delete/` + verifCode + `"> Verify Now </a> or http://localhost:9009/user/request-delete/` + verifCode
 	message += "\n\n\n\rThank You, Best Regards BotGostProject001."
-	message += " Code : " + vCode
+	message += " Code : " + verifCode
 
 	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
 	if sendingErr != nil {
 		resString, _ := json.Marshal(resMap)
 		return 0, errors.New(sendingErr.Error() + " ($data: " +
-			string(resString) + "). User Verification Code : " + vCode)
+			string(resString) + "). User Verification Code : " + verifCode)
 	}
 
 	return id, nil
@@ -246,6 +246,60 @@ func (svc UserServiceImpl) Logout(c *fiber.Ctx) (err error) {
 }
 
 func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
+	userEntity, err := svc.repository.GetByEmail(ctx, user.Email)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return fiber.NewError(fiber.StatusNotFound, "data not found")
+		}
+		return err
+	}
+	if userEntity == nil {
+		return fiber.NewError(fiber.StatusNotFound, "data not found")
+	}
+	if userEntity.ActivatedAt == nil {
+		message := "your account has not been activated since register, please check your inbox/ spam mail."
+		return fiber.NewError(fiber.StatusBadRequest, message)
+	}
+
+	var (
+		verifCode string
+		counter   int
+	)
+	if userEntity.VerificationCode != nil {
+		for {
+			verifCode = randomString(7) + randomString(7) + randomString(7)
+			userGetByCode, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
+				"verification_code =": verifCode,
+			})
+			if getByCodeErr != nil || userGetByCode == nil {
+				break
+			}
+			counter += 1
+			if counter >= 150 {
+				return errors.New("failed generating verification code")
+			}
+		}
+	}
+	userEntity.VerificationCode = &verifCode
+	userEntity.SetUpdateTime()
+
+	err = svc.repository.Update(ctx, *userEntity)
+	if err != nil {
+		return err
+	}
+
+	var (
+		toEmail          []string
+		subject, message string
+	)
+
+	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
+	if sendingErr != nil {
+		resString, _ := json.Marshal(resMap)
+		return errors.New(sendingErr.Error() + " ($data: " + string(resString) +
+			"). User Verification Code : " + verifCode)
+	}
+
 	return nil
 }
 
