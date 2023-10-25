@@ -169,16 +169,13 @@ func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) 
 func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) {
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
 		"verification_code =": verifyCode,
-		"activated_at =":      nil,
 	})
 	if getByCodeErr != nil || userEntity == nil {
 		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
 	}
-	userEntity.ActivatedAccount()
-	userEntity.SetUpdateTime()
-	updateErr := svc.repository.Update(ctx, *userEntity)
-	if updateErr != nil {
-		return updateErr
+	deleteErr := svc.repository.Delete(ctx, userEntity.ID)
+	if deleteErr != nil {
+		return deleteErr
 	}
 	return nil
 }
