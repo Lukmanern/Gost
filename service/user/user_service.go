@@ -30,6 +30,7 @@ import (
 type UserService interface {
 	Register(ctx context.Context, user model.UserRegister) (id int, err error)
 	Verification(ctx context.Context, verifyCode string) (err error)
+	DeleteUserByVerification(ctx context.Context, verifyCode string) (err error)
 	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
@@ -51,8 +52,6 @@ type UserServiceImpl struct {
 var (
 	userAuthService     *UserServiceImpl
 	userAuthServiceOnce sync.Once
-	subject             string = "Gost Project Activation Account"
-	message             string = "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern. Your account has already been created but is not yet active. To activate your account, you can click on the Activation Link. If you do not recall registering for an account on Project Gost, you can request data deletion by clicking the Link Request Delete Inactive Account."
 )
 
 func NewUserService(roleService roleService.RoleService) UserService {
@@ -130,16 +129,31 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 
 	// sending verify email
 	toEmail := []string{user.Email}
-	res, sendingErr := svc.emailService.Send(toEmail, subject, message)
+	subject := "Gost Project Activation Account"
+	message := "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern."
+	message += " Your account has already been created but is not yet active. To activate your account,"
+	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
+	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
+	message += "\n\n\n  <enter>"
+	message += `Activation Link : <a href=http://localhost:9009/user/verification/` + vCode + `"> Verify Now </a> or http://localhost:9009/user/verification/` + vCode
+	message += "\n\n\n  <enter>"
+	message += ` Request Delete Link : <a href=http://localhost:9009/user/request-delete/` + vCode + `"> Verify Now </a> or http://localhost:9009/user/request-delete/` + vCode
+	message += "\n\n\n  <enter>Thank You, Best Regards BotGostProject001"
+
+	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
 	if sendingErr != nil {
-		jsonData, _ := json.Marshal(res)
-		return 0, errors.New(sendingErr.Error() + " (data: " + string(jsonData) + ")")
+		resString, _ := json.Marshal(resMap)
+		return 0, errors.New(sendingErr.Error() + " ($data: " + string(resString) + ")")
 	}
 
 	return id, nil
 }
 
 func (cvs UserServiceImpl) Verification(ctx context.Context, verifyCode string) (err error) {
+	return
+}
+
+func (cvs UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) {
 	return
 }
 

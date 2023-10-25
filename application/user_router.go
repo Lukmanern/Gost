@@ -28,7 +28,8 @@ func getUserRoutes(router fiber.Router) {
 	userRoute := router.Group("user")
 	userRoute.Post("login", userController.Login)
 	userRoute.Post("register", userController.Register)
-	userRoute.Post("verification", userController.Verification)
+	userRoute.Post("verification", userController.AccountActivation)
+	userRoute.Post("request-delete", userController.DeleteAccountActivation)
 
 	userRouteAuth := userRoute.Use(jwtHandler.IsAuthenticated)
 	userRouteAuth.Get("my-profile", userController.MyProfile)

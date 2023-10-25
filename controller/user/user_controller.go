@@ -15,7 +15,8 @@ import (
 
 type UserController interface {
 	Register(c *fiber.Ctx) error
-	Verification(c *fiber.Ctx) error
+	AccountActivation(c *fiber.Ctx) error
+	DeleteAccountActivation(c *fiber.Ctx) error
 	Login(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
 	ForgetPassword(c *fiber.Ctx) error
@@ -68,13 +69,47 @@ func (ctr UserControllerImpl) Register(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, data)
 }
 
-func (ctr UserControllerImpl) Verification(c *fiber.Ctx) error {
-	panic("impl me")
+func (ctr UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
+	var user model.UserVerificationCode
+	if err := c.BodyParser(&user); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+	ctx := c.Context()
+	err := ctr.service.Verification(ctx, user.Code)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return response.Error(c, "internal server error: "+err.Error())
+	}
+
+	return response.CreateResponse(c, fiber.StatusOK, true,
+		"Thank you for your confirmation. Your account is active now.", nil)
+}
+
+func (ctr UserControllerImpl) DeleteAccountActivation(c *fiber.Ctx) error {
+	var user model.UserVerificationCode
+	if err := c.BodyParser(&user); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+	ctx := c.Context()
+	err := ctr.service.Verification(ctx, user.Code)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return response.Error(c, "internal server error: "+err.Error())
+	}
+
+	return response.CreateResponse(c, fiber.StatusOK, true,
+		"Thank you for your confirmation. Your account is active now.", nil)
 }
 
 func (ctr UserControllerImpl) Login(c *fiber.Ctx) error {
 	var user model.UserLogin
-	// user.IP = c.IP() // Todo : update it in production
+	// user.IP = c.IP() // Todo : uncomment this line in production
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
