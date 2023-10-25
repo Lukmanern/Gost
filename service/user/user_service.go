@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"math/rand"
 	"strconv"
@@ -50,6 +51,8 @@ type UserServiceImpl struct {
 var (
 	userAuthService     *UserServiceImpl
 	userAuthServiceOnce sync.Once
+	subject             string = "Gost Project Activation Account"
+	message             string = "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern. Your account has already been created but is not yet active. To activate your account, you can click on the Activation Link. If you do not recall registering for an account on Project Gost, you can request data deletion by clicking the Link Request Delete Inactive Account."
 )
 
 func NewUserService(roleService roleService.RoleService) UserService {
@@ -123,6 +126,14 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	id, err = svc.repository.Create(ctx, userEntity, user.RoleID)
 	if err != nil {
 		return 0, err
+	}
+
+	// sending verify email
+	toEmail := []string{user.Email}
+	res, sendingErr := svc.emailService.Send(toEmail, subject, message)
+	if sendingErr != nil {
+		jsonData, _ := json.Marshal(res)
+		return 0, errors.New(sendingErr.Error() + " (data: " + string(jsonData) + ")")
 	}
 
 	return id, nil

@@ -45,15 +45,13 @@ func NewEmailService() EmailService {
 	return emailService
 }
 
-const simpleMessage = `Lorem ipsum, dolor sit amet consectetur adipisicing elit. Ad consequuntur 
-similique voluptatibus ab enim harum dolor, sit, corporis repellendus culpa cum, quasi corrupti! 
-Impedit inventore cum optio quas, nisi aliquid ullam omnis voluptas, architecto deserunt, sint 
-tempora? Iure ea alias recusandae sunt ad, vero laudantium esse.`
+const simpleMessage = `Hello, I am RobotAdmin001 from Project Gost: Golang Starter By Lukmanern. 
+Your account has already been created but is not yet active. To activate your account, 
+you can click on the Activation Link. If you do not recall registering for an account 
+on Project Gost, you can request data deletion by clicking the Link Request Delete 
+Inactive Account.`
 
-var testEmails = []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com", "code_name_safe_in_unsafe@proton.me",
-	"lukmanernandi16@gmail.com.", "unsurlukm an@gmail.com", "code _name_safe_in_unsafe@proton.me", "lukmanern*a)ndi16@gmail.com",
-	"unsurlukman@gmail.com", "code_n}ame_safe_in_unsafe@proton.me",
-}
+var testEmails = []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com"}
 
 func (svc EmailServiceImpl) TestingHandler(c *fiber.Ctx) (err error) {
 	res, err := svc.Send(testEmails, "Testing Gost Project", simpleMessage)
@@ -92,10 +90,10 @@ func (svc EmailServiceImpl) Send(emails []string, subject string, message string
 	errorSends := make([]error, lenEmails)
 	var wg sync.WaitGroup
 
+	addr := svc.getSMTPAddr()
+	auth := svc.getAuth()
+	mime := svc.getMime()
 	for i, email := range emails {
-		addr := svc.getSMTPAddr()
-		auth := svc.getAuth()
-		mime := svc.getMime()
 		body := "From: " + svc.Email + "\n" +
 			"To: " + email + "\n" +
 			"Subject: " + subject + "\n" + mime +
