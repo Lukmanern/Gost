@@ -63,10 +63,13 @@ func (ctr UserControllerImpl) Register(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+regisErr.Error())
 	}
+
+	message := "Account success created. please check " + user.Email +
+		" inbox, our system has sended verification code or link."
 	data := map[string]any{
 		"id": id,
 	}
-	return response.SuccessCreated(c, data)
+	return response.CreateResponse(c, fiber.StatusCreated, true, message, data)
 }
 
 func (ctr UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
@@ -94,7 +97,7 @@ func (ctr UserControllerImpl) DeleteAccountActivation(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	ctx := c.Context()
-	err := ctr.service.Verification(ctx, user.Code)
+	err := ctr.service.DeleteUserByVerification(ctx, user.Code)
 	if err != nil {
 		fiberErr, ok := err.(*fiber.Error)
 		if ok {
@@ -103,8 +106,8 @@ func (ctr UserControllerImpl) DeleteAccountActivation(c *fiber.Ctx) error {
 		return response.Error(c, "internal server error: "+err.Error())
 	}
 
-	return response.CreateResponse(c, fiber.StatusOK, true,
-		"Thank you for your confirmation. Your account is active now.", nil)
+	message := "Your data is already deleted, thank you for your confirmation."
+	return response.CreateResponse(c, fiber.StatusOK, true, message, nil)
 }
 
 func (ctr UserControllerImpl) Login(c *fiber.Ctx) error {

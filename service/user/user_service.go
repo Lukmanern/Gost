@@ -82,8 +82,6 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	}
 
 	// create verification code
-	// generate password and
-	// create user entity
 	var (
 		passwordHashed, vCode string
 		hashErr               error
@@ -102,6 +100,7 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 			return 0, errors.New("failed generating verification code")
 		}
 	}
+	// generate password
 	counter = 0
 	for {
 		passwordHashed, hashErr = hash.Generate(user.Password)
@@ -135,16 +134,17 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
 	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
 	message += "\n\n\n\r" // should printed as enter or <br />
-	message += `Activation Link : <a href=http://localhost:9009/user/verification/` + vCode + `"> Verify Now </a> or http://localhost:9009/user/verification/` + vCode
+	message += ` Activation Link : <a href=http://localhost:9009/user/verification/` + vCode + `"> Verify Now </a> or http://localhost:9009/user/verification/` + vCode
 	message += "\n\n\n\r" // should printed as enter or <br />
 	message += ` Request Delete Link : <a href=http://localhost:9009/user/request-delete/` + vCode + `"> Verify Now </a> or http://localhost:9009/user/request-delete/` + vCode
-	message += "\n\n\n\rThank You, Best Regards BotGostProject001"
-	message += "Code : " + vCode
+	message += "\n\n\n\rThank You, Best Regards BotGostProject001."
+	message += " Code : " + vCode
 
 	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
 	if sendingErr != nil {
 		resString, _ := json.Marshal(resMap)
-		return 0, errors.New(sendingErr.Error() + " ($data: " + string(resString) + ")")
+		return 0, errors.New(sendingErr.Error() + " ($data: " +
+			string(resString) + "). User Verification Code : " + vCode)
 	}
 
 	return id, nil
@@ -167,7 +167,20 @@ func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) 
 }
 
 func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) {
-	return
+	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
+		"verification_code =": verifyCode,
+		"activated_at =":      nil,
+	})
+	if getByCodeErr != nil || userEntity == nil {
+		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
+	}
+	userEntity.ActivatedAccount()
+	userEntity.SetUpdateTime()
+	updateErr := svc.repository.Update(ctx, *userEntity)
+	if updateErr != nil {
+		return updateErr
+	}
+	return nil
 }
 
 func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
@@ -205,7 +218,7 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 		return "", fiber.NewError(fiber.StatusBadRequest, "wrong password")
 	}
 	if userEntity.ActivatedAt == nil {
-		errMsg := "Your account is already exist in our system. But it's still inactive, please check Your email inbox to activated-it"
+		errMsg := "Your account is already exist in our system, but it's still inactive, please check Your email inbox to activated-it"
 		return "", fiber.NewError(fiber.StatusBadRequest, errMsg)
 	}
 
@@ -260,12 +273,23 @@ func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPa
 		return fiber.NewError(fiber.StatusBadRequest, "wrong password")
 	}
 
-	newPasswordHashed, hashErr := hash.Generate(user.NewPassword)
-	if hashErr != nil {
-		return errors.New("something failed while hashing new data, please try again")
+	var (
+		hashErr      error
+		passwdHashed string
+		counter      int
+	)
+	for {
+		passwdHashed, hashErr = hash.Generate(user.NewPassword)
+		if hashErr == nil {
+			break
+		}
+		counter += 1
+		if counter >= 150 {
+			return errors.New("failed hashing user password")
+		}
 	}
 
-	updateErr := svc.repository.UpdatePassword(ctx, userCheck.ID, newPasswordHashed)
+	updateErr := svc.repository.UpdatePassword(ctx, userCheck.ID, passwdHashed)
 	if updateErr != nil {
 		return updateErr
 	}
@@ -312,6 +336,7 @@ func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserPro
 	}
 
 	userEntity := entity.User{
+		ID:               user.ID,
 		Name:             cases.Title(language.Und).String(user.Name),
 		VerificationCode: userByID.VerificationCode,
 		ActivatedAt:      userByID.ActivatedAt,

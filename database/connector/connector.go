@@ -3,6 +3,7 @@ package connector
 import (
 	"log"
 	"sync"
+	"time"
 
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/go-redis/redis"
@@ -48,6 +49,11 @@ func LoadDatabase() *gorm.DB {
 		if pingErr != nil {
 			log.Panicf("can't ping sql-db : %s", pingErr)
 		}
+
+		// config for small-to-medium web applications
+		database.SetMaxOpenConns(25)
+		database.SetMaxIdleConns(25)
+		database.SetConnMaxLifetime(time.Hour)
 	})
 
 	return gormDatabase
