@@ -7,38 +7,44 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func Test_getUserRoutes(t *testing.T) {
+func Test_getUserAuthRoutes(t *testing.T) {
 	env.ReadConfig("./../.env")
 	router := fiber.New()
 
 	type args struct {
 		router fiber.Router
 	}
+
 	tests := []struct {
 		name string
 		args args
 	}{
 		{
-			name: "Test create user route",
+			name: "Test login route",
 			args: args{router: router},
 		},
 		{
-			name: "Test get all users route",
+			name: "Test my-profile route",
 			args: args{router: router},
 		},
 		{
-			name: "Test get user by ID route",
+			name: "Test logout route",
 			args: args{router: router},
 		},
 		{
-			name: "Test update user route",
+			name: "Test update-profile route",
 			args: args{router: router},
 		},
 		{
-			name: "Test delete user route",
+			name: "Test forget-password route",
+			args: args{router: router},
+		},
+		{
+			name: "Test update-password route",
 			args: args{router: router},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			getUserRoutes(tt.args.router)

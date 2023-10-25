@@ -1,27 +1,33 @@
-// don't use this for production
-
 package application
 
 import (
 	"github.com/gofiber/fiber/v2"
 
-	controller "github.com/Lukmanern/gost/controller/user_dev"
-	service "github.com/Lukmanern/gost/service/user_dev"
+	"github.com/Lukmanern/gost/internal/middleware"
+
+	controller "github.com/Lukmanern/gost/controller/user_auth"
+	service "github.com/Lukmanern/gost/service/user_auth"
 )
 
 var (
-	userService    service.UserDevService
-	userController controller.UserController
+	userAuthService    service.UserAuthService
+	userAuthController controller.UserAuthController
 )
 
 func getUserRoutes(router fiber.Router) {
-	userService = service.NewUserDevService()
-	userController = controller.NewUserController(userService)
+	jwtHandler := middleware.NewJWTHandler()
+	userAuthService = service.NewUserAuthService()
+	userAuthController = controller.NewUserAuthController(userAuthService)
 
-	userRoute := router.Group("user/dev")
-	userRoute.Post("create", userController.Create)
-	userRoute.Get("", userController.GetAll)
-	userRoute.Get(":id", userController.Get)
-	userRoute.Put(":id", userController.Update)
-	userRoute.Delete(":id", userController.Delete)
+	userAuthRoute := router.Group("user")
+	userAuthRoute.Post("login", userAuthController.Login)
+	userAuthRoute.Post("register", userAuthController.Register)
+	userAuthRoute.Post("verification", userAuthController.Verification)
+
+	userAuthRouteAuth := userAuthRoute.Use(jwtHandler.IsAuthenticated)
+	userAuthRouteAuth.Get("my-profile", userAuthController.MyProfile)
+	userAuthRouteAuth.Post("logout", userAuthController.Logout)
+	userAuthRouteAuth.Post("profile-update", userAuthController.UpdateProfile)
+	userAuthRouteAuth.Post("forget-password", userAuthController.ForgetPassword)
+	userAuthRouteAuth.Post("update-password", userAuthController.UpdatePassword)
 }

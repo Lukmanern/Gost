@@ -18,7 +18,7 @@ var (
 	permissionController controller.PermissionController
 )
 
-func getRBACAuthRoutes(router fiber.Router) {
+func getRbacRoutes(router fiber.Router) {
 	jwtHandler := middleware.NewJWTHandler()
 
 	permissionService = service.NewPermissionService()
