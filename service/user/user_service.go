@@ -35,6 +35,7 @@ type UserService interface {
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
+	ResetPassword(ctx context.Context, user model.UserResetPassword) (err error)
 	UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
 	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
@@ -132,10 +133,6 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	message += " Your account has already been created but is not yet active. To activate your account,"
 	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
 	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
-	message += "\n\n\n\r" // should printed as enter or <br />
-	message += ` Activation Link : <a href=http://localhost:9009/user/verification/` + verifCode + `"> Verify Now </a> or http://localhost:9009/user/verification/` + verifCode
-	message += "\n\n\n\r" // should printed as enter or <br />
-	message += ` Request Delete Link : <a href=http://localhost:9009/user/request-delete/` + verifCode + `"> Verify Now </a> or http://localhost:9009/user/request-delete/` + verifCode
 	message += "\n\n\n\rThank You, Best Regards BotGostProject001."
 	message += " Code : " + verifCode
 
@@ -288,11 +285,14 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 		return err
 	}
 
-	var (
-		toEmail          []string
-		subject, message string
-	)
-
+	toEmail := []string{user.Email}
+	subject := "Gost Project Reset Password"
+	message := "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern."
+	message += " Your account has already been created but is not yet active. To activate your account,"
+	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
+	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
+	message += "\n\n\n\rThank You, Best Regards BotGostProject001."
+	message += " Code : " + verifCode
 	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
 	if sendingErr != nil {
 		resString, _ := json.Marshal(resMap)
@@ -303,19 +303,56 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 	return nil
 }
 
-func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
-	userCheck, err := svc.repository.GetByID(ctx, user.ID)
+func (svc UserServiceImpl) ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) {
+	userByCode, err := svc.repository.GetByConditions(ctx, map[string]any{
+		"verification_code =": user.Code,
+	})
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, "data not found")
 		}
 		return err
 	}
-	if userCheck == nil {
+	if userByCode == nil {
 		return fiber.NewError(fiber.StatusNotFound, "user not found")
 	}
 
-	res, verfiryErr := hash.Verify(userCheck.Password, user.OldPassword)
+	var (
+		hashErr      error
+		passwdHashed string
+		counter      int
+	)
+	for {
+		passwdHashed, hashErr = hash.Generate(user.NewPassword)
+		if hashErr == nil {
+			break
+		}
+		counter += 1
+		if counter >= 150 {
+			return errors.New("failed hashing user password")
+		}
+	}
+
+	updateErr := svc.repository.UpdatePassword(ctx, userByCode.ID, passwdHashed)
+	if updateErr != nil {
+		return updateErr
+	}
+	return nil
+}
+
+func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
+	userByID, err := svc.repository.GetByID(ctx, user.ID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return fiber.NewError(fiber.StatusNotFound, "data not found")
+		}
+		return err
+	}
+	if userByID == nil {
+		return fiber.NewError(fiber.StatusNotFound, "user not found")
+	}
+
+	res, verfiryErr := hash.Verify(userByID.Password, user.OldPassword)
 	if verfiryErr != nil {
 		return verfiryErr
 	}
@@ -338,10 +375,14 @@ func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPa
 			return errors.New("failed hashing user password")
 		}
 	}
-
-	updateErr := svc.repository.UpdatePassword(ctx, userCheck.ID, passwdHashed)
+	userByID.VerificationCode = nil
+	updateErr := svc.repository.Update(ctx, *userByID)
 	if updateErr != nil {
 		return updateErr
+	}
+	updatePwErr := svc.repository.UpdatePassword(ctx, userByID.ID, passwdHashed)
+	if updatePwErr != nil {
+		return updatePwErr
 	}
 
 	return nil

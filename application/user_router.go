@@ -31,6 +31,7 @@ func getUserRoutes(router fiber.Router) {
 	userRoute.Post("verification", userController.AccountActivation)
 	userRoute.Post("request-delete", userController.DeleteAccountActivation)
 	userRoute.Post("forget-password", userController.ForgetPassword)
+	userRoute.Post("reset-password", userController.ResetPassword)
 
 	userRouteAuth := userRoute.Use(jwtHandler.IsAuthenticated)
 	userRouteAuth.Post("logout", userController.Logout)

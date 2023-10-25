@@ -2,7 +2,8 @@
 
 ### Todo / OnDev
 
-4. Finishing user services
+1. Finishing user services
+2. Set update time -> used in repository / or how?
 
 ### Done / OnTest
 
