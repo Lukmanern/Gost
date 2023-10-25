@@ -26,7 +26,6 @@ func getDevRouter(router fiber.Router) {
 	devRouter.Get("storing-to-redis", devController.StoringToRedis)
 	devRouter.Get("get-from-redis", devController.GetFromRedis)
 
-	// userAuthRoute.Use(jwtHandler.IsAuthenticated)
 	devAuthRoute := devRouter.Use(jwtHandler.IsAuthenticated)
 	devAuthRoute.Get("validate-jwt", devController.ValidateNewJWT)
 

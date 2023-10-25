@@ -20,11 +20,13 @@ import (
 	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/rbac"
-	userRepository "github.com/Lukmanern/gost/repository/user"
+	repository "github.com/Lukmanern/gost/repository/user"
+	roleService "github.com/Lukmanern/gost/service/rbac"
 )
 
 type UserService interface {
 	Register(ctx context.Context, user model.UserRegister) (id int, err error)
+	Verification(ctx context.Context, verifyCode string) (err error)
 	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
@@ -36,9 +38,10 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	userRepository userRepository.UserRepository
-	jwtHandler     *middleware.JWTHandler
-	redis          *redis.Client
+	repository repository.UserRepository
+	roleSvc    roleService.RoleService
+	jwtHandler *middleware.JWTHandler
+	redis      *redis.Client
 }
 
 var (
@@ -46,12 +49,13 @@ var (
 	userAuthServiceOnce sync.Once
 )
 
-func NewUserService() UserService {
+func NewUserService(roleService roleService.RoleService) UserService {
 	userAuthServiceOnce.Do(func() {
 		userAuthService = &UserServiceImpl{
-			userRepository: userRepository.NewUserRepository(),
-			jwtHandler:     middleware.NewJWTHandler(),
-			redis:          connector.LoadRedisDatabase(),
+			repository: repository.NewUserRepository(),
+			roleSvc:    roleService,
+			jwtHandler: middleware.NewJWTHandler(),
+			redis:      connector.LoadRedisDatabase(),
 		}
 	})
 
@@ -59,7 +63,33 @@ func NewUserService() UserService {
 }
 
 func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {
+	// search email
+	userByEmail, getErr := svc.repository.GetByEmail(ctx, user.Email)
+	if getErr == nil || userByEmail != nil {
+		return 0, fiber.NewError(fiber.StatusBadRequest, "email has been used")
+	}
+
+	// search role
+
+	// generate password and
+	// create user entity
+	passwordHashed, hashErr := hash.Generate(user.Password)
+	if hashErr != nil {
+		return 0, errors.New("something failed while hashing data, please try again")
+	}
+
+	userEntity := entity.User{
+		Name:     cases.Title(language.Und).String(user.Name),
+		Email:    user.Email,
+		Password: passwordHashed,
+	}
+	userEntity.SetTimes()
+
 	panic("impl me")
+}
+
+func (cvs UserServiceImpl) Verification(ctx context.Context, verifyCode string) (err error) {
+	return
 }
 
 func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
@@ -78,7 +108,7 @@ func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (co
 }
 
 func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
-	userEntity, err := svc.userRepository.GetByEmail(ctx, user.Email)
+	userEntity, err := svc.repository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return "", fiber.NewError(fiber.StatusNotFound, "data not found")
@@ -133,7 +163,7 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 }
 
 func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
-	userCheck, err := svc.userRepository.GetByID(ctx, user.ID)
+	userCheck, err := svc.repository.GetByID(ctx, user.ID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, "data not found")
@@ -157,7 +187,7 @@ func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPa
 		return errors.New("something failed while hashing new data, please try again")
 	}
 
-	updateErr := svc.userRepository.UpdatePassword(ctx, userCheck.ID, newPasswordHashed)
+	updateErr := svc.repository.UpdatePassword(ctx, userCheck.ID, newPasswordHashed)
 	if updateErr != nil {
 		return updateErr
 	}
@@ -166,7 +196,7 @@ func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPa
 }
 
 func (svc UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
-	user, err := svc.userRepository.GetByID(ctx, id)
+	user, err := svc.repository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return profile, fiber.NewError(fiber.StatusNotFound, "user not found")
@@ -193,7 +223,7 @@ func (svc UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model
 
 func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
 	isUserExist := func() bool {
-		getUser, getErr := svc.userRepository.GetByID(ctx, user.ID)
+		getUser, getErr := svc.repository.GetByID(ctx, user.ID)
 		if getErr != nil {
 			return false
 		}
@@ -213,7 +243,7 @@ func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserPro
 	}
 	userEntity.SetUpdateTime()
 
-	err = svc.userRepository.Update(ctx, userEntity)
+	err = svc.repository.Update(ctx, userEntity)
 	if err != nil {
 		return err
 	}
