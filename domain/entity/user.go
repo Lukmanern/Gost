@@ -17,6 +17,12 @@ type User struct {
 	base.TimeFields
 }
 
+func (e *User) ActivatedAccount() {
+	timeNow := time.Now()
+	e.ActivatedAt = &timeNow
+	e.VerificationCode = nil
+}
+
 func (e *User) TableName() string {
 	return "users"
 }

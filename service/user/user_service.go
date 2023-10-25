@@ -134,11 +134,12 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	message += " Your account has already been created but is not yet active. To activate your account,"
 	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
 	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
-	message += "\n\n\n  <enter>"
+	message += "\n\n\n\r" // should printed as enter or <br />
 	message += `Activation Link : <a href=http://localhost:9009/user/verification/` + vCode + `"> Verify Now </a> or http://localhost:9009/user/verification/` + vCode
-	message += "\n\n\n  <enter>"
+	message += "\n\n\n\r" // should printed as enter or <br />
 	message += ` Request Delete Link : <a href=http://localhost:9009/user/request-delete/` + vCode + `"> Verify Now </a> or http://localhost:9009/user/request-delete/` + vCode
-	message += "\n\n\n  <enter>Thank You, Best Regards BotGostProject001"
+	message += "\n\n\n\rThank You, Best Regards BotGostProject001"
+	message += "Code : " + vCode
 
 	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
 	if sendingErr != nil {
@@ -149,11 +150,23 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	return id, nil
 }
 
-func (cvs UserServiceImpl) Verification(ctx context.Context, verifyCode string) (err error) {
-	return
+func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) (err error) {
+	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
+		"verification_code =": verifyCode,
+	})
+	if getByCodeErr != nil || userEntity == nil {
+		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
+	}
+	userEntity.ActivatedAccount()
+	userEntity.SetUpdateTime()
+	updateErr := svc.repository.Update(ctx, *userEntity)
+	if updateErr != nil {
+		return updateErr
+	}
+	return nil
 }
 
-func (cvs UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) {
+func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) {
 	return
 }
 
@@ -287,24 +300,21 @@ func (svc UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model
 }
 
 func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
-	isUserExist := func() bool {
-		getUser, getErr := svc.repository.GetByID(ctx, user.ID)
-		if getErr != nil {
-			return false
+	userByID, getErr := svc.repository.GetByID(ctx, user.ID)
+	if getErr != nil {
+		if getErr == gorm.ErrRecordNotFound {
+			return fiber.NewError(fiber.StatusNotFound, "data not found")
 		}
-		if getUser == nil {
-			return false
-		}
-
-		return true
+		return err
 	}
-	if !isUserExist() {
+	if userByID == nil {
 		return fiber.NewError(fiber.StatusNotFound, "data not found")
 	}
 
 	userEntity := entity.User{
-		ID:   user.ID,
-		Name: cases.Title(language.Und).String(user.Name),
+		Name:             cases.Title(language.Und).String(user.Name),
+		VerificationCode: userByID.VerificationCode,
+		ActivatedAt:      userByID.ActivatedAt,
 	}
 	userEntity.SetUpdateTime()
 

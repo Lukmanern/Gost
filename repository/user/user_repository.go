@@ -122,15 +122,17 @@ func (repo UserRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGe
 
 func (repo UserRepositoryImpl) Update(ctx context.Context, user entity.User) (err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
-		var oldUser entity.User
-		result := tx.Where("id = ?", user.ID).First(&oldUser)
+		var oldData entity.User
+		result := tx.Where("id = ?", user.ID).First(&oldData)
 		if result.Error != nil {
 			return result.Error
 		}
 
-		oldUser.Name = user.Name
-		oldUser.UpdatedAt = user.UpdatedAt
-		result = tx.Save(&oldUser)
+		oldData.Name = user.Name
+		oldData.ActivatedAt = user.ActivatedAt
+		oldData.VerificationCode = user.VerificationCode
+		oldData.UpdatedAt = user.UpdatedAt
+		result = tx.Save(&oldData)
 		if result.Error != nil {
 			return result.Error
 		}
