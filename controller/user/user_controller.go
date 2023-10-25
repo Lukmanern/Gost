@@ -10,10 +10,10 @@ import (
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/response"
-	service "github.com/Lukmanern/gost/service/user_auth"
+	service "github.com/Lukmanern/gost/service/user"
 )
 
-type UserAuthController interface {
+type UserController interface {
 	Register(c *fiber.Ctx) error
 	Verification(c *fiber.Ctx) error
 	Login(c *fiber.Ctx) error
@@ -24,18 +24,18 @@ type UserAuthController interface {
 	MyProfile(c *fiber.Ctx) error
 }
 
-type UserAuthControllerImpl struct {
-	service service.UserAuthService
+type UserControllerImpl struct {
+	service service.UserService
 }
 
 var (
-	userAuthController     *UserAuthControllerImpl
+	userAuthController     *UserControllerImpl
 	userAuthControllerOnce sync.Once
 )
 
-func NewUserAuthController(service service.UserAuthService) UserAuthController {
+func NewUserController(service service.UserService) UserController {
 	userAuthControllerOnce.Do(func() {
-		userAuthController = &UserAuthControllerImpl{
+		userAuthController = &UserControllerImpl{
 			service: service,
 		}
 	})
@@ -43,7 +43,7 @@ func NewUserAuthController(service service.UserAuthService) UserAuthController {
 	return userAuthController
 }
 
-func (ctr UserAuthControllerImpl) Register(c *fiber.Ctx) error {
+func (ctr UserControllerImpl) Register(c *fiber.Ctx) error {
 	var user model.UserRegister
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -68,11 +68,11 @@ func (ctr UserAuthControllerImpl) Register(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, data)
 }
 
-func (ctr UserAuthControllerImpl) Verification(c *fiber.Ctx) error {
+func (ctr UserControllerImpl) Verification(c *fiber.Ctx) error {
 	panic("impl me")
 }
 
-func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
+func (ctr UserControllerImpl) Login(c *fiber.Ctx) error {
 	var user model.UserLogin
 	// user.IP = c.IP() // Todo : update it in production
 	if err := c.BodyParser(&user); err != nil {
@@ -115,7 +115,7 @@ func (ctr UserAuthControllerImpl) Login(c *fiber.Ctx) error {
 	return response.CreateResponse(c, fiber.StatusOK, true, "success login", data)
 }
 
-func (ctr UserAuthControllerImpl) Logout(c *fiber.Ctx) error {
+func (ctr UserControllerImpl) Logout(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
 		return response.Unauthorized(c)
@@ -129,7 +129,7 @@ func (ctr UserAuthControllerImpl) Logout(c *fiber.Ctx) error {
 	return response.CreateResponse(c, fiber.StatusOK, true, "success logout", nil)
 }
 
-func (ctr UserAuthControllerImpl) ForgetPassword(c *fiber.Ctx) error {
+func (ctr UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	var user model.UserForgetPassword
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -153,7 +153,7 @@ func (ctr UserAuthControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
 }
 
-func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
+func (ctr UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
 		return response.Unauthorized(c)
@@ -189,7 +189,7 @@ func (ctr UserAuthControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
-func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
+func (ctr UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
 		return response.Unauthorized(c)
@@ -218,7 +218,7 @@ func (ctr UserAuthControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
-func (ctr UserAuthControllerImpl) MyProfile(c *fiber.Ctx) error {
+func (ctr UserControllerImpl) MyProfile(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok {
 		return response.BadRequest(c, "invalid token")

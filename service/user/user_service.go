@@ -23,7 +23,7 @@ import (
 	userRepository "github.com/Lukmanern/gost/repository/user"
 )
 
-type UserAuthService interface {
+type UserService interface {
 	Register(ctx context.Context, user model.UserRegister) (id int, err error)
 	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
@@ -35,20 +35,20 @@ type UserAuthService interface {
 	DeleteUser(ctx context.Context, id int) (err error)
 }
 
-type UserAuthServiceImpl struct {
+type UserServiceImpl struct {
 	userRepository userRepository.UserRepository
 	jwtHandler     *middleware.JWTHandler
 	redis          *redis.Client
 }
 
 var (
-	userAuthService     *UserAuthServiceImpl
+	userAuthService     *UserServiceImpl
 	userAuthServiceOnce sync.Once
 )
 
-func NewUserAuthService() UserAuthService {
+func NewUserService() UserService {
 	userAuthServiceOnce.Do(func() {
-		userAuthService = &UserAuthServiceImpl{
+		userAuthService = &UserServiceImpl{
 			userRepository: userRepository.NewUserRepository(),
 			jwtHandler:     middleware.NewJWTHandler(),
 			redis:          connector.LoadRedisDatabase(),
@@ -58,11 +58,11 @@ func NewUserAuthService() UserAuthService {
 	return userAuthService
 }
 
-func (svc UserAuthServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {
+func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {
 	panic("impl me")
 }
 
-func (svc UserAuthServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
+func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
 	key := "failed-login-" + userIP
 	getStatus := svc.redis.Get(key)
 	counter, _ = strconv.Atoi(getStatus.Val())
@@ -77,7 +77,7 @@ func (svc UserAuthServiceImpl) FailedLoginCounter(userIP string, increment bool)
 	return counter, nil
 }
 
-func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
+func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
 	userEntity, err := svc.userRepository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -119,7 +119,7 @@ func (svc UserAuthServiceImpl) Login(ctx context.Context, user model.UserLogin) 
 	return token, nil
 }
 
-func (svc UserAuthServiceImpl) Logout(c *fiber.Ctx) (err error) {
+func (svc UserServiceImpl) Logout(c *fiber.Ctx) (err error) {
 	err = svc.jwtHandler.InvalidateToken(c)
 	if err != nil {
 		return errors.New("problem invalidating token")
@@ -128,11 +128,11 @@ func (svc UserAuthServiceImpl) Logout(c *fiber.Ctx) (err error) {
 	return nil
 }
 
-func (svc UserAuthServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
+func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
 	return nil
 }
 
-func (svc UserAuthServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
+func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
 	userCheck, err := svc.userRepository.GetByID(ctx, user.ID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -165,7 +165,7 @@ func (svc UserAuthServiceImpl) UpdatePassword(ctx context.Context, user model.Us
 	return nil
 }
 
-func (svc UserAuthServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
+func (svc UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
 	user, err := svc.userRepository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -191,7 +191,7 @@ func (svc UserAuthServiceImpl) MyProfile(ctx context.Context, id int) (profile m
 	return profile, nil
 }
 
-func (svc UserAuthServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
+func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
 	isUserExist := func() bool {
 		getUser, getErr := svc.userRepository.GetByID(ctx, user.ID)
 		if getErr != nil {
@@ -220,6 +220,6 @@ func (svc UserAuthServiceImpl) UpdateProfile(ctx context.Context, user model.Use
 	return nil
 }
 
-func (svc UserAuthServiceImpl) DeleteUser(ctx context.Context, id int) (err error) {
+func (svc UserServiceImpl) DeleteUser(ctx context.Context, id int) (err error) {
 	return
 }
