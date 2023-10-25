@@ -38,7 +38,6 @@ type UserService interface {
 	UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
 	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
-	DeleteUser(ctx context.Context, id int) (err error)
 }
 
 type UserServiceImpl struct {
@@ -345,10 +344,6 @@ func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserPro
 		return err
 	}
 	return nil
-}
-
-func (svc UserServiceImpl) DeleteUser(ctx context.Context, id int) (err error) {
-	return
 }
 
 func randomString(n int) string {

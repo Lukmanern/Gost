@@ -2,20 +2,20 @@
 
 ### Todo / OnDev
 
-1. Email Confirmation For Forget Password
-2. Email Confirmation For Registration
-3. User request to delete the account
 4. Finishing user services
 
 ### Done / OnTest
 
 1. Reset Password
-2. Migrate from MySQL to Supabase PostgreSQL
-3. Add more test for controller and service
-4. add Max Retry/Jail in Login
-5. Modify Middleware Test
-6. Add Test file
-7. Fixing RBAC
+2. Email Confirmation For Forget Password
+3. Email Confirmation For Registration
+4. User request to delete the account
+5. Migrate from MySQL to Supabase PostgreSQL
+6. Add more test for controller and service
+7. add Max Retry/Jail in Login
+8. Modify Middleware Test
+9. Add Test file
+10. Fixing RBAC
 
 ### Read List
 
