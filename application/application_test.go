@@ -41,7 +41,7 @@ func init() {
 	ctx = context.Background()
 }
 
-func createUser() (id int) {
+func createUser() entity.User {
 	// create new user
 	// with admin role
 	code := "code"
@@ -61,10 +61,8 @@ func createUser() (id int) {
 	if err != nil {
 		panic("failed to create new user admin at application/application_test.go")
 	}
-	// save id -> create jwToken
 	userEntt.ID = id
-
-	return id
+	return userEntt
 }
 
 func deleteUser(id int) {
