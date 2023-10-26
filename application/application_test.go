@@ -266,11 +266,148 @@ func TestRunApp_USER_TEST(t *testing.T) {
 			ExpectedBody: "", // no-content
 			AddToken:     true,
 		},
+		{
+			HTTPMethod:   "POST",
+			URL:          "http://localhost:9009/user/update-password",
+			ExpectedCode: http.StatusBadRequest,
+			ReqBody:      []byte(`{"password": "password","new_password":"password00DIF","new_password_confirm": "password00"}`),
+			ExpectedBody: "", // no-content
+			AddToken:     true,
+		},
 	}
 
 	for _, tc := range testCases {
+		req, err := http.NewRequest(tc.HTTPMethod, tc.URL, bytes.NewBuffer(tc.ReqBody))
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		if tc.AddToken {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("HTTP request failed: %v", err)
+		}
+		defer resp.Body.Close()
 
-		// Create a request with the Authorization header containing the JWT token.
+		if resp.StatusCode != tc.ExpectedCode {
+			t.Errorf("URL : "+tc.URL+" :: Expected status code %d, got %d", tc.ExpectedCode, resp.StatusCode)
+		}
+		// Read and verify the response body.
+		responseBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Errorf("Failed to read response body: %v", err)
+		}
+		responseStr := string(responseBytes)
+		if tc.ExpectedBody != "" {
+			if responseStr != tc.ExpectedBody {
+				t.Errorf("URL : "+tc.URL+" :: Expected response body '%s', got '%s'", tc.ExpectedBody, responseStr)
+			}
+		}
+		if tc.ExpectedCode == http.StatusNoContent && responseStr != tc.ExpectedBody {
+			t.Error("should equal to void-string")
+		}
+	}
+}
+
+func TestRunApp_RBAC_TEST(t *testing.T) {
+	// get user
+	user := createUser()
+	defer func() {
+		deleteUser(user.ID)
+	}()
+
+	// get user with role and permission
+	getUserByID, getErr := userRepo.GetByID(ctx, user.ID)
+	if getErr != nil {
+		t.Error("should not error :", getErr)
+	}
+
+	userRole := getUserByID.Roles[0]
+	permissionMapID := make(rbac.PermissionMap, 0)
+	for _, permission := range userRole.Permissions {
+		permissionMapID[uint8(permission.ID)] = 0b_0001
+	}
+	expAt := timeNow.Add(10 * time.Minute)
+	token, generateErr := jwtHandler.GenerateJWT(getUserByID.ID, getUserByID.Email, getUserByID.Roles[0].Name, permissionMapID, expAt)
+	if generateErr != nil || token == "" {
+		t.Error("generateJWT :: should not error or not void string")
+	}
+
+	// Start the server.
+	go RunApp()
+	// Wait for the server to run.
+	time.Sleep(5 * time.Second)
+
+	// Define test cases with different endpoints,
+	// expected status codes, request bodies,
+	// and expected response bodies.
+	testCases := []struct {
+		HTTPMethod   string
+		URL          string
+		ExpectedCode int
+		ReqBody      []byte
+		ExpectedBody string
+		AddToken     bool
+	}{
+		{
+			HTTPMethod:   "GET",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot GET /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "POST",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot POST /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "PUT",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot PUT /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "DELETE",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot DELETE /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "POST",
+			URL:          "http://localhost:9009/user",
+			ExpectedCode: http.StatusUnauthorized,
+			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
+		},
+		{
+			HTTPMethod:   "GET",
+			URL:          "http://localhost:9009/user/my-profile",
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: "", // to long
+			AddToken:     true,
+		},
+		{
+			HTTPMethod:   "PUT",
+			URL:          "http://localhost:9009/user/profile-update",
+			ExpectedCode: http.StatusNoContent,
+			ReqBody:      []byte(`{"name": "new-name"}`),
+			ExpectedBody: "", // no-content
+			AddToken:     true,
+		},
+		{
+			HTTPMethod:   "POST",
+			URL:          "http://localhost:9009/user/update-password",
+			ExpectedCode: http.StatusBadRequest,
+			ReqBody:      []byte(`{"password": "password","new_password":"password00DIF","new_password_confirm": "password00"}`),
+			ExpectedBody: "", // no-content
+			AddToken:     true,
+		},
+	}
+
+	for _, tc := range testCases {
 		req, err := http.NewRequest(tc.HTTPMethod, tc.URL, bytes.NewBuffer(tc.ReqBody))
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
