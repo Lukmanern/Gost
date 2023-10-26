@@ -147,5 +147,5 @@ func (ctr DevControllerImpl) GetFromRedis(c *fiber.Ctx) error {
 		return response.Error(c, "redis result error ("+resErr.Error()+")")
 	}
 
-	return response.SuccessCreated(c, res)
+	return response.SuccessLoaded(c, res)
 }

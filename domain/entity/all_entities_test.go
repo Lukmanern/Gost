@@ -1,6 +1,11 @@
 package entity
 
-import "testing"
+import (
+	"testing"
+	"time"
+
+	"github.com/Lukmanern/gost/domain/base"
+)
 
 func TestAllTablesName(t *testing.T) {
 	type tableNamer interface {
@@ -17,5 +22,26 @@ func TestAllTablesName(t *testing.T) {
 		if name == "" {
 			t.Errorf("TableName for %T should not be empty: " + name)
 		}
+	}
+}
+
+func TestUserActivatedAccount(t *testing.T) {
+	timeNow := time.Now()
+	code := "example-code"
+	user := User{
+		VerificationCode: &code,
+		ActivatedAt:      nil,
+		TimeFields: base.TimeFields{
+			CreatedAt: &timeNow,
+			UpdatedAt: &timeNow,
+		},
+	}
+
+	user.ActivatedAccount()
+	if user.VerificationCode != nil {
+		t.Error("should nil")
+	}
+	if user.ActivatedAt == nil {
+		t.Error("should nil")
 	}
 }
