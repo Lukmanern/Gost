@@ -19,16 +19,15 @@ import (
 )
 
 var (
-	jwtHandler    *middleware.JWTHandler
-	idHashMap     rbac.PermissionMap
-	adminRoleName string
-	adminRoleID   int
-	userRoleName  string
-	userRoleID    int
-	timeNow       time.Time
-	userRepo      repository.UserRepository
-	ctx           context.Context
-	userEntt      entity.User
+	adminRoleID int = 1
+	userRoleID  int = 2
+
+	jwtHandler *middleware.JWTHandler
+	idHashMap  rbac.PermissionMap
+	timeNow    time.Time
+	userRepo   repository.UserRepository
+	ctx        context.Context
+	userEntt   entity.User
 )
 
 func init() {
@@ -37,10 +36,6 @@ func init() {
 	jwtHandler = middleware.NewJWTHandler()
 	idHashMap = rbac.PermissionsHashMap()
 	timeNow = time.Now()
-	adminRoleName = "admin"
-	adminRoleID = 1
-	adminRoleName = "user"
-	adminRoleID = 2
 	userRepo = repository.NewUserRepository()
 	ctx = context.Background()
 }
@@ -63,7 +58,7 @@ func createUser(role_id int) *entity.User {
 	}
 	id, err := userRepo.Create(ctx, userEntt, role_id)
 	if err != nil {
-		panic("failed to create new user admin at application/application_test.go")
+		panic("failed to create new user at application/application_test.go : " + err.Error())
 	}
 	userEntt.ID = id
 	return &userEntt
@@ -387,41 +382,40 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 	go RunApp()
 	time.Sleep(5 * time.Second)
 	testCases := []struct {
+		AddToken     bool
 		HTTPMethod   string
 		URL          string
 		ExpectedCode int
 		ReqBody      []byte
 		ExpectedBody string
-		AddToken     bool
 	}{
 		{
+			AddToken:     true,
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/user",
+			URL:          "http://localhost:9009/role",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
+			AddToken:     true,
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/user/my-profile",
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: "", // to long
-			AddToken:     true,
+			URL:          "http://localhost:9009/role/1",
+			ExpectedCode: http.StatusUnauthorized,
+			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
-			HTTPMethod:   "PUT",
-			URL:          "http://localhost:9009/user/profile-update",
-			ExpectedCode: http.StatusNoContent,
-			ReqBody:      []byte(`{"name": "new-name"}`),
-			ExpectedBody: "", // no-content
 			AddToken:     true,
+			HTTPMethod:   "GET",
+			URL:          "http://localhost:9009/role",
+			ExpectedCode: http.StatusUnauthorized,
+			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
+			AddToken:     true,
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/user/update-password",
-			ExpectedCode: http.StatusBadRequest,
-			ReqBody:      []byte(`{"password": "password","new_password":"password00DIF","new_password_confirm": "password00"}`),
-			ExpectedBody: "", // no-content
-			AddToken:     true,
+			URL:          "http://localhost:9009/permission",
+			ExpectedCode: http.StatusUnauthorized,
+			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 	}
 
