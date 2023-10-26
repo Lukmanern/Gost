@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
+	"github.com/gofiber/fiber/v2"
 )
 
 var (
@@ -41,14 +41,14 @@ func init() {
 	ctx = context.Background()
 }
 
-func createUser() entity.User {
+func createUser() *entity.User {
 	// create new user
 	// with admin role
 	code := "code"
 	createdAt := timeNow.Add(-5 * time.Minute)
 	userEntt = entity.User{
 		Name:             "name",
-		Email:            "email",
+		Email:            helper.RandomEmails(2)[0],
 		Password:         "password",
 		VerificationCode: &code,
 		ActivatedAt:      &timeNow,
@@ -62,7 +62,7 @@ func createUser() entity.User {
 		panic("failed to create new user admin at application/application_test.go")
 	}
 	userEntt.ID = id
-	return userEntt
+	return &userEntt
 }
 
 func deleteUser(id int) {
@@ -181,14 +181,26 @@ func TestRunApp_HTTP_GET(t *testing.T) {
 	}
 }
 
-func TestRunApp_HTTP_POST(t *testing.T) {
+func TestRunApp_USER_TEST(t *testing.T) {
 	// get user
-	userByID, getErr := userRepo.GetByID(ctx, userEntt.ID)
-	if getErr != nil || userByID == nil {
-		t.Error("getUserByID :: should not error or not nil")
+	user := createUser()
+	defer func() {
+		deleteUser(user.ID)
+	}()
+
+	// get user with role and permission
+	getUserByID, getErr := userRepo.GetByID(ctx, user.ID)
+	if getErr != nil {
+		t.Error("should not error :", getErr)
+	}
+
+	userRole := getUserByID.Roles[0]
+	permissionMapID := make(rbac.PermissionMap, 0)
+	for _, permission := range userRole.Permissions {
+		permissionMapID[uint8(permission.ID)] = 0b_0001
 	}
 	expAt := timeNow.Add(10 * time.Minute)
-	token, generateErr := jwtHandler.GenerateJWT(userByID.ID, userByID.Email, userByID.Roles[0].Name, map[uint8]uint8{}, expAt)
+	token, generateErr := jwtHandler.GenerateJWT(getUserByID.ID, getUserByID.Email, getUserByID.Roles[0].Name, permissionMapID, expAt)
 	if generateErr != nil || token == "" {
 		t.Error("generateJWT :: should not error or not void string")
 	}
@@ -198,10 +210,11 @@ func TestRunApp_HTTP_POST(t *testing.T) {
 	// Wait for the server to run.
 	time.Sleep(5 * time.Second)
 
-	// Define test cases with different URLs,
+	// Define test cases with different endpoints,
 	// expected status codes, request bodies,
 	// and expected response bodies.
 	testCases := []struct {
+		HTTPMethod   string
 		URL          string
 		ExpectedCode int
 		ReqBody      []byte
@@ -209,32 +222,60 @@ func TestRunApp_HTTP_POST(t *testing.T) {
 		AddToken     bool
 	}{
 		{
+			HTTPMethod:   "GET",
 			URL:          "http://localhost:9009/not-found-path",
 			ExpectedCode: http.StatusNotFound,
-			ReqBody:      []byte(`{"key": "value"}`),
+			ExpectedBody: `{"message":"Cannot GET /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "POST",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"message":"Cannot POST /not-found-path"}`,
 		},
 		{
+			HTTPMethod:   "PUT",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot PUT /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "DELETE",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot DELETE /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "POST",
 			URL:          "http://localhost:9009/user",
 			ExpectedCode: http.StatusUnauthorized,
-			ReqBody:      []byte(`{"user": "test"}`),
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
+			HTTPMethod:   "GET",
 			URL:          "http://localhost:9009/user/my-profile",
-			ExpectedCode: http.StatusUnauthorized,
-			ReqBody:      []byte(`{"user": "test"}`),
-			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: "", // to long
+			AddToken:     true,
+		},
+		{
+			HTTPMethod:   "PUT",
+			URL:          "http://localhost:9009/user/profile-update",
+			ExpectedCode: http.StatusNoContent,
+			ReqBody:      []byte(`{"name": "new-name"}`),
+			ExpectedBody: "", // no-content
+			AddToken:     true,
 		},
 	}
 
 	for _, tc := range testCases {
 
 		// Create a request with the Authorization header containing the JWT token.
-		req, err := http.NewRequest("POST", tc.URL, bytes.NewBuffer(tc.ReqBody))
+		req, err := http.NewRequest(tc.HTTPMethod, tc.URL, bytes.NewBuffer(tc.ReqBody))
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
+		req.Header.Set("Content-Type", "application/json")
 		if tc.AddToken {
 			req.Header.Set("Authorization", "Bearer "+token)
 		}
@@ -248,16 +289,19 @@ func TestRunApp_HTTP_POST(t *testing.T) {
 		if resp.StatusCode != tc.ExpectedCode {
 			t.Errorf("URL : "+tc.URL+" :: Expected status code %d, got %d", tc.ExpectedCode, resp.StatusCode)
 		}
-
 		// Read and verify the response body.
 		responseBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Errorf("Failed to read response body: %v", err)
 		}
 		responseStr := string(responseBytes)
-
-		if responseStr != tc.ExpectedBody {
-			t.Errorf("URL : "+tc.URL+" :: Expected response body '%s', got '%s'", tc.ExpectedBody, responseStr)
+		if tc.ExpectedBody != "" {
+			if responseStr != tc.ExpectedBody {
+				t.Errorf("URL : "+tc.URL+" :: Expected response body '%s', got '%s'", tc.ExpectedBody, responseStr)
+			}
+		}
+		if tc.ExpectedCode == http.StatusNoContent && responseStr != tc.ExpectedBody {
+			t.Error("should equal to void-string")
 		}
 	}
 }

@@ -27,7 +27,7 @@ func main() {
 	appInProduction := config.GetAppInProduction()
 	if !appInProduction {
 		func() {
-			fmt.Print("\n\nWarning : DROPING ALL DB-TABLES AND RE-CREATE in 9 seconds (CTRL+C to stop)\n\n")
+			fmt.Print("\nWarning : DROPING ALL DB-TABLES AND RE-CREATE in 9 seconds (CTRL+C to stop)\n\n")
 			time.Sleep(9 * time.Second)
 			tables := entity.AllTables()
 			deleteErr := db.Migrator().DropTable(tables...)
