@@ -469,3 +469,100 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 		}
 	}
 }
+
+func TestRunApp_MIDDLEWARE_TEST(t *testing.T) {
+	// create 2 user: 1 admin and 1 user
+	// -> 1 admin -> generateJWT -> run http (looping)
+	// -> 1 user -> generateJWT -> run http (looping)
+
+	endpoints := []string{
+		// endpoints for admin
+		"http://127.0.0:9009/middleware/create-rhp",
+		"http://127.0.0:9009/middleware/view-rhp",
+		"http://127.0.0:9009/middleware/update-rhp",
+		"http://127.0.0:9009/middleware/delete-rhp",
+		// endpoints for user
+		"http://127.0.0:9009/middleware/create-exmpl",
+		"http://127.0.0:9009/middleware/view-exmpl",
+		"http://127.0.0:9009/middleware/update-exmpl",
+		"http://127.0.0:9009/middleware/delete-exmpl",
+	}
+
+	admin := createUser(1)
+	user := createUser(2)
+	defer func() {
+		deleteUser(admin.ID)
+		deleteUser(user.ID)
+	}()
+
+	// ADMIN
+	adminByID, getErr := userRepo.GetByID(ctx, admin.ID)
+	if getErr != nil {
+		t.Error("should not error :", getErr)
+	}
+
+	adminRole := adminByID.Roles[0]
+	adminPermissionMapID := make(rbac.PermissionMap, 0)
+	for _, permission := range adminRole.Permissions {
+		adminPermissionMapID[uint8(permission.ID)] = 0b_0001
+	}
+	expAt := timeNow.Add(10 * time.Minute)
+	adminToken, generateErr := jwtHandler.GenerateJWT(adminByID.ID, adminByID.Email, adminByID.Roles[0].Name, adminPermissionMapID, expAt)
+	if generateErr != nil || adminToken == "" {
+		t.Error("generateJWT :: should not error or not void string")
+	}
+
+	// ADMIN
+	userByID, getErr := userRepo.GetByID(ctx, user.ID)
+	if getErr != nil {
+		t.Error("should not error :", getErr)
+	}
+
+	userRole := userByID.Roles[0]
+	userPermissionMapID := make(rbac.PermissionMap, 0)
+	for _, permission := range userRole.Permissions {
+		userPermissionMapID[uint8(permission.ID)] = 0b_0001
+	}
+	userToken, generateErr := jwtHandler.GenerateJWT(userByID.ID, userByID.Email, userByID.Roles[0].Name, userPermissionMapID, expAt)
+	if generateErr != nil || userToken == "" {
+		t.Error("generateJWT :: should not error or not void string")
+	}
+
+	for _, endpoint := range endpoints {
+		// Test with admin JWT token
+		adminClient := &http.Client{}
+		reqAdmin, err := http.NewRequest("GET", endpoint, nil)
+		if err != nil {
+			t.Errorf("Failed to create request: %v", err)
+			continue
+		}
+		reqAdmin.Header.Set("Authorization", "Bearer "+adminToken)
+		respAdmin, err := adminClient.Do(reqAdmin)
+		if err != nil {
+			t.Errorf("Request to %s with admin JWT failed: %v", endpoint, err)
+			continue
+		}
+		defer respAdmin.Body.Close()
+		if respAdmin.StatusCode != http.StatusOK {
+			t.Errorf("Request to %s with admin JWT returned non-200 status: %d", endpoint, respAdmin.StatusCode)
+		}
+
+		// Test with user JWT token
+		userClient := &http.Client{}
+		reqUser, err := http.NewRequest("GET", endpoint, nil)
+		if err != nil {
+			t.Errorf("Failed to create request: %v", err)
+			continue
+		}
+		reqUser.Header.Set("Authorization", "Bearer "+userToken)
+		respUser, err := userClient.Do(reqUser)
+		if err != nil {
+			t.Errorf("Request to %s with user JWT failed: %v", endpoint, err)
+			continue
+		}
+		defer respUser.Body.Close()
+		if respUser.StatusCode != http.StatusOK {
+			t.Errorf("Request to %s with user JWT returned non-200 status: %d", endpoint, respUser.StatusCode)
+		}
+	}
+}
