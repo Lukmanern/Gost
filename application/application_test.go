@@ -19,14 +19,16 @@ import (
 )
 
 var (
-	jwtHandler *middleware.JWTHandler
-	idHashMap  rbac.PermissionMap
-	roleName   string
-	roleID     int
-	timeNow    time.Time
-	userRepo   repository.UserRepository
-	ctx        context.Context
-	userEntt   entity.User
+	jwtHandler    *middleware.JWTHandler
+	idHashMap     rbac.PermissionMap
+	adminRoleName string
+	adminRoleID   int
+	userRoleName  string
+	userRoleID    int
+	timeNow       time.Time
+	userRepo      repository.UserRepository
+	ctx           context.Context
+	userEntt      entity.User
 )
 
 func init() {
@@ -35,13 +37,15 @@ func init() {
 	jwtHandler = middleware.NewJWTHandler()
 	idHashMap = rbac.PermissionsHashMap()
 	timeNow = time.Now()
-	roleName = "admin"
-	roleID = 1
+	adminRoleName = "admin"
+	adminRoleID = 1
+	adminRoleName = "user"
+	adminRoleID = 2
 	userRepo = repository.NewUserRepository()
 	ctx = context.Background()
 }
 
-func createUser() *entity.User {
+func createUser(role_id int) *entity.User {
 	// create new user
 	// with admin role
 	code := "code"
@@ -57,7 +61,7 @@ func createUser() *entity.User {
 			UpdatedAt: &createdAt,
 		},
 	}
-	id, err := userRepo.Create(ctx, userEntt, roleID)
+	id, err := userRepo.Create(ctx, userEntt, role_id)
 	if err != nil {
 		panic("failed to create new user admin at application/application_test.go")
 	}
@@ -126,6 +130,74 @@ func Test_getRBACAuthRoutes(t *testing.T) {
 	getRbacRoutes(router)
 }
 
+func TestRunApp_NOT_FOUND(t *testing.T) {
+	go RunApp()
+	time.Sleep(5 * time.Second)
+	testCases := []struct {
+		HTTPMethod   string
+		URL          string
+		ExpectedCode int
+		ExpectedBody string
+	}{
+		{
+			HTTPMethod:   "GET",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot GET /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "POST",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot POST /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "PUT",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot PUT /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "DELETE",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot DELETE /not-found-path"}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		req, err := http.NewRequest(tc.HTTPMethod, tc.URL, bytes.NewBuffer([]byte{}))
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("HTTP request failed: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != tc.ExpectedCode {
+			t.Errorf("URL : "+tc.URL+" :: Expected status code %d, got %d", tc.ExpectedCode, resp.StatusCode)
+		}
+		// Read and verify the response body.
+		responseBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Errorf("Failed to read response body: %v", err)
+		}
+		responseStr := string(responseBytes)
+		if tc.ExpectedBody != "" {
+			if responseStr != tc.ExpectedBody {
+				t.Errorf("URL : "+tc.URL+" :: Expected response body '%s', got '%s'", tc.ExpectedBody, responseStr)
+			}
+		}
+		if tc.ExpectedCode == http.StatusNoContent && responseStr != tc.ExpectedBody {
+			t.Error("should equal to void-string")
+		}
+	}
+}
+
 func TestRunApp_HTTP_GET(t *testing.T) {
 	// start server
 	go RunApp()
@@ -181,9 +253,9 @@ func TestRunApp_HTTP_GET(t *testing.T) {
 	}
 }
 
-func TestRunApp_USER_TEST(t *testing.T) {
+func TestRunApp_USER_ROUTE(t *testing.T) {
 	// get user
-	user := createUser()
+	user := createUser(adminRoleID)
 	defer func() {
 		deleteUser(user.ID)
 	}()
@@ -221,30 +293,6 @@ func TestRunApp_USER_TEST(t *testing.T) {
 		ExpectedBody string
 		AddToken     bool
 	}{
-		{
-			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot GET /not-found-path"}`,
-		},
-		{
-			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot POST /not-found-path"}`,
-		},
-		{
-			HTTPMethod:   "PUT",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot PUT /not-found-path"}`,
-		},
-		{
-			HTTPMethod:   "DELETE",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot DELETE /not-found-path"}`,
-		},
 		{
 			HTTPMethod:   "POST",
 			URL:          "http://localhost:9009/user",
@@ -314,7 +362,7 @@ func TestRunApp_USER_TEST(t *testing.T) {
 
 func TestRunApp_RBAC_TEST(t *testing.T) {
 	// get user
-	user := createUser()
+	user := createUser(userRoleID)
 	defer func() {
 		deleteUser(user.ID)
 	}()
@@ -336,14 +384,8 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 		t.Error("generateJWT :: should not error or not void string")
 	}
 
-	// Start the server.
 	go RunApp()
-	// Wait for the server to run.
 	time.Sleep(5 * time.Second)
-
-	// Define test cases with different endpoints,
-	// expected status codes, request bodies,
-	// and expected response bodies.
 	testCases := []struct {
 		HTTPMethod   string
 		URL          string
@@ -352,30 +394,6 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 		ExpectedBody string
 		AddToken     bool
 	}{
-		{
-			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot GET /not-found-path"}`,
-		},
-		{
-			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot POST /not-found-path"}`,
-		},
-		{
-			HTTPMethod:   "PUT",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot PUT /not-found-path"}`,
-		},
-		{
-			HTTPMethod:   "DELETE",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot DELETE /not-found-path"}`,
-		},
 		{
 			HTTPMethod:   "POST",
 			URL:          "http://localhost:9009/user",
