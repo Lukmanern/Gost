@@ -389,6 +389,7 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 		ReqBody      []byte
 		ExpectedBody string
 	}{
+		// user with role 'user' should failed to create/ see role and permission
 		{
 			AddToken:     true,
 			HTTPMethod:   "POST",
@@ -414,6 +415,20 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 			AddToken:     true,
 			HTTPMethod:   "POST",
 			URL:          "http://localhost:9009/permission",
+			ExpectedCode: http.StatusUnauthorized,
+			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
+		},
+		{
+			AddToken:     true,
+			HTTPMethod:   "GET",
+			URL:          "http://localhost:9009/permission",
+			ExpectedCode: http.StatusUnauthorized,
+			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
+		},
+		{
+			AddToken:     true,
+			HTTPMethod:   "GET",
+			URL:          "http://localhost:9009/permission/1",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
