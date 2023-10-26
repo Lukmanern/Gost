@@ -80,6 +80,10 @@ func (ctr UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
+	validate := validator.New()
+	if err := validate.Struct(&user); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
 	ctx := c.Context()
 	err := ctr.service.Verification(ctx, user.Code)
 	if err != nil {
@@ -97,6 +101,10 @@ func (ctr UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 func (ctr UserControllerImpl) DeleteAccountActivation(c *fiber.Ctx) error {
 	var user model.UserVerificationCode
 	if err := c.BodyParser(&user); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+	validate := validator.New()
+	if err := validate.Struct(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	ctx := c.Context()
@@ -217,7 +225,7 @@ func (ctr UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 		return response.Error(c, "internal server error: "+resetErr.Error())
 	}
 
-	message := "success sending link for reset password to email, check your email inbox"
+	message := "your password already updated, you can login with your new password, thank you"
 	return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
 }
 

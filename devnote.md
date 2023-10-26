@@ -3,7 +3,6 @@
 ### Todo / OnDev
 
 1. Finishing user services
-2. Set update time -> used in repository / or how?
 
 ### Done / OnTest
 
@@ -20,7 +19,7 @@
 
 ### Read List
 
-1. Database : https://www.alexedwards.net/blog/configuring-sqldb
+1. Database connection conf : https://www.alexedwards.net/blog/configuring-sqldb
 2. https://aleksei-kornev.medium.com/production-readiness-checklist-for-backend-applications-8d2b0c57ccec/
 3. https://last9.io/blog/deployment-readiness-checklists/
 4. https://github.com/gorrion-io/production-readiness-checklist/

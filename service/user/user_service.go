@@ -88,7 +88,8 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 		counter                   int = 0
 	)
 	for {
-		verifCode = randomString(7) + randomString(7) + randomString(7)
+		verifCode = ""
+		verifCode = randomString(7) + randomString(7) + randomString(7) // total = 21
 		userGetByCode, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
 			"verification_code =": verifCode,
 		})
@@ -260,21 +261,19 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 
 	var (
 		verifCode string
-		counter   int
+		counter   int // max retry
 	)
-	if userEntity.VerificationCode != nil {
-		for {
-			verifCode = randomString(7) + randomString(7) + randomString(7)
-			userGetByCode, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
-				"verification_code =": verifCode,
-			})
-			if getByCodeErr != nil || userGetByCode == nil {
-				break
-			}
-			counter += 1
-			if counter >= 150 {
-				return errors.New("failed generating verification code")
-			}
+	for {
+		verifCode = randomString(7) + randomString(7) + randomString(7) // total = 21
+		userGetByCode, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
+			"verification_code =": verifCode,
+		})
+		if getByCodeErr != nil || userGetByCode == nil {
+			break
+		}
+		counter += 1
+		if counter >= 150 {
+			return errors.New("failed generating verification code")
 		}
 	}
 	userEntity.VerificationCode = &verifCode
@@ -316,11 +315,15 @@ func (svc UserServiceImpl) ResetPassword(ctx context.Context, user model.UserRes
 	if userByCode == nil {
 		return fiber.NewError(fiber.StatusNotFound, "user not found")
 	}
+	if userByCode.ActivatedAt == nil {
+		errMsg := "Your account is already exist in our system, but it's still inactive, please check Your email inbox to activated-it"
+		return fiber.NewError(fiber.StatusBadRequest, errMsg)
+	}
 
 	var (
 		hashErr      error
 		passwdHashed string
-		counter      int
+		counter      int // max retry
 	)
 	for {
 		passwdHashed, hashErr = hash.Generate(user.NewPassword)
@@ -333,9 +336,15 @@ func (svc UserServiceImpl) ResetPassword(ctx context.Context, user model.UserRes
 		}
 	}
 
-	updateErr := svc.repository.UpdatePassword(ctx, userByCode.ID, passwdHashed)
+	userByCode.VerificationCode = nil
+	updateErr := svc.repository.Update(ctx, *userByCode)
 	if updateErr != nil {
 		return updateErr
+	}
+
+	updatePasswdErr := svc.repository.UpdatePassword(ctx, userByCode.ID, passwdHashed)
+	if updatePasswdErr != nil {
+		return updatePasswdErr
 	}
 	return nil
 }
@@ -375,11 +384,7 @@ func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPa
 			return errors.New("failed hashing user password")
 		}
 	}
-	userByID.VerificationCode = nil
-	updateErr := svc.repository.Update(ctx, *userByID)
-	if updateErr != nil {
-		return updateErr
-	}
+
 	updatePwErr := svc.repository.UpdatePassword(ctx, userByID.ID, passwdHashed)
 	if updatePwErr != nil {
 		return updatePwErr
