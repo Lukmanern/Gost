@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -20,6 +19,7 @@ import (
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/hash"
+	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
@@ -89,7 +89,7 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	)
 	for {
 		verifCode = ""
-		verifCode = randomString(7) + randomString(7) + randomString(7) // total = 21
+		verifCode = helper.RandomString(7) + helper.RandomString(7) + helper.RandomString(7) // total = 21
 		userGetByCode, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
 			"verification_code =": verifCode,
 		})
@@ -264,7 +264,7 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 		counter   int // max retry
 	)
 	for {
-		verifCode = randomString(7) + randomString(7) + randomString(7) // total = 21
+		verifCode = helper.RandomString(7) + helper.RandomString(7) + helper.RandomString(7) // total = 21
 		userGetByCode, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
 			"verification_code =": verifCode,
 		})
@@ -444,13 +444,4 @@ func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserPro
 		return err
 	}
 	return nil
-}
-
-func randomString(n int) string {
-	letterBytes := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
 }

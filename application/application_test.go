@@ -14,11 +14,15 @@ import (
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/middleware"
+	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
 )
 
 var (
 	jwtHandler *middleware.JWTHandler
+	idHashMap  rbac.PermissionMap
+	roleName   string
+	roleID     int
 	timeNow    time.Time
 	userRepo   repository.UserRepository
 	ctx        context.Context
@@ -29,15 +33,19 @@ func init() {
 	env.ReadConfig("./../.env")
 
 	jwtHandler = middleware.NewJWTHandler()
+	idHashMap = rbac.PermissionsHashMap()
 	timeNow = time.Now()
+	roleName = "admin"
+	roleID = 1
 	userRepo = repository.NewUserRepository()
 	ctx = context.Background()
+}
 
+func createUser() (id int) {
 	// create new user
 	// with admin role
 	code := "code"
 	createdAt := timeNow.Add(-5 * time.Minute)
-	ADMIN_ID := 1 // admin
 	userEntt = entity.User{
 		Name:             "name",
 		Email:            "email",
@@ -49,12 +57,21 @@ func init() {
 			UpdatedAt: &createdAt,
 		},
 	}
-	id, err := userRepo.Create(ctx, userEntt, ADMIN_ID)
+	id, err := userRepo.Create(ctx, userEntt, roleID)
 	if err != nil {
 		panic("failed to create new user admin at application/application_test.go")
 	}
 	// save id -> create jwToken
 	userEntt.ID = id
+
+	return id
+}
+
+func deleteUser(id int) {
+	err := userRepo.Delete(ctx, id)
+	if err != nil {
+		panic("error while deleting user: " + err.Error())
+	}
 }
 
 func Test_app_router(t *testing.T) {
@@ -167,6 +184,17 @@ func TestRunApp_HTTP_GET(t *testing.T) {
 }
 
 func TestRunApp_HTTP_POST(t *testing.T) {
+	// get user
+	userByID, getErr := userRepo.GetByID(ctx, userEntt.ID)
+	if getErr != nil || userByID == nil {
+		t.Error("getUserByID :: should not error or not nil")
+	}
+	expAt := timeNow.Add(10 * time.Minute)
+	token, generateErr := jwtHandler.GenerateJWT(userByID.ID, userByID.Email, userByID.Roles[0].Name, map[uint8]uint8{}, expAt)
+	if generateErr != nil || token == "" {
+		t.Error("generateJWT :: should not error or not void string")
+	}
+
 	// Start the server.
 	go RunApp()
 	// Wait for the server to run.
@@ -203,9 +231,19 @@ func TestRunApp_HTTP_POST(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		resp, err := http.Post(tc.URL, "application/json", bytes.NewBuffer(tc.ReqBody))
+
+		// Create a request with the Authorization header containing the JWT token.
+		req, err := http.NewRequest("POST", tc.URL, bytes.NewBuffer(tc.ReqBody))
 		if err != nil {
-			t.Errorf("HTTP request failed: %v", err)
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		if tc.AddToken {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("HTTP request failed: %v", err)
 		}
 		defer resp.Body.Close()
 
