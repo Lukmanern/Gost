@@ -470,29 +470,23 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 	}
 }
 
-func TestRunApp_MIDDLEWARE_TEST(t *testing.T) {
-	// create 2 user: 1 admin and 1 user
-	// -> 1 admin -> generateJWT -> run http (looping)
-	// -> 1 user -> generateJWT -> run http (looping)
-
-	endpoints := []string{
-		// endpoints for admin
-		"http://127.0.0:9009/middleware/create-rhp",
-		"http://127.0.0:9009/middleware/view-rhp",
-		"http://127.0.0:9009/middleware/update-rhp",
-		"http://127.0.0:9009/middleware/delete-rhp",
-		// endpoints for user
-		"http://127.0.0:9009/middleware/create-exmpl",
-		"http://127.0.0:9009/middleware/view-exmpl",
-		"http://127.0.0:9009/middleware/update-exmpl",
-		"http://127.0.0:9009/middleware/delete-exmpl",
+func TestRunApp_MIDDLEWARE_ADMIN_TEST(t *testing.T) {
+	adminEndpoints := []string{
+		"http://127.0.0.1:9009/middleware/create-rhp",
+		"http://127.0.0.1:9009/middleware/view-rhp",
+		"http://127.0.0.1:9009/middleware/update-rhp",
+		"http://127.0.0.1:9009/middleware/delete-rhp",
+	}
+	userEndpoints := []string{
+		"http://127.0.0.1:9009/middleware/create-exmpl",
+		"http://127.0.0.1:9009/middleware/view-exmpl",
+		"http://127.0.0.1:9009/middleware/update-exmpl",
+		"http://127.0.0.1:9009/middleware/delete-exmpl",
 	}
 
 	admin := createUser(1)
-	user := createUser(2)
 	defer func() {
 		deleteUser(admin.ID)
-		deleteUser(user.ID)
 	}()
 
 	// ADMIN
@@ -512,6 +506,86 @@ func TestRunApp_MIDDLEWARE_TEST(t *testing.T) {
 		t.Error("generateJWT :: should not error or not void string")
 	}
 
+	go RunApp()
+	time.Sleep(5 * time.Second)
+
+	for _, endpoint := range adminEndpoints {
+		req, err := http.NewRequest("GET", endpoint, bytes.NewBuffer([]byte{}))
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("HTTP request failed: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Error("URL : " + endpoint + " :: Expected status 200OK")
+		}
+		// Read and verify the response body.
+		responseBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Errorf("Failed to read response body: %v", err)
+		}
+		responseStr := string(responseBytes)
+		shouldRespone := `{"message":"success-view-endpoint","success":true,"data":null}`
+		if responseStr != shouldRespone {
+			t.Error("should be : " + responseStr)
+		}
+	}
+	for _, endpoint := range userEndpoints {
+		req, err := http.NewRequest("GET", endpoint, bytes.NewBuffer([]byte{}))
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("HTTP request failed: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Error("URL : " + endpoint + " :: Expected status 401")
+		}
+		// Read and verify the response body.
+		responseBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Errorf("Failed to read response body: %v", err)
+		}
+		responseStr := string(responseBytes)
+		shouldRespone := `{"message":"unauthorized","success":false,"data":null}`
+		if responseStr != shouldRespone {
+			t.Error("should be : " + responseStr)
+		}
+	}
+}
+
+func TestRunApp_MIDDLEWARE_USER_TEST(t *testing.T) {
+	adminEndpoints := []string{
+		"http://127.0.0.1:9009/middleware/create-rhp",
+		"http://127.0.0.1:9009/middleware/view-rhp",
+		"http://127.0.0.1:9009/middleware/update-rhp",
+		"http://127.0.0.1:9009/middleware/delete-rhp",
+	}
+	userEndpoints := []string{
+		"http://127.0.0.1:9009/middleware/create-exmpl",
+		"http://127.0.0.1:9009/middleware/view-exmpl",
+		"http://127.0.0.1:9009/middleware/update-exmpl",
+		"http://127.0.0.1:9009/middleware/delete-exmpl",
+	}
+
+	user := createUser(2)
+	defer func() {
+		deleteUser(user.ID)
+	}()
+
 	// ADMIN
 	userByID, getErr := userRepo.GetByID(ctx, user.ID)
 	if getErr != nil {
@@ -523,46 +597,69 @@ func TestRunApp_MIDDLEWARE_TEST(t *testing.T) {
 	for _, permission := range userRole.Permissions {
 		userPermissionMapID[uint8(permission.ID)] = 0b_0001
 	}
+	expAt := timeNow.Add(10 * time.Minute)
 	userToken, generateErr := jwtHandler.GenerateJWT(userByID.ID, userByID.Email, userByID.Roles[0].Name, userPermissionMapID, expAt)
 	if generateErr != nil || userToken == "" {
 		t.Error("generateJWT :: should not error or not void string")
 	}
 
-	for _, endpoint := range endpoints {
-		// Test with admin JWT token
-		adminClient := &http.Client{}
-		reqAdmin, err := http.NewRequest("GET", endpoint, nil)
-		if err != nil {
-			t.Errorf("Failed to create request: %v", err)
-			continue
-		}
-		reqAdmin.Header.Set("Authorization", "Bearer "+adminToken)
-		respAdmin, err := adminClient.Do(reqAdmin)
-		if err != nil {
-			t.Errorf("Request to %s with admin JWT failed: %v", endpoint, err)
-			continue
-		}
-		defer respAdmin.Body.Close()
-		if respAdmin.StatusCode != http.StatusOK {
-			t.Errorf("Request to %s with admin JWT returned non-200 status: %d", endpoint, respAdmin.StatusCode)
-		}
+	go RunApp()
+	time.Sleep(5 * time.Second)
 
-		// Test with user JWT token
-		userClient := &http.Client{}
-		reqUser, err := http.NewRequest("GET", endpoint, nil)
+	for _, endpoint := range adminEndpoints {
+		req, err := http.NewRequest("GET", endpoint, bytes.NewBuffer([]byte{}))
 		if err != nil {
-			t.Errorf("Failed to create request: %v", err)
-			continue
+			t.Fatalf("Failed to create request: %v", err)
 		}
-		reqUser.Header.Set("Authorization", "Bearer "+userToken)
-		respUser, err := userClient.Do(reqUser)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+userToken)
+		client := &http.Client{}
+		resp, err := client.Do(req)
 		if err != nil {
-			t.Errorf("Request to %s with user JWT failed: %v", endpoint, err)
-			continue
+			t.Fatalf("HTTP request failed: %v", err)
 		}
-		defer respUser.Body.Close()
-		if respUser.StatusCode != http.StatusOK {
-			t.Errorf("Request to %s with user JWT returned non-200 status: %d", endpoint, respUser.StatusCode)
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Error("URL : " + endpoint + " :: Expected status 401")
+		}
+		// Read and verify the response body.
+		responseBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Errorf("Failed to read response body: %v", err)
+		}
+		responseStr := string(responseBytes)
+		shouldRespone := `{"message":"unauthorized","success":false,"data":null}`
+		if responseStr != shouldRespone {
+			t.Error("should be : " + responseStr)
+		}
+	}
+	for _, endpoint := range userEndpoints {
+		req, err := http.NewRequest("GET", endpoint, bytes.NewBuffer([]byte{}))
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+userToken)
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("HTTP request failed: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Error("URL : " + endpoint + " :: Expected status 200OK")
+		}
+		// Read and verify the response body.
+		responseBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Errorf("Failed to read response body: %v", err)
+		}
+		responseStr := string(responseBytes)
+		shouldRespone := `{"message":"success-view-endpoint","success":true,"data":null}`
+		if responseStr != shouldRespone {
+			t.Error("should be : " + responseStr)
 		}
 	}
 }
