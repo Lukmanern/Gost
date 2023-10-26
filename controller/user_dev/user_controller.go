@@ -6,6 +6,7 @@ package controller
 
 import (
 	"math"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -39,6 +40,7 @@ func (ctr UserControllerImpl) Create(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
+	user.Email = strings.ToLower(user.Email)
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
