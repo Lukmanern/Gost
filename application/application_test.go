@@ -2,17 +2,59 @@ package application
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"testing"
 	"time"
 
-	"github.com/Lukmanern/gost/internal/env"
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/Lukmanern/gost/domain/base"
+	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/middleware"
+	repository "github.com/Lukmanern/gost/repository/user"
+)
+
+var (
+	jwtHandler *middleware.JWTHandler
+	timeNow    time.Time
+	userRepo   repository.UserRepository
+	ctx        context.Context
+	userEntt   entity.User
 )
 
 func init() {
 	env.ReadConfig("./../.env")
+
+	jwtHandler = middleware.NewJWTHandler()
+	timeNow = time.Now()
+	userRepo = repository.NewUserRepository()
+	ctx = context.Background()
+
+	// create new user
+	// with admin role
+	code := "code"
+	createdAt := timeNow.Add(-5 * time.Minute)
+	ADMIN_ID := 1 // admin
+	userEntt = entity.User{
+		Name:             "name",
+		Email:            "email",
+		Password:         "password",
+		VerificationCode: &code,
+		ActivatedAt:      &timeNow,
+		TimeFields: base.TimeFields{
+			CreatedAt: &createdAt,
+			UpdatedAt: &createdAt,
+		},
+	}
+	id, err := userRepo.Create(ctx, userEntt, ADMIN_ID)
+	if err != nil {
+		panic("failed to create new user admin at application/application_test.go")
+	}
+	// save id -> create jwToken
+	userEntt.ID = id
 }
 
 func Test_app_router(t *testing.T) {
@@ -138,6 +180,7 @@ func TestRunApp_HTTP_POST(t *testing.T) {
 		ExpectedCode int
 		ReqBody      []byte
 		ExpectedBody string
+		AddToken     bool
 	}{
 		{
 			URL:          "http://localhost:9009/not-found-path",
@@ -147,6 +190,12 @@ func TestRunApp_HTTP_POST(t *testing.T) {
 		},
 		{
 			URL:          "http://localhost:9009/user",
+			ExpectedCode: http.StatusUnauthorized,
+			ReqBody:      []byte(`{"user": "test"}`),
+			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
+		},
+		{
+			URL:          "http://localhost:9009/user/my-profile",
 			ExpectedCode: http.StatusUnauthorized,
 			ReqBody:      []byte(`{"user": "test"}`),
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
