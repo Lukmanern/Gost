@@ -1,6 +1,8 @@
 package application
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -81,11 +83,13 @@ func TestRunApp_HTTP_GET(t *testing.T) {
 		ExpectedCode int
 	}{
 		{"http://localhost:9009/not-found-path", http.StatusNotFound},
-		// user dev
-		{"http://localhost:9009/user/dev/99999999", http.StatusNotFound},
-		{"http://localhost:9009/user/dev/0", http.StatusBadRequest},
-		{"http://localhost:9009/user/dev/-1", http.StatusBadRequest},
-		{"http://localhost:9009/user/dev/stringID", http.StatusBadRequest},
+		// development user / user management
+		{"http://localhost:9009/user-management/99999999", http.StatusNotFound},
+		{"http://localhost:9009/user-management/0", http.StatusBadRequest},
+		{"http://localhost:9009/user-management/-1", http.StatusBadRequest},
+		{"http://localhost:9009/user-management/stringID", http.StatusBadRequest},
+		// user
+		{"http://localhost:9009/user/my-profile", http.StatusUnauthorized},
 		// permission (need auth)
 		{"http://localhost:9009/permission/99999999", http.StatusUnauthorized},
 		{"http://localhost:9009/permission/0", http.StatusUnauthorized},
@@ -116,6 +120,59 @@ func TestRunApp_HTTP_GET(t *testing.T) {
 
 		if resp.StatusCode != tc.ExpectedCode {
 			t.Errorf(tc.URL+":: Expected status code %d, got %d", tc.ExpectedCode, resp.StatusCode)
+		}
+	}
+}
+
+func TestRunApp_HTTP_POST(t *testing.T) {
+	// Start the server.
+	go RunApp()
+	// Wait for the server to run.
+	time.Sleep(5 * time.Second)
+
+	// Define test cases with different URLs,
+	// expected status codes, request bodies,
+	// and expected response bodies.
+	testCases := []struct {
+		URL          string
+		ExpectedCode int
+		ReqBody      []byte
+		ExpectedBody string
+	}{
+		{
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ReqBody:      []byte(`{"key": "value"}`),
+			ExpectedBody: `{"message":"Cannot POST /not-found-path"}`,
+		},
+		{
+			URL:          "http://localhost:9009/user",
+			ExpectedCode: http.StatusUnauthorized,
+			ReqBody:      []byte(`{"user": "test"}`),
+			ExpectedBody: `{"message":"unauthenticated"}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		resp, err := http.Post(tc.URL, "application/json", bytes.NewBuffer(tc.ReqBody))
+		if err != nil {
+			t.Errorf("HTTP request failed: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != tc.ExpectedCode {
+			t.Errorf("URL : "+tc.URL+" :: Expected status code %d, got %d", tc.ExpectedCode, resp.StatusCode)
+		}
+
+		// Read and verify the response body.
+		responseBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Errorf("Failed to read response body: %v", err)
+		}
+		responseStr := string(responseBytes)
+
+		if responseStr != tc.ExpectedBody {
+			t.Errorf("URL : "+tc.URL+" :: Expected response body '%s', got '%s'", tc.ExpectedBody, responseStr)
 		}
 	}
 }

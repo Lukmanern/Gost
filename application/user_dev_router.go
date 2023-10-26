@@ -20,7 +20,7 @@ func getUserDevRoutes(router fiber.Router) {
 	userDevService = service.NewUserDevService()
 	userDevController = controller.NewUserController(userDevService)
 
-	userDevRoute := router.Group("user/dev")
+	userDevRoute := router.Group("user-management")
 	userDevRoute.Post("create", userDevController.Create)
 	userDevRoute.Get("", userDevController.GetAll)
 	userDevRoute.Get(":id", userDevController.Get)
