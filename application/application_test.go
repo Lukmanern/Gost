@@ -4,12 +4,21 @@ import (
 	"testing"
 
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/gofiber/fiber/v2"
 )
 
 func init() {
 	env.ReadConfig("./../.env")
 }
+
 func Test_app_router(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			t.Error("should not panic : ", r)
+		}
+	}()
+
 	if router == nil {
 		t.Error("Router should not be nil")
 	}
@@ -29,16 +38,29 @@ func Test_app_router(t *testing.T) {
 		t.Error("Router's ProxyHeader should be empty")
 	}
 
-	tests := []struct {
-		name string
-	}{
-		{
-			name: "success test",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			setup()
-		})
-	}
+	setup()
+}
+
+func Test_getUserAuthRoutes(t *testing.T) {
+	env.ReadConfig("./../.env")
+	router := fiber.New()
+	getUserRoutes(router)
+}
+
+func Test_getUserRoutes(t *testing.T) {
+	env.ReadConfig("./../.env")
+	router := fiber.New()
+	getUserDevRoutes(router)
+}
+
+func Test_getEmailRouter(t *testing.T) {
+	env.ReadConfig("./../.env")
+	router := fiber.New()
+	getDevRouter(router)
+}
+
+func Test_getRBACAuthRoutes(t *testing.T) {
+	env.ReadConfig("./../.env")
+	router := fiber.New()
+	getRbacRoutes(router)
 }
