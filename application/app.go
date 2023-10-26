@@ -102,7 +102,7 @@ func RunApp() {
 
 	getDevRouter(router)              // don't use for production
 	getUserDevRoutes(router)          // don't use for production
-	getPermissionTestingRoute(router) // don't use for production
+	getMiddlewareTestingRoute(router) // don't use for production
 
 	getUserRoutes(router)
 	getRbacRoutes(router)
