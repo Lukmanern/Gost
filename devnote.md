@@ -2,7 +2,17 @@
 
 ### Todo / OnDev
 
-1. Finishing user services
+? github.com/Lukmanern/gost [no test files]
+? github.com/Lukmanern/gost/controller/dev [no test files]
+? github.com/Lukmanern/gost/controller/rbac [no test files]
+? github.com/Lukmanern/gost/controller/user [no test files]
+? github.com/Lukmanern/gost/controller/user_dev [no test files]
+? github.com/Lukmanern/gost/database/migration [no test files]
+? github.com/Lukmanern/gost/domain/model [no test files]
+? github.com/Lukmanern/gost/service/email [no test files]
+? github.com/Lukmanern/gost/service/rbac [no test files]
+? github.com/Lukmanern/gost/service/user [no test files]
+? github.com/Lukmanern/gost/service/user_dev [no test files]
 
 ### Done / OnTest
 

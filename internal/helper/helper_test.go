@@ -26,3 +26,10 @@ func TestRandomEmails(t *testing.T) {
 		}
 	}
 }
+
+func TestNewFiberCtx(t *testing.T) {
+	c := NewFiberCtx()
+	if c == nil {
+		t.Error("should not nil")
+	}
+}

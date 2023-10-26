@@ -3,6 +3,9 @@ package helper
 import (
 	"math/rand"
 	"strings"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/valyala/fasthttp"
 )
 
 func RandomString(n uint) string {
@@ -27,4 +30,10 @@ func RandomEmails(n uint) []string {
 		emails = append(emails, email)
 	}
 	return emails
+}
+
+// This used for testing handler : controller/ middleware/ any
+func NewFiberCtx() *fiber.Ctx {
+	app := fiber.New()
+	return app.AcquireCtx(&fasthttp.RequestCtx{})
 }

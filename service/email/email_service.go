@@ -17,6 +17,10 @@ import (
 type EmailService interface {
 	TestingHandler(c *fiber.Ctx) (err error)
 	Send(emails []string, subject string, message string) (res map[string]bool, err error)
+
+	getAuth() smtp.Auth
+	getSMTPAddr() string
+	getMime() string
 }
 
 type EmailServiceImpl struct {
