@@ -149,7 +149,7 @@ func TestRunApp_HTTP_POST(t *testing.T) {
 			URL:          "http://localhost:9009/user",
 			ExpectedCode: http.StatusUnauthorized,
 			ReqBody:      []byte(`{"user": "test"}`),
-			ExpectedBody: `{"message":"unauthenticated"}`,
+			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 	}
 

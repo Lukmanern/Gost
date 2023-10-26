@@ -135,8 +135,8 @@ func TestJWTHandler_InvalidateToken(t *testing.T) {
 	app := fiber.New()
 	c := app.AcquireCtx(&fasthttp.RequestCtx{})
 	invalidErr1 := jwtHandler.InvalidateToken(c)
-	if invalidErr1 == nil {
-		t.Error("Expected error for no token")
+	if invalidErr1 != nil {
+		t.Error("Should error: Expected error for no token")
 	}
 
 	c.Request().Header.Add("Authorization", "Bearer "+token)
