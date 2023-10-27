@@ -113,12 +113,6 @@ func TestSuccessCRUD_Permission(t *testing.T) {
 	}
 }
 
-// Create(ctx context.Context, permission model.PermissionCreate) (id int, err error)
-// GetByID(ctx context.Context, id int) (permission *model.PermissionResponse, err error)
-// GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []model.PermissionResponse, total int, err error)
-// Update(ctx context.Context, permission model.PermissionUpdate) (err error)
-// Delete(ctx context.Context, id int) (err error)
-
 func TestFailedCRUD_Permission(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
