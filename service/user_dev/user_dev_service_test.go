@@ -52,7 +52,7 @@ func TestSuccessCRUD(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	svc := NewUserDevService()
-	if svc == nil {
+	if svc == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 
@@ -88,7 +88,7 @@ func TestSuccessCRUD(t *testing.T) {
 
 	users, total, getAllErr := svc.GetAll(ctx, base.RequestGetAll{Limit: 10, Page: 1})
 	if len(users) < 1 || total < 1 || getAllErr != nil {
-		t.Error("should more than one and not error at all")
+		t.Error("should more than or equal one and not error at all")
 	}
 
 	updateUserData := model.UserProfileUpdate{
