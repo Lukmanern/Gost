@@ -2,6 +2,7 @@ package service
 
 import (
 	"log"
+	"strings"
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
@@ -53,7 +54,7 @@ func TestSuccessCRUD(t *testing.T) {
 		t.Error("should not nil")
 	}
 	modelPerm := model.PermissionCreate{
-		Name:        helper.RandomString(10),
+		Name:        strings.ToLower(helper.RandomString(10)),
 		Description: helper.RandomString(30),
 	}
 	permID, createErr := svc.Create(ctx, modelPerm)
@@ -68,6 +69,9 @@ func TestSuccessCRUD(t *testing.T) {
 	if getErr != nil || permByID == nil {
 		t.Error("should not error and permByID should not nil")
 	}
+	if permByID.Name != modelPerm.Name || permByID.Description != modelPerm.Description {
+		t.Error("name and desc should same")
+	}
 
 	perms, total, getAllErr := svc.GetAll(ctx, base.RequestGetAll{Limit: 10, Page: 1})
 	if len(perms) < 1 || total < 1 || getAllErr != nil {
@@ -76,17 +80,35 @@ func TestSuccessCRUD(t *testing.T) {
 
 	updatePermModel := model.PermissionUpdate{
 		ID:          permID,
-		Name:        helper.RandomString(11),
+		Name:        strings.ToLower(helper.RandomString(11)),
 		Description: helper.RandomString(31),
 	}
 	updateErr := svc.Update(ctx, updatePermModel)
 	if updateErr != nil {
 		t.Error("should not error")
 	}
-}
 
-// Create(ctx context.Context, permission model.PermissionCreate) (id int, err error)
-// GetByID(ctx context.Context, id int) (permission *model.PermissionResponse, err error)
-// GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []model.PermissionResponse, total int, err error)
-// Update(ctx context.Context, permission model.PermissionUpdate) (err error)
-// Delete(ctx context.Context, id int) (err error)
+	// value reset
+	permByID = nil
+	getErr = nil
+	permByID, getErr = svc.GetByID(ctx, permID)
+	if getErr != nil || permByID == nil {
+		t.Error("should not error and permByID should not nil")
+	}
+	if permByID.Name != updatePermModel.Name || permByID.Description != updatePermModel.Description {
+		t.Error("name and desc should same")
+	}
+
+	deleteErr := svc.Delete(ctx, permID)
+	if deleteErr != nil {
+		t.Error("should not error")
+	}
+
+	// value reset
+	permByID = nil
+	getErr = nil
+	permByID, getErr = svc.GetByID(ctx, permID)
+	if getErr == nil || permByID != nil {
+		t.Error("should error and permByID should nil")
+	}
+}
