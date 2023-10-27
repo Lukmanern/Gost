@@ -15,3 +15,13 @@
 05:46:18 | 400 |    234.0756ms |       127.0.0.1 | POST    | /user-management/create       
 05:48:27 | 400 |    282.9204ms |       127.0.0.1 | POST    | /user-management/create       
 05:49:18 | 400 |    287.4911ms |       127.0.0.1 | POST    | /user-management/create       
+05:51:32 | 400 |    255.3173ms |       127.0.0.1 | POST    | /user-management/create       
+05:51:52 | 400 |    262.0284ms |       127.0.0.1 | POST    | /user-management/create       
+06:06:33 | 400 |    261.1063ms |       127.0.0.1 | POST    | /user-management/create       
+06:06:44 | 400 |    268.9088ms |       127.0.0.1 | POST    | /user-management/create       
+06:19:20 | 400 |    261.2158ms |       127.0.0.1 | POST    | /user-management/create       
+06:19:20 | 201 |      155.43ms |       127.0.0.1 | POST    | /user-management/create       
+06:22:01 | 400 |    248.6971ms |       127.0.0.1 | POST    | /user-management/create       
+06:22:01 | 201 |    140.0909ms |       127.0.0.1 | POST    | /user-management/create       
+06:22:44 | 400 |     279.874ms |       127.0.0.1 | POST    | /user-management/create       
+06:22:44 | 201 |    156.1935ms |       127.0.0.1 | POST    | /user-management/create       

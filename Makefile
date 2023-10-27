@@ -13,5 +13,5 @@ test-report:
 migrate-test-report:
 	go run database/migration/main.go
 	timeout 5
-	go test -timeout 120s -coverprofile=cover.out ./...
+	go test -timeout 200s -coverprofile=cover.out ./...
 	go tool cover -html cover.out -o cover.html

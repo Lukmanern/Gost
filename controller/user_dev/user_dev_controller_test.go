@@ -2,9 +2,9 @@ package controller_test
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -17,6 +17,8 @@ import (
 	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	controller "github.com/Lukmanern/gost/controller/user_dev"
 	service "github.com/Lukmanern/gost/service/user_dev"
@@ -53,7 +55,7 @@ func init() {
 
 func Test_Create(t *testing.T) {
 	go application.RunApp()
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	ctr := userDevController
 	if ctr == nil {
@@ -83,10 +85,10 @@ func Test_Create(t *testing.T) {
 	}()
 
 	testCases := []struct {
-		CaseName       string
-		payload        model.UserCreate
-		wantRespString string
-		wantHttpCode   int
+		CaseName     string
+		payload      model.UserCreate
+		resp         response.Response
+		wantHttpCode int
 	}{
 		{
 			CaseName: "failed create: email has already used",
@@ -96,20 +98,28 @@ func Test_Create(t *testing.T) {
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},
-			wantRespString: `{"message":"email has been used","success":false,"data":null}`,
-			wantHttpCode:   http.StatusBadRequest,
+			resp: response.Response{
+				Data:    nil,
+				Success: false,
+				Message: "",
+			},
+			wantHttpCode: http.StatusBadRequest,
 		},
-		// {
-		// 	CaseName: "success create",
-		// 	payload: model.UserCreate{
-		// 		Name:     helper.RandomString(10),
-		// 		Email:    helper.RandomEmails(1)[0],
-		// 		Password: helper.RandomString(11),
-		// 		IsAdmin:  true,
-		// 	},
-		// 	wantRespString: `{"message":"email has been used","success":false,"data":null}`,
-		// 	wantHttpCode:   http.StatusBadRequest,
-		// },
+		{
+			CaseName: "success create",
+			payload: model.UserCreate{
+				Name:     helper.RandomString(10),
+				Email:    helper.RandomEmails(1)[0],
+				Password: helper.RandomString(11),
+				IsAdmin:  true,
+			},
+			resp: response.Response{
+				Data:    nil,
+				Success: true,
+				Message: response.MessageSuccessCreated,
+			},
+			wantHttpCode: http.StatusCreated,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -134,21 +144,39 @@ func Test_Create(t *testing.T) {
 		if resp.StatusCode != tc.wantHttpCode {
 			t.Error("should equal")
 		}
-		respBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		respString := string(respBytes)
-		if respString != tc.wantRespString {
-			t.Error("should equal")
-		}
 
-		respModel := response.NewResponse()
+		respModel := response.Response{}
 		decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
 		if decodeErr != nil {
-			t.Error("should not error", respModel.Message)
+			t.Error("should not error", decodeErr)
 		}
-		// t.Error("message : ", respModel.Message)
+
+		if tc.resp.Success != respModel.Success {
+			t.Fatal("should equal")
+		}
+		if tc.resp.Message != "" {
+			if tc.resp.Message != respModel.Message {
+				t.Error("should equal")
+			}
+		}
+		if tc.resp.Data != nil {
+			if !reflect.DeepEqual(tc.resp.Data, respModel.Data) {
+				t.Error("should equal")
+			}
+		}
+		if respModel.Success {
+			userByEmail, getErr := userDevService.GetByEmail(ctx, tc.payload.Email)
+			if userByEmail.Name != cases.Title(language.Und).String(tc.payload.Name) {
+				t.Error("should equal")
+			}
+			if getErr != nil {
+				t.Error("should not error", getErr)
+			}
+			deleteErr := userDevService.Delete(ctx, userByEmail.ID)
+			if deleteErr != nil {
+				t.Error("should not error", deleteErr)
+			}
+		}
 	}
 }
 

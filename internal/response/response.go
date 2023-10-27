@@ -6,15 +6,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type response struct {
+type Response struct {
 	Message string      `json:"message"`
 	Success bool        `json:"success"`
 	Data    interface{} `json:"data"`
 }
 
-func NewResponse() response {
-	return response{}
-}
+const (
+	MessageSuccessCreated = "data successfully created"
+	MessageSuccessLoaded  = "data successfully loaded"
+	MessageUnauthorized   = "unauthorized"
+)
 
 // SuccessNoContent formats a successful
 // response with HTTP status 204.
@@ -27,7 +29,7 @@ func SuccessNoContent(c *fiber.Ctx) error {
 // with the given parameters.
 func CreateResponse(c *fiber.Ctx, statusCode int, success bool, message string, data interface{}) error {
 	c.Status(statusCode)
-	return c.JSON(response{
+	return c.JSON(Response{
 		Message: strings.ToLower(message),
 		Success: success,
 		Data:    data,
@@ -37,13 +39,13 @@ func CreateResponse(c *fiber.Ctx, statusCode int, success bool, message string, 
 // SuccessLoaded formats a successful response
 // with HTTP status 200 and the provided data.
 func SuccessLoaded(c *fiber.Ctx, data interface{}) error {
-	return CreateResponse(c, fiber.StatusOK, true, "data successfully loaded", data)
+	return CreateResponse(c, fiber.StatusOK, true, MessageSuccessLoaded, data)
 }
 
 // SuccessCreated formats a successful response
 // with HTTP status 201 and the provided data.
 func SuccessCreated(c *fiber.Ctx, data interface{}) error {
-	return CreateResponse(c, fiber.StatusCreated, true, "data successfully created", data)
+	return CreateResponse(c, fiber.StatusCreated, true, MessageSuccessCreated, data)
 }
 
 // BadRequest formats a response with HTTP
@@ -55,7 +57,7 @@ func BadRequest(c *fiber.Ctx, message string) error {
 // Unauthorized formats a response with
 // HTTP status 401 indicating unauthorized access.
 func Unauthorized(c *fiber.Ctx) error {
-	return CreateResponse(c, fiber.StatusUnauthorized, false, "unauthorized", nil)
+	return CreateResponse(c, fiber.StatusUnauthorized, false, MessageUnauthorized, nil)
 }
 
 // DataNotFound formats a response with
