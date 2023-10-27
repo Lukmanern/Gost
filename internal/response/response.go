@@ -12,6 +12,10 @@ type response struct {
 	Data    interface{} `json:"data"`
 }
 
+func NewResponse() response {
+	return response{}
+}
+
 // SuccessNoContent formats a successful
 // response with HTTP status 204.
 func SuccessNoContent(c *fiber.Ctx) error {

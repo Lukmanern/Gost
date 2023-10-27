@@ -1,10 +1,11 @@
 package controller_test
 
 import (
-	"bytes"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/rbac"
+	"github.com/Lukmanern/gost/internal/response"
+	"github.com/gofiber/fiber/v2"
 
 	controller "github.com/Lukmanern/gost/controller/user_dev"
 	service "github.com/Lukmanern/gost/service/user_dev"
@@ -46,12 +49,12 @@ func init() {
 
 	userDevService = service.NewUserDevService()
 	userDevController = controller.NewUserController(userDevService)
-
-	go application.RunApp()
-	time.Sleep(5 * time.Second)
 }
 
 func Test_Create(t *testing.T) {
+	go application.RunApp()
+	time.Sleep(5 * time.Second)
+
 	ctr := userDevController
 	if ctr == nil {
 		t.Error("should not nil")
@@ -71,70 +74,81 @@ func Test_Create(t *testing.T) {
 		Password: helper.RandomString(11),
 		IsAdmin:  true,
 	}
-	userDevService.Create(ctx, modelUserCreate)
+	userID, createErr := userDevService.Create(ctx, modelUserCreate)
+	if createErr != nil || userID < 1 {
+		t.Error("should not error and got id more or equal than 1")
+	}
+	defer func() {
+		userDevService.Delete(ctx, userID)
+	}()
 
 	testCases := []struct {
-		HTTPMethod   string
-		URL          string
-		ExpectedCode int
-		ExpectedBody string
+		CaseName       string
+		payload        model.UserCreate
+		wantRespString string
+		wantHttpCode   int
 	}{
 		{
-			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot GET /not-found-path"}`,
+			CaseName: "failed create: email has already used",
+			payload: model.UserCreate{
+				Name:     helper.RandomString(10),
+				Email:    modelUserCreate.Email,
+				Password: helper.RandomString(11),
+				IsAdmin:  true,
+			},
+			wantRespString: `{"message":"email has been used","success":false,"data":null}`,
+			wantHttpCode:   http.StatusBadRequest,
 		},
-		{
-			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot POST /not-found-path"}`,
-		},
-		{
-			HTTPMethod:   "PUT",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot PUT /not-found-path"}`,
-		},
-		{
-			HTTPMethod:   "DELETE",
-			URL:          "http://localhost:9009/not-found-path",
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"message":"Cannot DELETE /not-found-path"}`,
-		},
+		// {
+		// 	CaseName: "success create",
+		// 	payload: model.UserCreate{
+		// 		Name:     helper.RandomString(10),
+		// 		Email:    helper.RandomEmails(1)[0],
+		// 		Password: helper.RandomString(11),
+		// 		IsAdmin:  true,
+		// 	},
+		// 	wantRespString: `{"message":"email has been used","success":false,"data":null}`,
+		// 	wantHttpCode:   http.StatusBadRequest,
+		// },
 	}
 
 	for _, tc := range testCases {
-		req, err := http.NewRequest(tc.HTTPMethod, tc.URL, bytes.NewBuffer([]byte{}))
+		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Fatalf("Failed to create request: %v", err)
+			t.Error("should not error", err.Error())
 		}
-		req.Header.Set("Content-Type", "application/json")
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			t.Fatalf("HTTP request failed: %v", err)
+		req, httpReqErr := http.NewRequest(http.MethodPost, "http://127.0.0.1:9009/user-management/create", strings.NewReader(string(jsonObject)))
+		if httpReqErr != nil {
+			t.Fatal("should not nil")
+		}
+		req.Close = true
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		client := &http.Client{
+			Transport: &http.Transport{},
+		}
+		resp, clientErr := client.Do(req)
+		if clientErr != nil {
+			t.Fatalf("HTTP request failed: %v", clientErr)
 		}
 		defer resp.Body.Close()
-
-		if resp.StatusCode != tc.ExpectedCode {
-			t.Errorf("URL : "+tc.URL+" :: Expected status code %d, got %d", tc.ExpectedCode, resp.StatusCode)
+		if resp.StatusCode != tc.wantHttpCode {
+			t.Error("should equal")
 		}
-		// Read and verify the response body.
-		responseBytes, err := io.ReadAll(resp.Body)
+		respBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			t.Errorf("Failed to read response body: %v", err)
+			log.Fatal(err)
 		}
-		responseStr := string(responseBytes)
-		if tc.ExpectedBody != "" {
-			if responseStr != tc.ExpectedBody {
-				t.Errorf("URL : "+tc.URL+" :: Expected response body '%s', got '%s'", tc.ExpectedBody, responseStr)
-			}
+		respString := string(respBytes)
+		if respString != tc.wantRespString {
+			t.Error("should equal")
 		}
-		if tc.ExpectedCode == http.StatusNoContent && responseStr != tc.ExpectedBody {
-			t.Error("should equal to void-string")
+
+		respModel := response.NewResponse()
+		decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
+		if decodeErr != nil {
+			t.Error("should not error", respModel.Message)
 		}
+		// t.Error("message : ", respModel.Message)
 	}
 }
 
