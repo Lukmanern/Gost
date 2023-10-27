@@ -11,6 +11,9 @@ import (
 	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
 	rbacService "github.com/Lukmanern/gost/service/rbac"
+	"github.com/gofiber/fiber/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func init() {
@@ -44,9 +47,9 @@ func TestNewUserService(t *testing.T) {
 func Test_SuccessRegister(t *testing.T) {
 	// register
 	// get by id -> get code
-	// verifikasi / Verification -> check verCode is should null
+	// verifikasi / Verification -> check verCode is should nil
 	// try to login -> save(create) JWT
-	// forget password -> check verCode is not null
+	// forget password -> check verCode is not nil
 	// Reset Password -> try login
 	// Update Password -> try login
 	// update profile -> updated or not
@@ -84,6 +87,57 @@ func Test_SuccessRegister(t *testing.T) {
 	if getErr != nil || userByID == nil {
 		t.Error("should not error and id should not nil")
 	}
+	if userByID.Name != cases.Title(language.Und).String(modelUserRegis.Name) ||
+		userByID.Email != modelUserRegis.Email ||
+		userByID.Roles[0].ID != modelUserRegis.RoleID {
+		t.Error("should equal")
+	}
+	if userByID.VerificationCode == nil {
+		t.Error("should not nil")
+	}
+	if userByID.ActivatedAt != nil {
+		t.Error("should nil")
+	}
+
+	// failed login : account is created,
+	// but account is inactive
+	modelUserLogin := model.UserLogin{
+		Email:    modelUserRegis.Email,
+		Password: modelUserRegis.Password,
+		IP:       "123.1.1.9",
+	}
+	token, loginErr := svc.Login(ctx, modelUserLogin)
+	if loginErr == nil || token != "" {
+		t.Error("should login and token should nil-string")
+	}
+	fiberErr, ok := loginErr.(*fiber.Error)
+	if ok {
+		if fiberErr.Code != fiber.StatusBadRequest {
+			t.Error("should error 400BadReq")
+		}
+	}
+
+	vCode := userByID.VerificationCode
+
+	verifErr := svc.Verification(ctx, *vCode)
+	if verifErr != nil {
+		t.Error("should not nil")
+	}
+
+	// value reset
+	userByID = nil
+	getErr = nil
+	userByID, getErr = userRepo.GetByID(ctx, userID)
+	if getErr != nil || userByID == nil {
+		t.Error("should not error and id should not nil")
+	}
+	if userByID.VerificationCode != nil {
+		t.Error("should nil")
+	}
+	if userByID.ActivatedAt == nil {
+		t.Error("should not nil")
+	}
+
 }
 
 // Done Register(ctx context.Context, user model.UserRegister) (id int, err error)
