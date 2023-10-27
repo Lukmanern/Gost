@@ -47,6 +47,9 @@ func TestNewUserService(t *testing.T) {
 }
 
 func Test_SuccessRegister(t *testing.T) {
+	defer func() {
+		connector.LoadRedisDatabase().FlushAll()
+	}()
 	permSvc := rbacService.NewPermissionService()
 	roleSvc := rbacService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
@@ -97,7 +100,7 @@ func Test_SuccessRegister(t *testing.T) {
 	modelUserLogin := model.UserLogin{
 		Email:    modelUserRegis.Email,
 		Password: modelUserRegis.Password,
-		IP:       "123.1.1.9",
+		IP:       helper.RandomIPAddress(),
 	}
 	token, loginErr := svc.Login(ctx, modelUserLogin)
 	if loginErr == nil || token != "" {
@@ -157,7 +160,7 @@ func Test_SuccessRegister(t *testing.T) {
 	modelUserLogin = model.UserLogin{
 		Email:    modelUserRegis.Email,
 		Password: modelUserRegis.Password,
-		IP:       "123.1.1.9",
+		IP:       helper.RandomIPAddress(),
 	}
 	token, loginErr = svc.Login(ctx, modelUserLogin)
 	if loginErr != nil || token == "" {
@@ -211,7 +214,7 @@ func Test_SuccessRegister(t *testing.T) {
 	modelUserLogin = model.UserLogin{
 		Email:    modelUserRegis.Email,
 		Password: modelUserRegis.Password,
-		IP:       "123.1.1.9",
+		IP:       helper.RandomIPAddress(),
 	}
 	token, loginErr = svc.Login(ctx, modelUserLogin)
 	if loginErr == nil || token != "" {
@@ -224,7 +227,7 @@ func Test_SuccessRegister(t *testing.T) {
 	modelUserLogin = model.UserLogin{
 		Email:    modelUserRegis.Email,
 		Password: modelUserResetPasswd.NewPassword,
-		IP:       "123.1.1.9",
+		IP:       helper.RandomIPAddress(),
 	}
 	token, loginErr = svc.Login(ctx, modelUserLogin)
 	if loginErr != nil || token == "" {
@@ -249,7 +252,7 @@ func Test_SuccessRegister(t *testing.T) {
 	modelUserLogin = model.UserLogin{
 		Email:    modelUserRegis.Email,
 		Password: modelUserUpdatePasswd.NewPassword,
-		IP:       "123.1.1.9",
+		IP:       helper.RandomIPAddress(),
 	}
 	token, loginErr = svc.Login(ctx, modelUserLogin)
 	if loginErr != nil || token == "" {
@@ -282,6 +285,9 @@ func Test_SuccessRegister(t *testing.T) {
 }
 
 func Test_FailedRegister(t *testing.T) {
+	defer func() {
+		connector.LoadRedisDatabase().FlushAll()
+	}()
 	permSvc := rbacService.NewPermissionService()
 	roleSvc := rbacService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
@@ -335,7 +341,7 @@ func Test_FailedRegister(t *testing.T) {
 
 	// failed login
 	_, loginErr := svc.Login(ctx, model.UserLogin{
-		IP: "123.1.1.12",
+		IP: helper.RandomIPAddress(),
 	})
 	if loginErr == nil {
 		t.Error("should error")
@@ -363,6 +369,9 @@ func Test_FailedRegister(t *testing.T) {
 }
 
 func Test_Banned_IP_Address(t *testing.T) {
+	defer func() {
+		connector.LoadRedisDatabase().FlushAll()
+	}()
 	permSvc := rbacService.NewPermissionService()
 	roleSvc := rbacService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
@@ -373,7 +382,7 @@ func Test_Banned_IP_Address(t *testing.T) {
 	}
 
 	for i := 1; i <= 15; i++ {
-		counter, err := svc.FailedLoginCounter("123.1.1.12", true)
+		counter, err := svc.FailedLoginCounter(helper.RandomIPAddress(), true)
 		if err != nil {
 			t.Error("should not error")
 		}

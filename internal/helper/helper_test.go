@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"net"
 	"testing"
 )
 
@@ -31,5 +32,15 @@ func TestNewFiberCtx(t *testing.T) {
 	c := NewFiberCtx()
 	if c == nil {
 		t.Error("should not nil")
+	}
+}
+
+func TestRandomIPAddress(t *testing.T) {
+	for i := 0; i < 20; i++ {
+		ipRand := RandomIPAddress()
+		ip := net.ParseIP(ipRand)
+		if ip == nil {
+			t.Error("should not nil")
+		}
 	}
 }

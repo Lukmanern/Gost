@@ -2,7 +2,9 @@ package helper
 
 import (
 	"math/rand"
+	"net"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
@@ -36,4 +38,16 @@ func RandomEmails(n uint) []string {
 func NewFiberCtx() *fiber.Ctx {
 	app := fiber.New()
 	return app.AcquireCtx(&fasthttp.RequestCtx{})
+}
+
+func RandomIPAddress() string {
+	source := rand.NewSource(time.Now().UnixNano())
+	rng := rand.New(source)
+	a := rng.Intn(256)
+	b := rng.Intn(256)
+	c := rng.Intn(256)
+	d := rng.Intn(256)
+	ip := net.IPv4(byte(a), byte(b), byte(c), byte(d))
+
+	return ip.String()
 }
