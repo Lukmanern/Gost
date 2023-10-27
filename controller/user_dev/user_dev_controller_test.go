@@ -1,17 +1,27 @@
-package controller
+package controller_test
 
 import (
+	"bytes"
+	"io"
 	"log"
+	"net/http"
+	"testing"
+	"time"
 
+	"github.com/Lukmanern/gost/application"
 	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/rbac"
+
+	controller "github.com/Lukmanern/gost/controller/user_dev"
 	service "github.com/Lukmanern/gost/service/user_dev"
 )
 
 var (
 	userDevService    service.UserDevService
-	userDevController UserController
+	userDevController controller.UserController
 )
 
 func init() {
@@ -35,24 +45,101 @@ func init() {
 	rbac.PermissionHashMap = rbac.PermissionsHashMap()
 
 	userDevService = service.NewUserDevService()
-	userDevController = NewUserController(userDevService)
+	userDevController = controller.NewUserController(userDevService)
+
+	go application.RunApp()
+	time.Sleep(5 * time.Second)
 }
 
-// func TestDelete(t *testing.T) {
-// 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/action/%s", actionEntity.ID), nil)
-// 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
-// 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-// 	app := fiber.New()
-// 	actionService := service.LoadActionService()
-// 	actionController := NewActionController(actionService)
-// 	app.Put("/action/:id", actionController.Delete)
-// 	resp, err := app.Test(req, -1)
-// 	if err != nil {
-// 		log.Print(err)
-// 		tearDown()
-// 		return
-// 	}
-// 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-// 	saved, _ := repo.Get(ctx, actionEntity.ID, hospitalID)
-// 	assert.Empty(t, saved.ID)
-// }
+func Test_Create(t *testing.T) {
+	ctr := userDevController
+	if ctr == nil {
+		t.Error("should not nil")
+	}
+	c := helper.NewFiberCtx()
+	if ctr == nil || c == nil {
+		t.Error("should not error")
+	}
+
+	ctx := c.Context()
+	if ctx == nil {
+		t.Error("should not nil")
+	}
+	modelUserCreate := model.UserCreate{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(11),
+		IsAdmin:  true,
+	}
+	userDevService.Create(ctx, modelUserCreate)
+
+	testCases := []struct {
+		HTTPMethod   string
+		URL          string
+		ExpectedCode int
+		ExpectedBody string
+	}{
+		{
+			HTTPMethod:   "GET",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot GET /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "POST",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot POST /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "PUT",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot PUT /not-found-path"}`,
+		},
+		{
+			HTTPMethod:   "DELETE",
+			URL:          "http://localhost:9009/not-found-path",
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"message":"Cannot DELETE /not-found-path"}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		req, err := http.NewRequest(tc.HTTPMethod, tc.URL, bytes.NewBuffer([]byte{}))
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("HTTP request failed: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != tc.ExpectedCode {
+			t.Errorf("URL : "+tc.URL+" :: Expected status code %d, got %d", tc.ExpectedCode, resp.StatusCode)
+		}
+		// Read and verify the response body.
+		responseBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Errorf("Failed to read response body: %v", err)
+		}
+		responseStr := string(responseBytes)
+		if tc.ExpectedBody != "" {
+			if responseStr != tc.ExpectedBody {
+				t.Errorf("URL : "+tc.URL+" :: Expected response body '%s', got '%s'", tc.ExpectedBody, responseStr)
+			}
+		}
+		if tc.ExpectedCode == http.StatusNoContent && responseStr != tc.ExpectedBody {
+			t.Error("should equal to void-string")
+		}
+	}
+}
+
+// Create(c *fiber.Ctx) error
+// Get(c *fiber.Ctx) error
+// GetAll(c *fiber.Ctx) error
+// Update(c *fiber.Ctx) error
+// Delete(c *fiber.Ctx) error
