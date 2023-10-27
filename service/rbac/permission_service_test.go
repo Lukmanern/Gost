@@ -46,7 +46,7 @@ func TestNewPermissionService(t *testing.T) {
 // -> delete
 // -> get by id
 
-func TestSuccessCRUD(t *testing.T) {
+func TestSuccessCRUD_Permission(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	svc := NewPermissionService()
