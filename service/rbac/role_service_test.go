@@ -55,6 +55,19 @@ func TestSuccessCRUD_Role(t *testing.T) {
 		t.Error("should not nil")
 	}
 
+	// failed create: permissions not found
+	func() {
+		modelRole := model.RoleCreate{
+			Name:          strings.ToLower(helper.RandomString(10)),
+			Description:   helper.RandomString(30),
+			PermissionsID: []int{-1, -2, -3},
+		}
+		roleID, createErr := svc.Create(ctx, modelRole)
+		if createErr == nil || roleID != 0 {
+			t.Error("should error and id should zero")
+		}
+	}()
+
 	modelRole := model.RoleCreate{
 		Name:        strings.ToLower(helper.RandomString(10)),
 		Description: helper.RandomString(30),
@@ -86,6 +99,30 @@ func TestSuccessCRUD_Role(t *testing.T) {
 		}
 	}()
 
+	// failed connect: permissions not
+	// found and  role not found
+	func() {
+		modelConnectFailed := model.RoleConnectToPermissions{
+			RoleID:        roleID,
+			PermissionsID: []int{-3, -2, -1},
+		}
+		connectErr := svc.ConnectPermissions(ctx, modelConnectFailed)
+		if connectErr == nil {
+			t.Error("should error")
+		}
+
+		modelConnectFailed = model.RoleConnectToPermissions{
+			RoleID:        -1,
+			PermissionsID: []int{},
+		}
+		connectErr = nil
+		connectErr = svc.ConnectPermissions(ctx, modelConnectFailed)
+		if connectErr == nil {
+			t.Error("should error")
+		}
+	}()
+
+	// success connect
 	modelConnect := model.RoleConnectToPermissions{
 		RoleID:        roleID,
 		PermissionsID: permsID,
@@ -108,6 +145,19 @@ func TestSuccessCRUD_Role(t *testing.T) {
 		t.Error("should more than or equal one and not error at all")
 	}
 
+	// update failed : role not found
+	func() {
+		updateRoleModel := model.RoleUpdate{
+			ID:          -1,
+			Name:        strings.ToLower(helper.RandomString(11)),
+			Description: helper.RandomString(31),
+		}
+		updateErr := svc.Update(ctx, updateRoleModel)
+		if updateErr == nil {
+			t.Error("should error")
+		}
+	}()
+
 	updateRoleModel := model.RoleUpdate{
 		ID:          roleID,
 		Name:        strings.ToLower(helper.RandomString(11)),
@@ -128,6 +178,14 @@ func TestSuccessCRUD_Role(t *testing.T) {
 	if roleByID.Name != updateRoleModel.Name || roleByID.Description != updateRoleModel.Description {
 		t.Error("name and desc should same")
 	}
+
+	// delete error : role not found
+	func() {
+		deleteErr := svc.Delete(ctx, -1)
+		if deleteErr == nil {
+			t.Error("should error")
+		}
+	}()
 
 	deleteErr := svc.Delete(ctx, roleID)
 	if deleteErr != nil {
