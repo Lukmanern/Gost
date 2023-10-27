@@ -8,6 +8,7 @@ import (
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
+	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
 	rbacService "github.com/Lukmanern/gost/service/rbac"
@@ -45,15 +46,6 @@ func TestNewUserService(t *testing.T) {
 }
 
 func Test_SuccessRegister(t *testing.T) {
-	// register
-	// get by id -> get code
-	// verifikasi / Verification -> check verCode is should nil
-	// try to login -> save(create) JWT
-	// forget password -> check verCode is not nil
-	// Reset Password -> try login
-	// Update Password -> try login
-	// update profile -> updated or not
-	// MyProfile
 	permSvc := rbacService.NewPermissionService()
 	roleSvc := rbacService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
@@ -108,7 +100,7 @@ func Test_SuccessRegister(t *testing.T) {
 	}
 	token, loginErr := svc.Login(ctx, modelUserLogin)
 	if loginErr == nil || token != "" {
-		t.Error("should login and token should nil-string")
+		t.Error("should error login and token should nil-string")
 	}
 	fiberErr, ok := loginErr.(*fiber.Error)
 	if ok {
@@ -132,13 +124,127 @@ func Test_SuccessRegister(t *testing.T) {
 		t.Error("should not error and id should not nil")
 	}
 	if userByID.VerificationCode != nil {
+		t.Error("should not nil")
+	}
+	if userByID.ActivatedAt == nil {
 		t.Error("should nil")
+	}
+
+	// reset value
+	token = ""
+	loginErr = nil
+	modelUserLogin = model.UserLogin{
+		Email:    modelUserRegis.Email,
+		Password: modelUserRegis.Password,
+		IP:       "123.1.1.9",
+	}
+	token, loginErr = svc.Login(ctx, modelUserLogin)
+	if loginErr != nil || token == "" {
+		t.Error("should not error login and token should not nil-string")
+	}
+
+	jwtHandler := middleware.NewJWTHandler()
+	if !jwtHandler.IsTokenValid(token) {
+		t.Error("token should valid")
+	}
+	if jwtHandler.IsBlacklisted(token) {
+		t.Error("should not in black-list")
+	}
+
+	modelUserForgetPasswd := model.UserForgetPassword{
+		Email: modelUserLogin.Email,
+	}
+	forgetPwErr := svc.ForgetPassword(ctx, modelUserForgetPasswd)
+	if forgetPwErr != nil {
+		t.Error("should not error")
+	}
+
+	// value reset
+	userByID = nil
+	getErr = nil
+	userByID, getErr = userRepo.GetByID(ctx, userID)
+	if getErr != nil || userByID == nil {
+		t.Error("should not error and id should not nil")
+	}
+	if userByID.VerificationCode == nil {
+		t.Error("should not nil")
 	}
 	if userByID.ActivatedAt == nil {
 		t.Error("should not nil")
 	}
 
+	passwd := helper.RandomString(12)
+	modelUserResetPasswd := model.UserResetPassword{
+		Code:               *userByID.VerificationCode,
+		NewPassword:        passwd,
+		NewPasswordConfirm: passwd,
+	}
+	resetErr := svc.ResetPassword(ctx, modelUserResetPasswd)
+	if resetErr != nil {
+		t.Error("should not error")
+	}
+
+	// reset value, login failed
+	token = ""
+	loginErr = nil
+	modelUserLogin = model.UserLogin{
+		Email:    modelUserRegis.Email,
+		Password: modelUserRegis.Password,
+		IP:       "123.1.1.9",
+	}
+	token, loginErr = svc.Login(ctx, modelUserLogin)
+	if loginErr == nil || token != "" {
+		t.Error("should error login and token should nil-string")
+	}
+
+	// reset value, login success
+	token = ""
+	loginErr = nil
+	modelUserLogin = model.UserLogin{
+		Email:    modelUserRegis.Email,
+		Password: modelUserResetPasswd.NewPassword,
+		IP:       "123.1.1.9",
+	}
+	token, loginErr = svc.Login(ctx, modelUserLogin)
+	if loginErr != nil || token == "" {
+		t.Error("should not error login and token should not nil-string")
+	}
+
+	passwd = helper.RandomString(14)
+	modelUserUpdatePasswd := model.UserPasswordUpdate{
+		ID:                 userID,
+		OldPassword:        modelUserResetPasswd.NewPassword,
+		NewPassword:        passwd,
+		NewPasswordConfirm: passwd,
+	}
+	updatePasswdErr := svc.UpdatePassword(ctx, modelUserUpdatePasswd)
+	if updatePasswdErr != nil {
+		t.Error("should not error")
+	}
+
+	// reset value, login success
+	token = ""
+	loginErr = nil
+	modelUserLogin = model.UserLogin{
+		Email:    modelUserRegis.Email,
+		Password: modelUserUpdatePasswd.NewPassword,
+		IP:       "123.1.1.9",
+	}
+	token, loginErr = svc.Login(ctx, modelUserLogin)
+	if loginErr != nil || token == "" {
+		t.Error("should not error login and token should not nil-string")
+	}
 }
+
+// register
+// get by id -> get code
+// verifikasi / Verification -> check verCode is should nil Done
+// try to login -> save(create) JWT Done
+// forget password -> check verCode is not nil Done
+// Reset Password -> try login Done
+// Update Password -> try login
+// update profile -> updated or not
+// MyProfile
 
 // Done Register(ctx context.Context, user model.UserRegister) (id int, err error)
 // Done Verification(ctx context.Context, verifyCode string) (err error)
@@ -151,3 +257,5 @@ func Test_SuccessRegister(t *testing.T) {
 // UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
 // UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
 // MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
+
+// Todo : add login failed 5 times for banned testing of IP 4-5x times
