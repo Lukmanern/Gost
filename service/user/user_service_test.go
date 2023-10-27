@@ -251,14 +251,74 @@ func Test_SuccessRegister(t *testing.T) {
 	if profile.Name != cases.Title(language.Und).String(modelUserUpdate.Name) {
 		t.Error("should equal")
 	}
+
+	// success logout
+	cForLogout := helper.NewFiberCtx()
+	logoutErr := svc.Logout(cForLogout)
+	if logoutErr != nil {
+		t.Error("should no error")
+	}
 }
 
 func Test_FailedRegister(t *testing.T) {
+	permSvc := rbacService.NewPermissionService()
+	roleSvc := rbacService.NewRoleService(permSvc)
+	svc := NewUserService(roleSvc)
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	if svc == nil || ctx == nil {
+		t.Error("should not nil")
+	}
 
-}
+	userRepo := repository.NewUserRepository()
+	if userRepo == nil {
+		t.Error("should not nil")
+	}
 
-func Test_IP_Banned(t *testing.T) {
+	modelUserRegis := model.UserRegister{
+		Name:     helper.RandomString(12),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(12),
+		RoleID:   -10, // failed
+	}
+	userID, regisErr := svc.Register(ctx, modelUserRegis)
+	if regisErr == nil || userID != 0 {
+		t.Error("should error and id should zero")
+	}
 
+	defer func() {
+		userRepo.Delete(ctx, userID)
+	}()
+
+	verifErr := svc.Verification(ctx, "wrongCode")
+	if verifErr == nil {
+		t.Error("should error")
+	}
+	fiberErr, ok := verifErr.(*fiber.Error)
+	if ok {
+		if fiberErr.Code != fiber.StatusNotFound {
+			t.Error("should error 404")
+		}
+	}
+
+	deleteUserErr := svc.DeleteUserByVerification(ctx, "wrongCode")
+	if deleteUserErr == nil {
+		t.Error("should error")
+	}
+	fiberErr, ok = deleteUserErr.(*fiber.Error)
+	if ok {
+		if fiberErr.Code != fiber.StatusNotFound {
+			t.Error("should error 404")
+		}
+	}
+
+	// failed login
+	_, loginErr := svc.Login(ctx, model.UserLogin{
+		IP: "123.1.1.12",
+	})
+	if loginErr == nil {
+		t.Error("should error")
+	}
 }
 
 // Register(ctx context.Context, user model.UserRegister) (id int, err error)
