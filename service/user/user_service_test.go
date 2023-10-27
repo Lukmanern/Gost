@@ -4,6 +4,10 @@ import (
 	"log"
 	"testing"
 
+	"github.com/gofiber/fiber/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
@@ -12,9 +16,6 @@ import (
 	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
 	rbacService "github.com/Lukmanern/gost/service/rbac"
-	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 func init() {
@@ -107,6 +108,26 @@ func Test_SuccessRegister(t *testing.T) {
 		if fiberErr.Code != fiber.StatusBadRequest {
 			t.Error("should error 400BadReq")
 		}
+	}
+
+	// failed forget password : account is created,
+	// but account is inactive
+	forgetPassErr := svc.ForgetPassword(ctx, model.UserForgetPassword{Email: modelUserRegis.Email})
+	if forgetPassErr == nil {
+		t.Error("should error login and token should nil-string")
+	}
+	fiberErr, ok = forgetPassErr.(*fiber.Error)
+	if ok {
+		if fiberErr.Code != fiber.StatusBadRequest {
+			t.Error("should error 400BadReq")
+		}
+	}
+
+	// failed forget password : account is created,
+	// but account is inactive
+	resetPasswdErr := svc.ResetPassword(ctx, model.UserResetPassword{Code: "wrongCode"})
+	if resetPasswdErr == nil {
+		t.Error("should error login and token should nil-string")
 	}
 
 	vCode := userByID.VerificationCode
@@ -319,18 +340,61 @@ func Test_FailedRegister(t *testing.T) {
 	if loginErr == nil {
 		t.Error("should error")
 	}
+
+	forgetErr := svc.ForgetPassword(ctx, model.UserForgetPassword{Email: "wrong_email@gost.project"})
+	if forgetErr == nil {
+		t.Error("should error")
+	}
+
+	verifyErr := svc.ResetPassword(ctx, model.UserResetPassword{Code: "wrong-code"})
+	if verifyErr == nil {
+		t.Error("should error")
+	}
+
+	updatePasswdErr := svc.UpdatePassword(ctx, model.UserPasswordUpdate{ID: -1})
+	if updatePasswdErr == nil {
+		t.Error("should error")
+	}
+
+	_, getErr := svc.MyProfile(ctx, -10)
+	if getErr == nil {
+		t.Error("should error")
+	}
 }
 
-// Register(ctx context.Context, user model.UserRegister) (id int, err error)
-// Verification(ctx context.Context, verifyCode string) (err error)
-// DeleteUserByVerification(ctx context.Context, verifyCode string) (err error)
-// FailedLoginCounter(userIP string, increment bool) (counter int, err error)
-// Login(ctx context.Context, user model.UserLogin) (token string, err error)
-// Logout(c *fiber.Ctx) (err error)
-// ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
-// ResetPassword(ctx context.Context, user model.UserResetPassword) (err error)
-// UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
-// UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
-// MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
+func Test_Banned_IP_Address(t *testing.T) {
+	permSvc := rbacService.NewPermissionService()
+	roleSvc := rbacService.NewRoleService(permSvc)
+	svc := NewUserService(roleSvc)
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	if svc == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+
+	for i := 1; i <= 15; i++ {
+		counter, err := svc.FailedLoginCounter("123.1.1.12", true)
+		if err != nil {
+			t.Error("should not error")
+		}
+		if i >= 4 {
+			if counter == i {
+				t.Error("counter should error")
+			}
+		}
+	}
+}
+
+// Register(ctx context.Context, user model.UserRegister) (id int, err error) Done
+// Verification(ctx context.Context, verifyCode string) (err error) Done
+// DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) Done : half
+// FailedLoginCounter(userIP string, increment bool) (counter int, err error) Done
+// Login(ctx context.Context, user model.UserLogin) (token string, err error) Done
+// Logout(c *fiber.Ctx) (err error) Done
+// ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) Done
+// ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) Done
+// UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) Done
+// UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) Done
+// MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) Done
 
 // Todo : add login failed 5 times for banned testing of IP 4-5x times
