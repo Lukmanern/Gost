@@ -234,23 +234,38 @@ func Test_SuccessRegister(t *testing.T) {
 	if loginErr != nil || token == "" {
 		t.Error("should not error login and token should not nil-string")
 	}
+
+	modelUserUpdate := model.UserProfileUpdate{
+		ID:   userID,
+		Name: helper.RandomString(10),
+	}
+	updateProfileErr := svc.UpdateProfile(ctx, modelUserUpdate)
+	if updateProfileErr != nil {
+		t.Error("should not error")
+	}
+
+	profile, getErr := svc.MyProfile(ctx, userID)
+	if getErr != nil {
+		t.Error("should not error")
+	}
+	if profile.Name != cases.Title(language.Und).String(modelUserUpdate.Name) {
+		t.Error("should equal")
+	}
 }
 
-// register
-// get by id -> get code
-// verifikasi / Verification -> check verCode is should nil Done
-// try to login -> save(create) JWT Done
-// forget password -> check verCode is not nil Done
-// Reset Password -> try login Done
-// Update Password -> try login
-// update profile -> updated or not
-// MyProfile
+func Test_FailedRegister(t *testing.T) {
 
-// Done Register(ctx context.Context, user model.UserRegister) (id int, err error)
-// Done Verification(ctx context.Context, verifyCode string) (err error)
+}
+
+func Test_IP_Banned(t *testing.T) {
+
+}
+
+// Register(ctx context.Context, user model.UserRegister) (id int, err error)
+// Verification(ctx context.Context, verifyCode string) (err error)
 // DeleteUserByVerification(ctx context.Context, verifyCode string) (err error)
 // FailedLoginCounter(userIP string, increment bool) (counter int, err error)
-// Done Login(ctx context.Context, user model.UserLogin) (token string, err error)
+// Login(ctx context.Context, user model.UserLogin) (token string, err error)
 // Logout(c *fiber.Ctx) (err error)
 // ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
 // ResetPassword(ctx context.Context, user model.UserResetPassword) (err error)
