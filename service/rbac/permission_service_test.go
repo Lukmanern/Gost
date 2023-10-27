@@ -112,3 +112,49 @@ func TestSuccessCRUD_Permission(t *testing.T) {
 		t.Error("should error and permByID should nil")
 	}
 }
+
+// Create(ctx context.Context, permission model.PermissionCreate) (id int, err error)
+// GetByID(ctx context.Context, id int) (permission *model.PermissionResponse, err error)
+// GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []model.PermissionResponse, total int, err error)
+// Update(ctx context.Context, permission model.PermissionUpdate) (err error)
+// Delete(ctx context.Context, id int) (err error)
+
+func TestFailedCRUD_Permission(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	svc := NewPermissionService()
+	if svc == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+	modelPerm := model.PermissionCreate{
+		Name:        strings.ToLower(helper.RandomString(10)),
+		Description: helper.RandomString(30),
+	}
+	permID, createErr := svc.Create(ctx, modelPerm)
+	if createErr != nil || permID < 1 {
+		t.Error("should not error and permID should more than one")
+	}
+	defer func() {
+		svc.Delete(ctx, permID)
+	}()
+
+	permByID, getErr := svc.GetByID(ctx, -10)
+	if getErr == nil || permByID != nil {
+		t.Error("should error and permByID should nil")
+	}
+
+	updatePermModel := model.PermissionUpdate{
+		ID:          -10,
+		Name:        strings.ToLower(helper.RandomString(11)),
+		Description: helper.RandomString(31),
+	}
+	updateErr := svc.Update(ctx, updatePermModel)
+	if updateErr == nil {
+		t.Error("should error")
+	}
+
+	deleteErr := svc.Delete(ctx, -10)
+	if deleteErr == nil {
+		t.Error("should error")
+	}
+}
