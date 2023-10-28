@@ -3,6 +3,8 @@ package controller_test
 import (
 	"encoding/json"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
@@ -53,6 +55,7 @@ func Test_Create(t *testing.T) {
 	if ctr == nil || c == nil {
 		t.Error("should not nil")
 	}
+	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	createdUser := model.UserCreate{
@@ -74,12 +77,12 @@ func Test_Create(t *testing.T) {
 
 	testCases := []struct {
 		caseName string
-		payload  model.UserCreate
+		payload  *model.UserCreate
 		wantErr  bool
 	}{
 		{
 			caseName: "success create user -1",
-			payload: model.UserCreate{
+			payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmails(1)[0] + "xyz",
 				Password: helper.RandomString(11),
@@ -89,7 +92,7 @@ func Test_Create(t *testing.T) {
 		},
 		{
 			caseName: "success create user -2",
-			payload: model.UserCreate{
+			payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmails(1)[0] + "xyz",
 				Password: helper.RandomString(11),
@@ -99,7 +102,7 @@ func Test_Create(t *testing.T) {
 		},
 		{
 			caseName: "success create user -3",
-			payload: model.UserCreate{
+			payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmails(1)[0] + "xyz",
 				Password: helper.RandomString(11),
@@ -109,7 +112,7 @@ func Test_Create(t *testing.T) {
 		},
 		{
 			caseName: "failed create user: invalid email address",
-			payload: model.UserCreate{
+			payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    "invalid-email-address",
 				Password: helper.RandomString(11),
@@ -119,7 +122,7 @@ func Test_Create(t *testing.T) {
 		},
 		{
 			caseName: "failed create user: email already used",
-			payload: model.UserCreate{
+			payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    createdUser.Email,
 				Password: helper.RandomString(11),
@@ -129,13 +132,18 @@ func Test_Create(t *testing.T) {
 		},
 		{
 			caseName: "failed create user: password too short",
-			payload: model.UserCreate{
+			payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmails(1)[0],
 				Password: "short",
 				IsAdmin:  true,
 			},
 			wantErr: true,
+		},
+		{
+			caseName: "failed create user: nil payload, validate failed",
+			payload:  nil,
+			wantErr:  true,
 		},
 	}
 
@@ -149,6 +157,8 @@ func Test_Create(t *testing.T) {
 		createErr := userDevController.Create(c)
 		if createErr != nil {
 			t.Error("should not erro", createErr)
+		} else if tc.payload == nil {
+			continue
 		}
 
 		ctx := c.Context()
@@ -171,6 +181,26 @@ func Test_Create(t *testing.T) {
 				t.Error("should equal")
 			}
 		}
+	}
+}
+
+func Test_Get(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			t.Error("panic ::", r)
+		}
+	}()
+
+	req := httptest.NewRequest(http.MethodGet, "/user-management/1", nil)
+	app := fiber.New()
+	app.Get("/user-management/:id", userDevController.Get)
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatal("should not error")
+	}
+	if resp == nil {
+		t.Error("should not error")
 	}
 }
 
