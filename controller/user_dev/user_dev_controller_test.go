@@ -11,6 +11,8 @@ import (
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	controller "github.com/Lukmanern/gost/controller/user_dev"
 	service "github.com/Lukmanern/gost/service/user_dev"
@@ -46,21 +48,29 @@ func init() {
 }
 
 func Test_Create(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctr := userDevController
+	if ctr == nil || c == nil {
+		t.Error("should not nil")
+	}
+	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+	createdUser := model.UserCreate{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(11),
+	}
+	createdUserID, createErr := userDevService.Create(c.Context(), createdUser)
+	if createErr != nil || createdUserID < 1 {
+		t.Fatal("should not error and userID should more tha zero")
+	}
 	defer func() {
+		userDevService.Delete(c.Context(), createdUserID)
 		r := recover()
 		if r != nil {
 			t.Error("panic ::", r)
 		}
 	}()
-	ctr := userDevController
-	if ctr == nil {
-		t.Error("should not nil")
-	}
-	c := helper.NewFiberCtx()
-	if ctr == nil || c == nil {
-		t.Error("should not error")
-	}
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	testCases := []struct {
 		caseName string
@@ -68,14 +78,64 @@ func Test_Create(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			caseName: "success create user",
+			caseName: "success create user -1",
 			payload: model.UserCreate{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0] + "XYZ",
+				Email:    helper.RandomEmails(1)[0] + "xyz",
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},
 			wantErr: false,
+		},
+		{
+			caseName: "success create user -2",
+			payload: model.UserCreate{
+				Name:     helper.RandomString(10),
+				Email:    helper.RandomEmails(1)[0] + "xyz",
+				Password: helper.RandomString(11),
+				IsAdmin:  true,
+			},
+			wantErr: false,
+		},
+		{
+			caseName: "success create user -3",
+			payload: model.UserCreate{
+				Name:     helper.RandomString(10),
+				Email:    helper.RandomEmails(1)[0] + "xyz",
+				Password: helper.RandomString(11),
+				IsAdmin:  true,
+			},
+			wantErr: false,
+		},
+		{
+			caseName: "failed create user: invalid email address",
+			payload: model.UserCreate{
+				Name:     helper.RandomString(10),
+				Email:    "invalid-email-address",
+				Password: helper.RandomString(11),
+				IsAdmin:  true,
+			},
+			wantErr: true,
+		},
+		{
+			caseName: "failed create user: email already used",
+			payload: model.UserCreate{
+				Name:     helper.RandomString(10),
+				Email:    createdUser.Email,
+				Password: helper.RandomString(11),
+				IsAdmin:  true,
+			},
+			wantErr: true,
+		},
+		{
+			caseName: "failed create user: password too short",
+			payload: model.UserCreate{
+				Name:     helper.RandomString(10),
+				Email:    helper.RandomEmails(1)[0],
+				Password: "short",
+				IsAdmin:  true,
+			},
+			wantErr: true,
 		},
 	}
 
@@ -92,13 +152,24 @@ func Test_Create(t *testing.T) {
 		}
 
 		ctx := c.Context()
-		userByEMail, _ := userDevService.GetByEmail(ctx, tc.payload.Email)
-		if userByEMail == nil && !tc.wantErr {
-			// if wantErr is false and user is not found
-			// there is test failed
-			t.Error("should not nil")
-		} else {
-			userDevService.Delete(ctx, userByEMail.ID)
+		userByEMail, getErr := userDevService.GetByEmail(ctx, tc.payload.Email)
+		// if wantErr is false and user is not found
+		// there is test failed
+		if getErr != nil && !tc.wantErr {
+			t.Fatal("test fail", getErr)
+		}
+		if !tc.wantErr {
+			if userByEMail == nil {
+				t.Fatal("should not nil")
+			} else {
+				deleteErr := userDevService.Delete(ctx, userByEMail.ID)
+				if deleteErr != nil {
+					t.Error("should not error")
+				}
+			}
+			if userByEMail.Name != cases.Title(language.Und).String(tc.payload.Name) {
+				t.Error("should equal")
+			}
 		}
 	}
 }
