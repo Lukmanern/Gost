@@ -1,4 +1,0 @@
-20:05:17 | 404 |            0s |       127.0.0.1 | GET     | /not-found-path                | Cannot GET /not-found-path
-20:05:17 | 404 |            0s |       127.0.0.1 | POST    | /not-found-path                | Cannot POST /not-found-path
-20:05:17 | 404 |            0s |       127.0.0.1 | PUT     | /not-found-path                | Cannot PUT /not-found-path
-20:05:17 | 404 |            0s |       127.0.0.1 | DELETE  | /not-found-path                | Cannot DELETE /not-found-path

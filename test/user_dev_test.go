@@ -1,4 +1,4 @@
-package controller_test
+package test
 
 import (
 	"encoding/json"
@@ -32,7 +32,7 @@ var (
 func init() {
 	// controller\user_dev\user_dev_controller_test.go
 	// Check env and database
-	env.ReadConfig("./../../.env")
+	env.ReadConfig("./../.env")
 	config := env.Configuration()
 	dbURI := config.GetDatabaseURI()
 	privKey := config.GetPrivateKey()
@@ -66,8 +66,6 @@ func Test_Create(t *testing.T) {
 		t.Error("should not error")
 	}
 
-	c.Request().Header.Add("", "")
-	c.Request().SetBody([]byte{})
 	ctx := c.Context()
 	if ctx == nil {
 		t.Error("should not nil")
