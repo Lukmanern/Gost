@@ -81,16 +81,6 @@ func (ctr UserDevControllerImpl) Get(c *fiber.Ctx) error {
 }
 
 func (ctr UserDevControllerImpl) GetAll(c *fiber.Ctx) error {
-	return response.SuccessLoaded(c, base.GetAllResponse{
-		Meta: base.PageMeta{
-			Pages: 111,
-			Page:  1,
-			Total: 100,
-		},
-		Data: []any{
-			"xyzcom",
-		},
-	})
 	request := base.RequestGetAll{
 		Page:    c.QueryInt("page", 1),
 		Limit:   c.QueryInt("limit", 20),

@@ -2,6 +2,7 @@ package controller_test
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
@@ -318,7 +318,6 @@ func Test_GetAll(t *testing.T) {
 		payload  string
 		respCode int
 		wantErr  bool
-		response base.GetAllResponse
 	}{
 		{
 			payload:  "page=1&limit=100&search=",
@@ -342,19 +341,23 @@ func Test_GetAll(t *testing.T) {
 		if resp.StatusCode != tc.respCode {
 			t.Error("should equal")
 		}
-		// if !tc.wantErr {
-		// 	body := base.GetAllResponse{}.Meta
-		// 	bytes, err := io.ReadAll(resp.Body)
-		// 	if err != nil {
-		// 		log.Fatal(err)
-		// 	}
-		// 	err = json.Unmarshal(bytes, &body)
-		// 	if err != nil {
-		// 		log.Fatal(err)
-		// 	}
-		// 	// data := reflect.ValueOf(body)
-		// 	t.Error(body)
-		// }
+		if !tc.wantErr {
+			body := response.Response{}
+			bytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal("should not error", err.Error())
+			}
+			err = json.Unmarshal(bytes, &body)
+			if err != nil {
+				t.Fatal("should not error", err.Error())
+			}
+			if !body.Success {
+				t.Fatal("should be success")
+			}
+			if len(bytes) <= 2 {
+				t.Error("len of bytes should much")
+			}
+		}
 	}
 }
 

@@ -7,6 +7,6 @@ type PageMeta struct {
 }
 
 type GetAllResponse struct {
-	Meta PageMeta      `json:"meta"`
-	Data []interface{} `json:"data"`
+	Meta PageMeta    `json:"meta"`
+	Data interface{} `json:"data"`
 }
