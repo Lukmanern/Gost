@@ -1,13 +1,16 @@
 package controller_test
 
 import (
+	"encoding/json"
 	"log"
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/rbac"
+	"github.com/gofiber/fiber/v2"
 
 	controller "github.com/Lukmanern/gost/controller/user_dev"
 	service "github.com/Lukmanern/gost/service/user_dev"
@@ -43,9 +46,12 @@ func init() {
 }
 
 func Test_Create(t *testing.T) {
-	// go application.RunApp()
-	// time.Sleep(2 * time.Second)
-
+	defer func() {
+		r := recover()
+		if r != nil {
+			t.Error("panic ::", r)
+		}
+	}()
 	ctr := userDevController
 	if ctr == nil {
 		t.Error("should not nil")
@@ -54,13 +60,22 @@ func Test_Create(t *testing.T) {
 	if ctr == nil || c == nil {
 		t.Error("should not error")
 	}
+	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	c.Request().Header.Add("", "")
-	c.Request().SetBody([]byte{})
+	jsonObject, marshalErr := json.Marshal(&model.UserCreate{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmails(1)[0] + "XYZCOM",
+		Password: helper.RandomString(11),
+		IsAdmin:  true,
+	})
+	if marshalErr != nil {
+		t.Error("should not error", marshalErr.Error())
+	}
+	c.Request().SetBody(jsonObject)
 
-	err := userDevController.Create(c)
-	if err != nil {
-		t.Error(err)
+	createErr := userDevController.Create(c)
+	if createErr != nil {
+		t.Error("should not erro", createErr)
 	}
 }
 
