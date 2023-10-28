@@ -400,9 +400,7 @@ func Test_Update(t *testing.T) {
 	testCases := []struct {
 		caseName string
 		payload  *model.UserProfileUpdate
-		wantErr  bool
 		respCode int
-		response response.Response
 	}{
 		{
 			caseName: "success update user -1",
@@ -411,7 +409,6 @@ func Test_Update(t *testing.T) {
 				Name: helper.RandomString(6),
 			},
 			respCode: http.StatusNoContent,
-			wantErr:  false,
 		},
 		{
 			caseName: "success update user -2",
@@ -420,7 +417,6 @@ func Test_Update(t *testing.T) {
 				Name: helper.RandomString(8),
 			},
 			respCode: http.StatusNoContent,
-			wantErr:  false,
 		},
 		{
 			caseName: "success update user -3",
@@ -429,7 +425,6 @@ func Test_Update(t *testing.T) {
 				Name: helper.RandomString(10),
 			},
 			respCode: http.StatusNoContent,
-			wantErr:  false,
 		},
 		{
 			caseName: "failed update: invalid id",
@@ -491,8 +486,82 @@ func Test_Update(t *testing.T) {
 	}
 }
 
-// Create(c *fiber.Ctx) error Done
-// Get(c *fiber.Ctx) error Done
-// GetAll(c *fiber.Ctx) error Done
-// Update(c *fiber.Ctx) error Done
-// Delete(c *fiber.Ctx) error
+func Test_Delete(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctr := userDevController
+	ctx := c.Context()
+	if ctr == nil || c == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+	c.Method(http.MethodPut)
+	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+	createdUser := model.UserCreate{
+		Name:     helper.RandomString(11),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(11),
+		IsAdmin:  true,
+	}
+	createdUserID, createErr := userDevService.Create(ctx, createdUser)
+	if createErr != nil || createdUserID <= 0 {
+		t.Error("should not error and more than zero")
+	}
+	defer func() {
+		userDevService.Delete(ctx, createdUserID)
+		r := recover()
+		if r != nil {
+			t.Error("panic ::", r)
+		}
+	}()
+
+	testCases := []struct {
+		caseName string
+		wantErr  bool
+		respCode int
+		paramID  int
+		response response.Response
+	}{
+		{
+			caseName: "success delete user",
+			respCode: http.StatusNoContent,
+			paramID:  createdUserID,
+		},
+		{
+			caseName: "failed delete: invalid id",
+			respCode: http.StatusBadRequest,
+			paramID:  -100,
+		},
+		{
+			caseName: "failed delete: not found",
+			respCode: http.StatusNotFound,
+			paramID:  createdUserID + 100,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.caseName)
+		url := "http://127.0.0.1:9009/user-management/" + strconv.Itoa(tc.paramID)
+		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
+		if httpReqErr != nil || req == nil {
+			t.Fatal("should not nil")
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		app := fiber.New()
+		app.Delete("/user-management/:id", userDevController.Delete)
+		req.Close = true
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal", resp.StatusCode)
+		}
+	}
+
+	userByID, err := userDevService.GetByID(ctx, createdUserID)
+	if err == nil || userByID != nil {
+		t.Error("should error and user should nil")
+	}
+}
