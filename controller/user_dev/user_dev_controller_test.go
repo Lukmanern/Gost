@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
@@ -12,6 +13,7 @@ import (
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/rbac"
+	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -185,27 +187,101 @@ func Test_Create(t *testing.T) {
 }
 
 func Test_Get(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	if c == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+
+	createdUser := model.UserCreate{
+		Name:     helper.RandomString(11),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(11),
+		IsAdmin:  true,
+	}
+	createdUserID, createErr := userDevService.Create(ctx, createdUser)
+	if createErr != nil || createdUserID <= 0 {
+		t.Error("should not error and more than zero")
+	}
 	defer func() {
+		userDevService.Delete(ctx, createdUserID)
 		r := recover()
 		if r != nil {
 			t.Error("panic ::", r)
 		}
 	}()
 
-	req := httptest.NewRequest(http.MethodGet, "/user-management/1", nil)
-	app := fiber.New()
-	app.Get("/user-management/:id", userDevController.Get)
-	resp, err := app.Test(req, -1)
-	if err != nil {
-		t.Fatal("should not error")
+	testCases := []struct {
+		caseName string
+		userID   string
+		respCode int
+		wantErr  bool
+		response response.Response
+	}{
+		{
+			caseName: "success get user",
+			userID:   strconv.Itoa(createdUserID),
+			respCode: http.StatusOK,
+			wantErr:  false,
+			response: response.Response{
+				Message: response.MessageSuccessLoaded,
+				Success: true,
+			},
+		},
+		{
+			caseName: "failed get user: negatif user id",
+			userID:   "-10",
+			respCode: http.StatusBadRequest,
+			wantErr:  true,
+		},
+		{
+			caseName: "failed get user: user not found",
+			userID:   "199999990",
+			respCode: http.StatusNotFound,
+			wantErr:  true,
+		},
+		{
+			caseName: "failed get user: failed convert id to int",
+			userID:   "not-number",
+			respCode: http.StatusBadRequest,
+			wantErr:  true,
+		},
 	}
-	if resp == nil {
-		t.Error("should not error")
+
+	for _, tc := range testCases {
+		req := httptest.NewRequest(http.MethodGet, "/user-management/"+tc.userID, nil)
+		app := fiber.New()
+		app.Get("/user-management/:id", userDevController.Get)
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		if resp == nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal")
+		}
+		if !tc.wantErr {
+			respModel := response.Response{}
+			decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
+			if decodeErr != nil {
+				t.Error("should not error", decodeErr)
+			}
+
+			if tc.response.Message != respModel.Message && tc.response.Message != "" {
+				t.Error("should equal")
+			}
+			if respModel.Success != tc.response.Success {
+				t.Error("should equal")
+			}
+		}
 	}
 }
 
-// Create(c *fiber.Ctx) error
-// Get(c *fiber.Ctx) error
+// Create(c *fiber.Ctx) error Done
+// Get(c *fiber.Ctx) error Done
 // GetAll(c *fiber.Ctx) error
 // Update(c *fiber.Ctx) error
 // Delete(c *fiber.Ctx) error
