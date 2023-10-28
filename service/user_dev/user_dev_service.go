@@ -7,6 +7,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
@@ -98,6 +99,7 @@ func (svc UserDevServiceImpl) GetByID(ctx context.Context, id int) (user *model.
 }
 
 func (svc UserDevServiceImpl) GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error) {
+	email = strings.ToLower(email)
 	userEntity, err := svc.repository.GetByEmail(ctx, email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

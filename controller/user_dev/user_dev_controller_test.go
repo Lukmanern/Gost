@@ -62,20 +62,44 @@ func Test_Create(t *testing.T) {
 	}
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	jsonObject, marshalErr := json.Marshal(&model.UserCreate{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0] + "XYZCOM",
-		Password: helper.RandomString(11),
-		IsAdmin:  true,
-	})
-	if marshalErr != nil {
-		t.Error("should not error", marshalErr.Error())
+	testCases := []struct {
+		caseName string
+		payload  model.UserCreate
+		wantErr  bool
+	}{
+		{
+			caseName: "success create user",
+			payload: model.UserCreate{
+				Name:     helper.RandomString(10),
+				Email:    helper.RandomEmails(1)[0] + "XYZ",
+				Password: helper.RandomString(11),
+				IsAdmin:  true,
+			},
+			wantErr: false,
+		},
 	}
-	c.Request().SetBody(jsonObject)
 
-	createErr := userDevController.Create(c)
-	if createErr != nil {
-		t.Error("should not erro", createErr)
+	for _, tc := range testCases {
+		jsonObject, marshalErr := json.Marshal(&tc.payload)
+		if marshalErr != nil {
+			t.Error("should not error", marshalErr.Error())
+		}
+		c.Request().SetBody(jsonObject)
+
+		createErr := userDevController.Create(c)
+		if createErr != nil {
+			t.Error("should not erro", createErr)
+		}
+
+		ctx := c.Context()
+		userByEMail, _ := userDevService.GetByEmail(ctx, tc.payload.Email)
+		if userByEMail == nil && !tc.wantErr {
+			// if wantErr is false and user is not found
+			// there is test failed
+			t.Error("should not nil")
+		} else {
+			userDevService.Delete(ctx, userByEMail.ID)
+		}
 	}
 }
 
