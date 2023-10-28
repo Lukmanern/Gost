@@ -26,7 +26,7 @@ import (
 
 var (
 	userDevService    service.UserDevService
-	userDevController controller.UserController
+	userDevController controller.UserDevController
 )
 
 func init() {
@@ -50,7 +50,7 @@ func init() {
 	rbac.PermissionHashMap = rbac.PermissionsHashMap()
 
 	userDevService = service.NewUserDevService()
-	userDevController = controller.NewUserController(userDevService)
+	userDevController = controller.NewUserDevController(userDevService)
 }
 
 func Test_Create(t *testing.T) {

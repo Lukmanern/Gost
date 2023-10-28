@@ -25,7 +25,7 @@ import (
 
 var (
 	userDevService    service.UserDevService
-	userDevController controller.UserController
+	userDevController controller.UserDevController
 )
 
 func init() {
@@ -49,7 +49,7 @@ func init() {
 	rbac.PermissionHashMap = rbac.PermissionsHashMap()
 
 	userDevService = service.NewUserDevService()
-	userDevController = controller.NewUserController(userDevService)
+	userDevController = controller.NewUserDevController(userDevService)
 }
 
 func Test_Create(t *testing.T) {
@@ -333,7 +333,7 @@ func Test_GetAll(t *testing.T) {
 		app.Get("/user-management", userDevController.GetAll)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal("should not error", err.Error())
 		}
 		if resp == nil {
 			t.Fatal("should not error")
@@ -343,12 +343,17 @@ func Test_GetAll(t *testing.T) {
 			t.Error("should equal")
 		}
 		// if !tc.wantErr {
-		// 	respModel := base.GetAllResponse{}
-		// 	decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
-		// 	if decodeErr != nil {
-		// 		t.Error("should not error", decodeErr)
+		// 	body := base.GetAllResponse{}.Meta
+		// 	bytes, err := io.ReadAll(resp.Body)
+		// 	if err != nil {
+		// 		log.Fatal(err)
 		// 	}
-		// 	t.Error(respModel.Meta)
+		// 	err = json.Unmarshal(bytes, &body)
+		// 	if err != nil {
+		// 		log.Fatal(err)
+		// 	}
+		// 	// data := reflect.ValueOf(body)
+		// 	t.Error(body)
 		// }
 	}
 }
