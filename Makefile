@@ -15,3 +15,7 @@ migrate-test-report:
 	timeout 5
 	go test -timeout 200s -coverprofile=cover.out ./...
 	go tool cover -html cover.out -o cover.html
+
+# !!windows only!! run redis in background
+st-redis:
+	redis-server.exe --service-start

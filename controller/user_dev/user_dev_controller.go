@@ -120,10 +120,10 @@ func (ctr UserDevControllerImpl) Update(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid id")
 	}
 	var user model.UserProfileUpdate
+	user.ID = id
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
-	user.ID = id
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())

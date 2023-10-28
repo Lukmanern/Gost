@@ -1,6 +1,7 @@
 package controller_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"log"
@@ -157,7 +158,7 @@ func Test_Create(t *testing.T) {
 		}
 		c.Request().SetBody(jsonObject)
 
-		createErr := userDevController.Create(c)
+		createErr := ctr.Create(c)
 		if createErr != nil {
 			t.Error("should not erro", createErr)
 		} else if tc.payload == nil {
@@ -258,7 +259,7 @@ func Test_Get(t *testing.T) {
 			t.Fatal("should not error")
 		}
 		if resp == nil {
-			t.Fatal("should not error")
+			t.Fatal("should not nil")
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -320,9 +321,16 @@ func Test_GetAll(t *testing.T) {
 		wantErr  bool
 	}{
 		{
+			caseName: "success getall",
 			payload:  "page=1&limit=100&search=",
 			respCode: http.StatusOK,
 			wantErr:  false,
+		},
+		{
+			caseName: "failed getall",
+			payload:  "page=-1&limit=-100&search=",
+			respCode: http.StatusBadRequest,
+			wantErr:  true,
 		},
 	}
 
@@ -335,7 +343,7 @@ func Test_GetAll(t *testing.T) {
 			t.Fatal("should not error", err.Error())
 		}
 		if resp == nil {
-			t.Fatal("should not error")
+			t.Fatal("should not nil")
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -361,8 +369,130 @@ func Test_GetAll(t *testing.T) {
 	}
 }
 
+func Test_Update(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctr := userDevController
+	ctx := c.Context()
+	if ctr == nil || c == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+	c.Method(http.MethodPut)
+	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+	createdUser := model.UserCreate{
+		Name:     helper.RandomString(11),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(11),
+		IsAdmin:  true,
+	}
+	createdUserID, createErr := userDevService.Create(ctx, createdUser)
+	if createErr != nil || createdUserID <= 0 {
+		t.Error("should not error and more than zero")
+	}
+	defer func() {
+		userDevService.Delete(ctx, createdUserID)
+		r := recover()
+		if r != nil {
+			t.Error("panic ::", r)
+		}
+	}()
+
+	testCases := []struct {
+		caseName string
+		payload  *model.UserProfileUpdate
+		wantErr  bool
+		respCode int
+		response response.Response
+	}{
+		{
+			caseName: "success update user -1",
+			payload: &model.UserProfileUpdate{
+				ID:   createdUserID,
+				Name: helper.RandomString(6),
+			},
+			respCode: http.StatusNoContent,
+			wantErr:  false,
+		},
+		{
+			caseName: "success update user -2",
+			payload: &model.UserProfileUpdate{
+				ID:   createdUserID,
+				Name: helper.RandomString(8),
+			},
+			respCode: http.StatusNoContent,
+			wantErr:  false,
+		},
+		{
+			caseName: "success update user -3",
+			payload: &model.UserProfileUpdate{
+				ID:   createdUserID,
+				Name: helper.RandomString(10),
+			},
+			respCode: http.StatusNoContent,
+			wantErr:  false,
+		},
+		{
+			caseName: "failed update: invalid id",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserProfileUpdate{
+				ID:   -10,
+				Name: "valid-name",
+			},
+		},
+		{
+			caseName: "failed update: invalid name, too short",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserProfileUpdate{
+				ID:   11,
+				Name: "",
+			},
+		},
+		{
+			caseName: "failed update: not found",
+			respCode: http.StatusNotFound,
+			payload: &model.UserProfileUpdate{
+				ID:   createdUserID + 10,
+				Name: "valid-name",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.caseName)
+		jsonObject, err := json.Marshal(&tc.payload)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		url := "http://127.0.0.1:9009/user-management/" + strconv.Itoa(tc.payload.ID)
+		req, httpReqErr := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
+		if httpReqErr != nil || req == nil {
+			t.Fatal("should not nil")
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		app := fiber.New()
+		app.Put("/user-management/:id", userDevController.Update)
+		req.Close = true
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal", resp.StatusCode)
+		}
+		if tc.payload != nil {
+			respModel := response.Response{}
+			decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
+			if decodeErr != nil && decodeErr != io.EOF {
+				t.Error("should not error", decodeErr)
+			}
+		}
+	}
+}
+
 // Create(c *fiber.Ctx) error Done
 // Get(c *fiber.Ctx) error Done
-// GetAll(c *fiber.Ctx) error
-// Update(c *fiber.Ctx) error
+// GetAll(c *fiber.Ctx) error Done
+// Update(c *fiber.Ctx) error Done
 // Delete(c *fiber.Ctx) error
