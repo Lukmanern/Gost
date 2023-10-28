@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
@@ -277,6 +278,78 @@ func Test_Get(t *testing.T) {
 				t.Error("should equal")
 			}
 		}
+	}
+}
+
+func Test_GetAll(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	if c == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+
+	userIDs := make([]int, 0)
+	for i := 0; i < 10; i++ {
+		createdUser := model.UserCreate{
+			Name:     helper.RandomString(11),
+			Email:    helper.RandomEmails(1)[0],
+			Password: helper.RandomString(11),
+			IsAdmin:  true,
+		}
+		createdUserID, createErr := userDevService.Create(ctx, createdUser)
+		if createErr != nil || createdUserID <= 0 {
+			t.Error("should not error and more than zero")
+		}
+		userIDs = append(userIDs, createdUserID)
+	}
+
+	defer func() {
+		for _, id := range userIDs {
+			userDevService.Delete(ctx, id)
+		}
+		r := recover()
+		if r != nil {
+			t.Error("panic ::", r)
+		}
+	}()
+
+	testCases := []struct {
+		caseName string
+		payload  string
+		respCode int
+		wantErr  bool
+		response base.GetAllResponse
+	}{
+		{
+			payload:  "page=1&limit=100&search=",
+			respCode: http.StatusOK,
+			wantErr:  false,
+		},
+	}
+
+	for _, tc := range testCases {
+		req := httptest.NewRequest(http.MethodGet, "/user-management?"+tc.payload, nil)
+		app := fiber.New()
+		app.Get("/user-management", userDevController.GetAll)
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		if resp == nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal")
+		}
+		// if !tc.wantErr {
+		// 	respModel := base.GetAllResponse{}
+		// 	decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
+		// 	if decodeErr != nil {
+		// 		t.Error("should not error", decodeErr)
+		// 	}
+		// 	t.Error(respModel.Meta)
+		// }
 	}
 }
 
