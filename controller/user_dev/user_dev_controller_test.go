@@ -10,15 +10,16 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/gofiber/fiber/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
-	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	controller "github.com/Lukmanern/gost/controller/user_dev"
 	service "github.com/Lukmanern/gost/service/user_dev"

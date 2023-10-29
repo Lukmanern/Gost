@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	rbacService "github.com/Lukmanern/gost/service/rbac"
 	service "github.com/Lukmanern/gost/service/user"
-	"github.com/gofiber/fiber/v2"
 )
 
 var (
