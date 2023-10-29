@@ -1064,8 +1064,6 @@ func Test_Logout(t *testing.T) {
 	}
 }
 
-// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
-
 func Test_UpdatePassword(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -1123,9 +1121,80 @@ func Test_UpdatePassword(t *testing.T) {
 			t.Fatal("panic ::", r)
 		}
 	}()
-}
 
-// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+	testCases := []struct {
+		caseName string
+		respCode int
+		token    string
+		payload  *model.UserProfileUpdate
+	}{
+		{
+			caseName: "success",
+			respCode: http.StatusNoContent,
+			token:    userToken,
+			payload: &model.UserProfileUpdate{
+				Name: helper.RandomString(11),
+			},
+		},
+		{
+			caseName: "success",
+			respCode: http.StatusNoContent,
+			token:    userToken,
+			payload: &model.UserProfileUpdate{
+				Name: helper.RandomString(11),
+			},
+		},
+		{
+			caseName: "failed: payload nil",
+			respCode: http.StatusBadRequest,
+			token:    userToken,
+		},
+		{
+			caseName: "failed: fake claims",
+			respCode: http.StatusUnauthorized,
+			token:    "fake-token",
+		},
+		{
+			caseName: "failed: payload nil, token nil",
+			respCode: http.StatusUnauthorized,
+			token:    "",
+		},
+	}
+
+	jwtHandler := middleware.NewJWTHandler()
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		if tc.payload != nil {
+			requestBody, err := json.Marshal(tc.payload)
+			if err != nil {
+				t.Fatal("Error while serializing payload to request body")
+			}
+			c.Request().SetBody(requestBody)
+		}
+		fakeClaims := jwtHandler.GenerateClaims(tc.token)
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
+		}
+		ctr.UpdateProfile(c)
+		resp := c.Response()
+		if resp.StatusCode() != tc.respCode {
+			t.Error("should equal, but got", resp.StatusCode(), "want", tc.respCode)
+		}
+
+		if resp.StatusCode() == http.StatusNoContent {
+			userByID, err := userRepo.GetByID(ctx, userID)
+			if err != nil || userByID == nil {
+				t.Error("should not error")
+			}
+
+			if userByID.Name != cases.Title(language.Und).String(tc.payload.Name) {
+				t.Error("shoudl equal")
+			}
+		}
+	}
+}
 
 func Test_UpdateProfile(t *testing.T) {
 	c := helper.NewFiberCtx()
@@ -1189,10 +1258,27 @@ func Test_UpdateProfile(t *testing.T) {
 		caseName string
 		respCode int
 		token    string
+		payload  *model.UserProfileUpdate
 	}{
 		{
 			caseName: "success",
-			respCode: http.StatusOK,
+			respCode: http.StatusNoContent,
+			token:    userToken,
+			payload: &model.UserProfileUpdate{
+				Name: helper.RandomString(11),
+			},
+		},
+		{
+			caseName: "success",
+			respCode: http.StatusNoContent,
+			token:    userToken,
+			payload: &model.UserProfileUpdate{
+				Name: helper.RandomString(11),
+			},
+		},
+		{
+			caseName: "failed: payload nil",
+			respCode: http.StatusBadRequest,
 			token:    userToken,
 		},
 		{
@@ -1212,6 +1298,13 @@ func Test_UpdateProfile(t *testing.T) {
 		c := helper.NewFiberCtx()
 		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		if tc.payload != nil {
+			requestBody, err := json.Marshal(tc.payload)
+			if err != nil {
+				t.Fatal("Error while serializing payload to request body")
+			}
+			c.Request().SetBody(requestBody)
+		}
 		fakeClaims := jwtHandler.GenerateClaims(tc.token)
 		if fakeClaims != nil {
 			c.Locals("claims", fakeClaims)
@@ -1219,31 +1312,17 @@ func Test_UpdateProfile(t *testing.T) {
 		ctr.UpdateProfile(c)
 		resp := c.Response()
 		if resp.StatusCode() != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode())
+			t.Error("should equal, but got", resp.StatusCode(), "want", tc.respCode)
 		}
 
-		if resp.StatusCode() == http.StatusOK {
-			respBody := c.Response().Body()
-			respString := string(respBody)
-			respStruct := struct {
-				Message string            `json:"message"`
-				Success bool              `json:"success"`
-				Data    model.UserProfile `json:"data"`
-			}{}
-
-			err := json.Unmarshal([]byte(respString), &respStruct)
-			if err != nil {
-				t.Errorf("Failed to parse response JSON: %v", err)
+		if resp.StatusCode() == http.StatusNoContent {
+			userByID, err := userRepo.GetByID(ctx, userID)
+			if err != nil || userByID == nil {
+				t.Error("should not error")
 			}
 
-			if !respStruct.Success {
-				t.Error("Expected success")
-			}
-			if respStruct.Message != response.MessageSuccessLoaded {
-				t.Error("Expected message to be equal")
-			}
-			if respStruct.Data.Email != createdUser.Email || respStruct.Data.Role.ID != createdUser.RoleID {
-				t.Error("email and other should equal")
+			if userByID.Name != cases.Title(language.Und).String(tc.payload.Name) {
+				t.Error("shoudl equal")
 			}
 		}
 	}
