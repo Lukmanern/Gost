@@ -92,14 +92,12 @@ func Test_Register(t *testing.T) {
 
 	testCases := []struct {
 		caseName string
-		wantErr  bool
 		respCode int
 		response response.Response
 		payload  *model.UserRegister
 	}{
 		{
 			caseName: "success register -1",
-			wantErr:  false,
 			respCode: http.StatusCreated,
 			response: response.Response{
 				Message: response.MessageSuccessCreated,
@@ -115,7 +113,6 @@ func Test_Register(t *testing.T) {
 		},
 		{
 			caseName: "success register -2",
-			wantErr:  false,
 			respCode: http.StatusCreated,
 			response: response.Response{
 				Message: response.MessageSuccessCreated,
@@ -131,7 +128,6 @@ func Test_Register(t *testing.T) {
 		},
 		{
 			caseName: "success register -3",
-			wantErr:  false,
 			respCode: http.StatusCreated,
 			response: response.Response{
 				Message: response.MessageSuccessCreated,
@@ -147,7 +143,6 @@ func Test_Register(t *testing.T) {
 		},
 		{
 			caseName: "failed register: email already used",
-			wantErr:  false,
 			respCode: http.StatusBadRequest,
 			response: response.Response{
 				Message: "",
@@ -163,7 +158,6 @@ func Test_Register(t *testing.T) {
 		},
 		{
 			caseName: "failed register: name too short",
-			wantErr:  false,
 			respCode: http.StatusBadRequest,
 			response: response.Response{
 				Message: "",
@@ -179,7 +173,6 @@ func Test_Register(t *testing.T) {
 		},
 		{
 			caseName: "failed register: password too short",
-			wantErr:  false,
 			respCode: http.StatusBadRequest,
 			response: response.Response{
 				Message: "",
@@ -195,14 +188,13 @@ func Test_Register(t *testing.T) {
 		},
 	}
 
+	endp := "/user/register"
 	for _, tc := range testCases {
 		log.Println(":::::::" + tc.caseName)
-
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		endp := "/user/register"
 		url := "http://127.0.0.1:9009" + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
@@ -257,6 +249,92 @@ func Test_AccountActivation(t *testing.T) {
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+	createdUser := model.UserRegister{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(10),
+		RoleID:   1, // admin
+	}
+	userID, createErr := userSvc.Register(ctx, createdUser)
+	if createErr != nil || userID <= 0 {
+		t.Fatal("should success create user, user failed to create")
+	}
+	userByID, getErr := userRepo.GetByID(ctx, userID)
+	if getErr != nil || userByID == nil {
+		t.Fatal("should success get user by id")
+	}
+	vCode := userByID.VerificationCode
+	if vCode == nil || userByID.ActivatedAt != nil {
+		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
+	}
+	defer func() {
+		userRepo.Delete(ctx, userID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic @ User_Test_Register ::", r)
+		}
+	}()
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		response response.Response
+		payload  *model.UserVerificationCode
+	}{
+		{
+			caseName: "success account activation",
+			respCode: http.StatusOK,
+			response: response.Response{
+				Message: "",
+				Success: true,
+				Data:    nil,
+			},
+			payload: &model.UserVerificationCode{
+				Code: *vCode,
+			},
+		},
+		{
+			caseName: "failed account activation: code not found",
+			respCode: http.StatusNotFound,
+			response: response.Response{
+				Message: "",
+				Success: false,
+				Data:    nil,
+			},
+			payload: &model.UserVerificationCode{
+				Code: *vCode,
+			},
+		},
+	}
+
+	endp := "/user/verification"
+	for _, tc := range testCases {
+		log.Println(":::::::" + tc.caseName)
+		jsonObject, err := json.Marshal(&tc.payload)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		url := "http://127.0.0.1:9009" + endp
+		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
+		if httpReqErr != nil || req == nil {
+			t.Fatal("should not nil")
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		app := fiber.New()
+		app.Post(endp, ctr.AccountActivation)
+		req.Close = true
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal", resp.StatusCode)
+		}
+	}
 }
 
 func Test_DeleteAccountActivation(t *testing.T) {
