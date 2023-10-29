@@ -13,17 +13,17 @@ import (
 
 var (
 	userDevService    service.UserDevService
-	userDevController controller.UserController
+	userDevController controller.UserDevController
 )
 
 func getUserDevRoutes(router fiber.Router) {
 	userDevService = service.NewUserDevService()
-	userDevController = controller.NewUserController(userDevService)
+	userDevController = controller.NewUserDevController(userDevService)
 
-	userDevRoute := router.Group("user/dev")
+	userDevRoute := router.Group("user-management")
 	userDevRoute.Post("create", userDevController.Create)
 	userDevRoute.Get("", userDevController.GetAll)
 	userDevRoute.Get(":id", userDevController.Get)
-	userDevRoute.Put(":id", userDevController.Update)
+	userDevRoute.Put("/:id", userDevController.Update)
 	userDevRoute.Delete(":id", userDevController.Delete)
 }

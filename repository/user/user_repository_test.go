@@ -32,8 +32,7 @@ func TestNewUserRepository(t *testing.T) {
 
 func TestUserRepositoryImpl_Create(t *testing.T) {
 	userRepositoryImpl := UserRepositoryImpl{
-		userTableName: userTableName,
-		db:            connector.LoadDatabase(),
+		db: connector.LoadDatabase(),
 	}
 
 	type args struct {
@@ -124,8 +123,7 @@ func TestUserRepositoryImpl_GetByID(t *testing.T) {
 		},
 	}
 	userRepositoryImpl := UserRepositoryImpl{
-		userTableName: userTableName,
-		db:            connector.LoadDatabase(),
+		db: connector.LoadDatabase(),
 	}
 	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
 	if createErr != nil {
@@ -195,8 +193,7 @@ func TestUserRepositoryImpl_GetByEmail(t *testing.T) {
 		},
 	}
 	userRepositoryImpl := UserRepositoryImpl{
-		userTableName: userTableName,
-		db:            connector.LoadDatabase(),
+		db: connector.LoadDatabase(),
 	}
 	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
 	if createErr != nil {
@@ -258,8 +255,7 @@ func TestUserRepositoryImpl_GetAll(t *testing.T) {
 	// create user
 	allUsersID := make([]int, 0)
 	userRepositoryImpl := UserRepositoryImpl{
-		userTableName: userTableName,
-		db:            connector.LoadDatabase(),
+		db: connector.LoadDatabase(),
 	}
 	for _, id := range []string{"4", "5", "6", "7", "8"} {
 		user := entity.User{
@@ -352,8 +348,7 @@ func TestUserRepositoryImpl_Update(t *testing.T) {
 		},
 	}
 	userRepositoryImpl := UserRepositoryImpl{
-		userTableName: userTableName,
-		db:            connector.LoadDatabase(),
+		db: connector.LoadDatabase(),
 	}
 	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
 	if createErr != nil {
@@ -424,7 +419,7 @@ func TestUserRepositoryImpl_UpdatePassword(t *testing.T) {
 	// create user
 	user := entity.User{
 		Name:     "validname",
-		Email:    "valid10@email.com", // keeping the password unique :D
+		Email:    "valid10@email.com",
 		Password: "example-password",
 		TimeFields: base.TimeFields{
 			CreatedAt: &timeNow,
@@ -432,8 +427,7 @@ func TestUserRepositoryImpl_UpdatePassword(t *testing.T) {
 		},
 	}
 	userRepositoryImpl := UserRepositoryImpl{
-		userTableName: userTableName,
-		db:            connector.LoadDatabase(),
+		db: connector.LoadDatabase(),
 	}
 	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
 	if createErr != nil {
@@ -490,6 +484,65 @@ func TestUserRepositoryImpl_UpdatePassword(t *testing.T) {
 				if getUser.Password != tt.args.passwordHashed {
 					t.Error("failed to update user's password")
 				}
+			}
+		})
+	}
+}
+
+func TestUserRepositoryImpl_GetByConditions(t *testing.T) {
+	user := entity.User{
+		Name:     "validname",
+		Email:    "valid10@email.com",
+		Password: "example-password",
+		TimeFields: base.TimeFields{
+			CreatedAt: &timeNow,
+			UpdatedAt: &timeNow,
+		},
+	}
+	userRepositoryImpl := UserRepositoryImpl{
+		db: connector.LoadDatabase(),
+	}
+	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
+	if createErr != nil {
+		t.Errorf("error while creating user")
+	}
+	// add id to user
+	user.ID = id
+	defer func() {
+		userRepositoryImpl.Delete(ctx, id)
+	}()
+
+	type args struct {
+		ctx   context.Context
+		conds map[string]any
+	}
+	tests := []struct {
+		name    string
+		repo    UserRepositoryImpl
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "success get data",
+			repo: userRepositoryImpl,
+			args: args{
+				ctx: ctx,
+				conds: map[string]any{
+					"name =": user.Name,
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotUser, err := tt.repo.GetByConditions(tt.args.ctx, tt.args.conds)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UserRepositoryImpl.GetByConditions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotUser.ID != user.ID || gotUser.Email != user.Email || gotUser.Password != user.Password {
+				t.Error("should got same ID/ Email/ Password")
 			}
 		})
 	}

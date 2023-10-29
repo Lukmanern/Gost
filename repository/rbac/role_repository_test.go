@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -120,58 +121,50 @@ func TestRoleRepositoryImpl_ConnectToPermission(t *testing.T) {
 		roleRepoImpl.Delete(ctx, role.ID)
 	}()
 
-	type args struct {
-		ctx           context.Context
+	ctxBg := context.Background()
+	testCases := []struct {
+		name          string
 		roleID        int
 		permissionsID []int
-	}
-	tests := []struct {
-		name      string
-		repo      RoleRepositoryImpl
-		args      args
-		wantErr   bool
-		wantPanic bool
+		wantErr       bool
 	}{
 		{
-			name:      "success create",
-			wantErr:   false,
-			wantPanic: true,
-			args: args{
-				ctx:           context.Background(),
-				roleID:        role.ID,
-				permissionsID: []int{1, 2, 3, 4, 5, 6},
-			},
+			name:          "Success Case",
+			roleID:        role.ID,
+			permissionsID: []int{2, 3, 4},
+			wantErr:       false,
 		},
 		{
-			name:      "failed create with invalid ids",
-			wantErr:   true,
-			wantPanic: true,
-			args: args{
-				ctx:           context.Background(),
-				roleID:        -1,
-				permissionsID: []int{-1, -2, -3, -4},
-			},
+			name:          "Failed Case",
+			roleID:        role.ID,
+			permissionsID: []int{-2, 3, 4},
+			wantErr:       true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r == nil && tt.wantPanic {
-					t.Errorf("create() do not panic")
-				}
-			}()
-			err := tt.repo.ConnectToPermission(tt.args.ctx, tt.args.roleID, tt.args.permissionsID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("RoleRepositoryImpl.ConnectToPermission() error = %v, wantErr %v", err, tt.wantErr)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := roleRepoImpl.ConnectToPermission(ctxBg, tc.roleID, tc.permissionsID)
+			if err != nil && !tc.wantErr {
+				t.Errorf("Expected error: %v, got error: %v", tc.wantErr, err)
 			}
 
-			// for _, permissionID := range permissionsID {
-			// 	entityRoleHasPermissions := entity.RoleHasPermission{}
-			// 	result := tt.repo.db.Where("permission_id = ?", permissionID).Where("role_id", role.ID).First(&entityRoleHasPermissions)
-			// 	if result.Error != nil {
-			// 		t.Error("error while getting role_has_permissions")
-			// 	}
-			// }
+			roleByID, getErr := roleRepoImpl.GetByID(ctx, role.ID)
+			if getErr != nil {
+				t.Errorf("Expect no error, got error: %v", getErr)
+			}
+
+			if !tc.wantErr {
+				perms := roleByID.Permissions
+				permsID := []int{}
+				for _, perm := range perms {
+					permsID = append(permsID, perm.ID)
+				}
+
+				if !reflect.DeepEqual(tc.permissionsID, permsID) {
+					t.Error("permsID should equal")
+				}
+			}
 		})
 	}
 }

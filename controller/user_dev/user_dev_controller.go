@@ -17,7 +17,7 @@ import (
 	service "github.com/Lukmanern/gost/service/user_dev"
 )
 
-type UserController interface {
+type UserDevController interface {
 	Create(c *fiber.Ctx) error
 	Get(c *fiber.Ctx) error
 	GetAll(c *fiber.Ctx) error
@@ -25,17 +25,17 @@ type UserController interface {
 	Delete(c *fiber.Ctx) error
 }
 
-type UserControllerImpl struct {
+type UserDevControllerImpl struct {
 	service service.UserDevService
 }
 
-func NewUserController(userService service.UserDevService) UserController {
-	return &UserControllerImpl{
+func NewUserDevController(userService service.UserDevService) UserDevController {
+	return &UserDevControllerImpl{
 		service: userService,
 	}
 }
 
-func (ctr UserControllerImpl) Create(c *fiber.Ctx) error {
+func (ctr UserDevControllerImpl) Create(c *fiber.Ctx) error {
 	var user model.UserCreate
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -61,14 +61,14 @@ func (ctr UserControllerImpl) Create(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, data)
 }
 
-func (ctr UserControllerImpl) Get(c *fiber.Ctx) error {
+func (ctr UserDevControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
 	}
 
 	ctx := c.Context()
-	user, getErr := ctr.service.GetByID(ctx, id)
+	userProfile, getErr := ctr.service.GetByID(ctx, id)
 	if getErr != nil {
 		fiberErr, ok := getErr.(*fiber.Error)
 		if ok {
@@ -77,10 +77,10 @@ func (ctr UserControllerImpl) Get(c *fiber.Ctx) error {
 		return response.Error(c, "internal server error: "+getErr.Error())
 	}
 
-	return response.SuccessLoaded(c, user)
+	return response.SuccessLoaded(c, userProfile)
 }
 
-func (ctr UserControllerImpl) GetAll(c *fiber.Ctx) error {
+func (ctr UserDevControllerImpl) GetAll(c *fiber.Ctx) error {
 	request := base.RequestGetAll{
 		Page:    c.QueryInt("page", 1),
 		Limit:   c.QueryInt("limit", 20),
@@ -114,16 +114,16 @@ func (ctr UserControllerImpl) GetAll(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, responseData)
 }
 
-func (ctr UserControllerImpl) Update(c *fiber.Ctx) error {
+func (ctr UserDevControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
 	}
 	var user model.UserProfileUpdate
+	user.ID = id
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
-	user.ID = id
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -142,7 +142,7 @@ func (ctr UserControllerImpl) Update(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
-func (ctr UserControllerImpl) Delete(c *fiber.Ctx) error {
+func (ctr UserDevControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")

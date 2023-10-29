@@ -123,11 +123,11 @@ func (j JWTHandler) InvalidateToken(c *fiber.Ctx) error {
 		return j.publicKey, nil
 	})
 	if err != nil || !token.Valid {
-		return fiber.NewError(fiber.StatusUnauthorized, "unauthenticated")
+		return response.Unauthorized(c)
 	}
 	status := j.cache.Set(cookie, cookie, time.Until(time.Unix(claims.ExpiresAt.Unix(), 0)))
 	if status.Err() != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "problem blacklisting token")
+		return response.Error(c, "problem blacklisting token")
 	}
 	return nil
 }
@@ -143,7 +143,7 @@ func (j JWTHandler) IsBlacklisted(cookie string) bool {
 func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 	cookie := extractToken(c)
 	if j.IsBlacklisted(cookie) {
-		return fiber.NewError(fiber.StatusUnauthorized, "unauthenticated")
+		return response.Unauthorized(c)
 	}
 	claims := Claims{}
 	token, err := jwt.ParseWithClaims(cookie, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
@@ -154,7 +154,7 @@ func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 		return j.publicKey, nil
 	})
 	if err != nil || !token.Valid {
-		return fiber.NewError(fiber.StatusUnauthorized, "unauthenticated")
+		return response.Unauthorized(c)
 	}
 	c.Locals("claims", &claims)
 	return c.Next()
@@ -207,6 +207,24 @@ func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 	}
 
 	return token, nil
+}
+
+func (j JWTHandler) GenerateClaims(cookieToken string) *Claims {
+	if j.IsBlacklisted(cookieToken) {
+		return nil
+	}
+	claims := Claims{}
+	token, err := jwt.ParseWithClaims(cookieToken, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
+		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fiber.NewError(fiber.StatusUnauthorized, fmt.Sprintf("unexpected method: %s", jwtToken.Header["alg"]))
+		}
+
+		return j.publicKey, nil
+	})
+	if err != nil || !token.Valid {
+		return nil
+	}
+	return &claims
 }
 
 // type PermissionMap = map[uint8]uint8

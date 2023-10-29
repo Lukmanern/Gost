@@ -87,7 +87,7 @@ func (repo UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (us
 }
 
 func (repo UserRepositoryImpl) GetByConditions(ctx context.Context, conds map[string]any) (user *entity.User, err error) {
-	// this func is vunarable
+	// this func is easy-contain-vunarable by default
 	user = &entity.User{}
 	query := repo.db
 	for con, val := range conds {
