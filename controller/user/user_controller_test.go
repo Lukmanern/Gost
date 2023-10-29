@@ -1074,9 +1074,32 @@ func Test_MyProfile(t *testing.T) {
 			c.Locals("claims", fakeClaims)
 		}
 		ctr.MyProfile(c)
-		response := c.Response()
-		if response.StatusCode() != tc.respCode {
-			t.Error("should equal, but got", response.StatusCode())
+		resp := c.Response()
+		if resp.StatusCode() != tc.respCode {
+			t.Error("should equal, but got", resp.StatusCode())
+		}
+
+		if resp.StatusCode() == http.StatusOK {
+			respBody := c.Response().Body()
+			respString := string(respBody)
+			respStruct := struct {
+				Message string `json:"message"`
+				Success bool   `json:"success"`
+			}{}
+
+			err := json.Unmarshal([]byte(respString), &respStruct)
+			if err != nil {
+				t.Errorf("Failed to parse response JSON: %v", err)
+			}
+
+			if !respStruct.Success {
+				t.Error("Expected success")
+			}
+			if respStruct.Message != response.MessageSuccessLoaded {
+				t.Error("Expected message to be equal")
+			}
+
+			t.Error(respStruct)
 		}
 	}
 }
