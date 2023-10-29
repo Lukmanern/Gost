@@ -576,6 +576,49 @@ func Test_ResetPassword(t *testing.T) {
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+	createdUser := model.UserRegister{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(10),
+		RoleID:   1, // admin
+	}
+	userID, createErr := userSvc.Register(ctx, createdUser)
+	if createErr != nil || userID <= 0 {
+		t.Fatal("should success create user, user failed to create")
+	}
+	userByID, getErr := userRepo.GetByID(ctx, userID)
+	if getErr != nil || userByID == nil {
+		t.Fatal("should success get user by id")
+	}
+	vCode := userByID.VerificationCode
+	if vCode == nil || userByID.ActivatedAt != nil {
+		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
+	}
+	verifyErr := userSvc.Verification(ctx, *vCode)
+	if verifyErr != nil {
+		t.Error("should not error")
+	}
+
+	// value reset
+	userByID = nil
+	getErr = nil
+	userByID, getErr = userRepo.GetByID(ctx, userID)
+	if getErr != nil || userByID == nil {
+		t.Fatal("should success get user by id")
+	}
+	if userByID.VerificationCode != nil || userByID.ActivatedAt == nil {
+		t.Fatal("user should active for now, but its get inactive")
+	}
+
+	defer func() {
+		userRepo.Delete(ctx, userID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic ::", r)
+		}
+	}()
 }
 
 func Test_Login(t *testing.T) {
