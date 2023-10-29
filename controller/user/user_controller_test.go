@@ -799,7 +799,7 @@ func Test_Login(t *testing.T) {
 			caseName: "success login",
 			respCode: http.StatusOK,
 			payload: &model.UserLogin{
-				Email:    strings.ToLower(createdActiveUser.Email),
+				Email:    createdActiveUser.Email,
 				Password: createdActiveUser.Password,
 				IP:       helper.RandomIPAddress(),
 			},
@@ -845,7 +845,7 @@ func Test_Login(t *testing.T) {
 			respCode: http.StatusNotFound,
 			payload: &model.UserLogin{
 				Password: "secret123",
-				Email:    "notfound" + createdUser.Email,
+				Email:    helper.RandomEmails(1)[0],
 				IP:       helper.RandomIPAddress(),
 			},
 		},
@@ -884,7 +884,7 @@ func Test_Login(t *testing.T) {
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 		app := fiber.New()
-		app.Post(endp, ctr.ResetPassword)
+		app.Post(endp, ctr.Login)
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
