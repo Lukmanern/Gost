@@ -1,6 +1,9 @@
 test:
 	go test -timeout 200s -coverprofile=cover.out ./...
 
+test-race:
+	go test -timeout 200s --race -coverprofile=cover.out ./...
+
 migrate:
 	go run database/migration/main.go
 

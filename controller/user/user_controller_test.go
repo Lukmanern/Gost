@@ -3,6 +3,7 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -919,7 +920,7 @@ func Test_Login(t *testing.T) {
 		}
 		url := "http://127.0.0.1:9009" + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
-		if httpReqErr != nil || req == nil {
+		if httpReqErr != nil {
 			t.Fatal("should not nil")
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -984,8 +985,6 @@ func Test_UpdateProfile(t *testing.T) {
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 }
 
-// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
-
 func Test_MyProfile(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -993,6 +992,114 @@ func Test_MyProfile(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
-	c.Method(http.MethodGet)
+
+	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+	// create inactive user
+	createdUser := model.UserRegister{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(10),
+		RoleID:   1, // admin
+	}
+	userID, createErr := userSvc.Register(ctx, createdUser)
+	if createErr != nil || userID <= 0 {
+		t.Fatal("should success create user, user failed to create")
+	}
+	userByID, getErr := userRepo.GetByID(ctx, userID)
+	if getErr != nil || userByID == nil {
+		t.Fatal("should success get user by id")
+	}
+	vCode := userByID.VerificationCode
+	if vCode == nil || userByID.ActivatedAt != nil {
+		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
+	}
+
+	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	if verifyErr != nil {
+		t.Error("should not error")
+	}
+	userByID = nil
+	userByID, getErr = userRepo.GetByID(ctx, userID)
+	if getErr != nil || userByID == nil {
+		t.Fatal("should success get user by id")
+	}
+	if userByID.VerificationCode != nil || userByID.ActivatedAt == nil {
+		t.Fatal("user should active for now, verification code should nil")
+	}
+
+	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
+		Email:    createdUser.Email,
+		Password: createdUser.Password,
+		IP:       helper.RandomIPAddress(),
+	})
+	if userToken == "" || loginErr != nil {
+		t.Error("login should success")
+	}
+	defer func() {
+		userRepo.Delete(ctx, userID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic ::", r)
+		}
+	}()
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		token    string
+	}{
+		{
+			caseName: "success",
+			respCode: http.StatusOK,
+			token:    userToken,
+		},
+		{
+			caseName: "failed: payload nil, token nil",
+			respCode: http.StatusBadRequest,
+			token:    "",
+		},
+	}
+
+	endp := "/user/my-profile"
+	for _, tc := range testCases {
+		log.Println(":::::::" + tc.caseName)
+		log.Println(":::::::" + tc.token)
+
+		url := "http://127.0.0.1:9009" + endp
+		req, httpReqErr := http.NewRequest(http.MethodGet, url, nil)
+		if httpReqErr != nil {
+			t.Fatal("should not nil")
+		}
+		req.Header.Set("Authorization", userToken)
+		// req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		app := fiber.New()
+		app.Get(endp, ctr.MyProfile)
+		// req.Close = true
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+
+		bytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		messageResp := struct {
+			Message string `json:"message"`
+			Data    any    `json:"data"`
+		}{}
+		err2 := json.Unmarshal(bytes, &messageResp)
+		if err2 != nil {
+			log.Fatal(err, "::", messageResp.Message)
+		}
+
+		if resp.StatusCode != tc.respCode {
+			t.Error(tc.caseName, "should equal, but got", resp.StatusCode, "want", tc.respCode, messageResp.Data)
+		}
+	}
 }

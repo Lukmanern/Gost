@@ -297,7 +297,7 @@ func (ctr UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 func (ctr UserControllerImpl) MyProfile(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok {
-		return response.BadRequest(c, "invalid token")
+		return response.ErrorWithData(c, "invalid token", c.Locals("claims"))
 	}
 
 	ctx := c.Context()
