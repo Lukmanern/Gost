@@ -611,6 +611,25 @@ func Test_ResetPassword(t *testing.T) {
 		t.Fatal("user should active for now, but its get inactive")
 	}
 
+	userForgetPasswd := model.UserForgetPassword{
+		Email: userByID.Email,
+	}
+	forgetPassErr := userSvc.ForgetPassword(ctx, userForgetPasswd)
+	if forgetPassErr != nil {
+		t.Error("should not error")
+	}
+
+	// value reset
+	userByID = nil
+	getErr = nil
+	userByID, getErr = userRepo.GetByID(ctx, userID)
+	if getErr != nil || userByID == nil {
+		t.Fatal("should success get user by id")
+	}
+	if userByID.VerificationCode == nil || userByID.ActivatedAt == nil {
+		t.Fatal("user should active for now, and verification code should not nil")
+	}
+
 	defer func() {
 		userRepo.Delete(ctx, userID)
 
@@ -619,6 +638,79 @@ func Test_ResetPassword(t *testing.T) {
 			t.Fatal("panic ::", r)
 		}
 	}()
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		payload  *model.UserResetPassword
+	}{
+		{
+			caseName: "success reset password",
+			respCode: http.StatusAccepted,
+			payload: &model.UserResetPassword{
+				Code:               *userByID.VerificationCode,
+				NewPassword:        "newPassword",
+				NewPasswordConfirm: "newPassword",
+			},
+		},
+		{
+			caseName: "failed reset password: password not match",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserResetPassword{
+				Code:               *userByID.VerificationCode,
+				NewPassword:        "newPassword",
+				NewPasswordConfirm: "newPasswordNotMatch",
+			},
+		},
+		{
+			caseName: "failed reset password: verification code too short",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserResetPassword{
+				Code:               "short",
+				NewPassword:        "newPassword",
+				NewPasswordConfirm: "newPasswordNotMatch",
+			},
+		},
+	}
+
+	endp := "/user/reset-password"
+	for _, tc := range testCases {
+		log.Println(":::::::" + tc.caseName)
+		jsonObject, err := json.Marshal(&tc.payload)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		url := "http://127.0.0.1:9009" + endp
+		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
+		if httpReqErr != nil || req == nil {
+			t.Fatal("should not nil")
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		app := fiber.New()
+		app.Post(endp, ctr.ResetPassword)
+		req.Close = true
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error(tc.caseName, "should equal, but got", resp.StatusCode, "want", tc.respCode)
+		}
+
+		if resp.StatusCode == http.StatusAccepted {
+			// proofing that password has changed
+			token, loginErr := userSvc.Login(ctx, model.UserLogin{
+				Email:    userByID.Email,
+				Password: tc.payload.NewPassword,
+				IP:       helper.RandomIPAddress(),
+			})
+			if token == "" || loginErr != nil {
+				t.Error("should success login, got failed login")
+			}
+		}
+	}
 }
 
 func Test_Login(t *testing.T) {
@@ -792,7 +884,7 @@ func Test_Login(t *testing.T) {
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 		app := fiber.New()
-		app.Post(endp, ctr.Login)
+		app.Post(endp, ctr.ResetPassword)
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
