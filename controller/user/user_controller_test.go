@@ -3,7 +3,7 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
-	"io"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -18,6 +18,7 @@ import (
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
+	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/response"
 	repository "github.com/Lukmanern/gost/repository/user"
 	rbacService "github.com/Lukmanern/gost/service/rbac"
@@ -1063,43 +1064,19 @@ func Test_MyProfile(t *testing.T) {
 		},
 	}
 
-	endp := "/user/my-profile"
+	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
-		log.Println(":::::::" + tc.caseName)
-		log.Println(":::::::" + tc.token)
-
-		url := "http://127.0.0.1:9009" + endp
-		req, httpReqErr := http.NewRequest(http.MethodGet, url, nil)
-		if httpReqErr != nil {
-			t.Fatal("should not nil")
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		fakeClaims := jwtHandler.GenerateClaims(tc.token)
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
 		}
-		req.Header.Set("Authorization", userToken)
-		// req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-
-		app := fiber.New()
-		app.Get(endp, ctr.MyProfile)
-		// req.Close = true
-		resp, err := app.Test(req, -1)
-		if err != nil {
-			t.Fatal("should not error")
-		}
-		defer resp.Body.Close()
-
-		bytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		messageResp := struct {
-			Message string `json:"message"`
-			Data    any    `json:"data"`
-		}{}
-		err2 := json.Unmarshal(bytes, &messageResp)
-		if err2 != nil {
-			log.Fatal(err, "::", messageResp.Message)
-		}
-
-		if resp.StatusCode != tc.respCode {
-			t.Error(tc.caseName, "should equal, but got", resp.StatusCode, "want", tc.respCode, messageResp.Data)
+		ctr.MyProfile(c)
+		response := c.Response()
+		if response.StatusCode() != tc.respCode {
+			t.Error("should equal, but got", response.StatusCode())
 		}
 	}
 }

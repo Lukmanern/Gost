@@ -209,6 +209,24 @@ func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 	return token, nil
 }
 
+func (j JWTHandler) GenerateClaims(cookieToken string) *Claims {
+	if j.IsBlacklisted(cookieToken) {
+		return nil
+	}
+	claims := Claims{}
+	token, err := jwt.ParseWithClaims(cookieToken, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
+		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fiber.NewError(fiber.StatusUnauthorized, fmt.Sprintf("unexpected method: %s", jwtToken.Header["alg"]))
+		}
+
+		return j.publicKey, nil
+	})
+	if err != nil || !token.Valid {
+		return nil
+	}
+	return &claims
+}
+
 // type PermissionMap = map[uint8]uint8
 func (j JWTHandler) HasPermission(c *fiber.Ctx, permission string) error {
 	claims, ok := c.Locals("claims").(*Claims)
