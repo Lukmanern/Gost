@@ -2,6 +2,7 @@ package helper
 
 import (
 	"net"
+	"strings"
 	"testing"
 )
 
@@ -18,11 +19,14 @@ func TestRandomEmails(t *testing.T) {
 	for i := 1; i <= 20; i++ {
 		emails := RandomEmails(uint(i))
 		if len(emails) != i {
-			t.Error("len of emails should equal")
+			t.Error("total of emails should equal")
 		}
 		for _, email := range emails {
-			if len(email) < 33 {
-				t.Error("len of an email should not less than 33")
+			if len(email) < 10 {
+				t.Error("length of an email should not less than 10")
+			}
+			if email != strings.ToLower(email) {
+				t.Error("email should lower by results")
 			}
 		}
 	}

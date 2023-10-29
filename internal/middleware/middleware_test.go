@@ -42,7 +42,7 @@ func init() {
 			7: 1,
 			8: 1,
 		},
-		Exp:     timeNow.Add(60 * time.Hour),
+		Exp:     timeNow.Add(60 * time.Minute),
 		wantErr: false,
 	}
 }
@@ -58,40 +58,37 @@ func TestNewJWTHandler(t *testing.T) {
 	}
 }
 
-// func TestJWTHandler_GenerateJWT(t *testing.T) {
-// 	type params struct {
-// 		ID      int
-// 		Email   string
-// 		Role    string
-// 		Per     []string
-// 		Exp     time.Time
-// 		wantErr bool
-// 	}
-// 	timeNow := time.Now()
-// 	paramStruct := []params{
-// 		{
-// 			ID:      1,
-// 			Email:   "test_email@gost.project",
-// 			Role:    "test-role",
-// 			Per:     []string{"permission-1", "permission-2", "permission-3"},
-// 			Exp:     timeNow.Add(60 * time.Hour),
-// 			wantErr: false,
-// 		},
-// 		{
-// 			wantErr: true,
-// 		},
-// 	}
-// 	jwtHandler := NewJWTHandler()
-// 	for _, param := range paramStruct {
-// 		token, err := jwtHandler.GenerateJWT(param.ID, param.Email, param.Role, param.Per, param.Exp)
-// 		if (err != nil) != param.wantErr {
-// 			t.Error("error while generating")
-// 		}
-// 		if token == "" && !param.wantErr {
-// 			t.Error("error token nil")
-// 		}
-// 	}
-// }
+func TestGenerateClaims(t *testing.T) {
+	jwtHandler := NewJWTHandler()
+	token, err := jwtHandler.GenerateJWT(1, params.Email, params.Role, params.Per, params.Exp)
+	if err != nil || token == "" {
+		t.Fatal("should not error")
+	}
+
+	testCases := []struct {
+		token    string
+		isResNil bool
+	}{
+		{
+			token:    "",
+			isResNil: true,
+		},
+		{
+			token:    token,
+			isResNil: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		claims := jwtHandler.GenerateClaims(tc.token)
+		if claims == nil && !tc.isResNil {
+			t.Error("should not nil")
+		}
+		if claims != nil && tc.isResNil {
+			t.Error("should nil")
+		}
+	}
+}
 
 func TestJWTHandler_GenerateJWTWithLabel(t *testing.T) {
 	type params struct {
