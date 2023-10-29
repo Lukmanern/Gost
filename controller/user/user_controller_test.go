@@ -1126,22 +1126,36 @@ func Test_UpdatePassword(t *testing.T) {
 		caseName string
 		respCode int
 		token    string
-		payload  *model.UserProfileUpdate
+		payload  *model.UserPasswordUpdate
 	}{
 		{
 			caseName: "success",
 			respCode: http.StatusNoContent,
 			token:    userToken,
-			payload: &model.UserProfileUpdate{
-				Name: helper.RandomString(11),
+			payload: &model.UserPasswordUpdate{
+				OldPassword:        createdUser.Password,
+				NewPassword:        "passwordNew123",
+				NewPasswordConfirm: "passwordNew123",
 			},
 		},
 		{
 			caseName: "success",
 			respCode: http.StatusNoContent,
 			token:    userToken,
-			payload: &model.UserProfileUpdate{
-				Name: helper.RandomString(11),
+			payload: &model.UserPasswordUpdate{
+				OldPassword:        "passwordNew123",
+				NewPassword:        "passwordNew12345",
+				NewPasswordConfirm: "passwordNew12345",
+			},
+		},
+		{
+			caseName: "failed: no new password",
+			respCode: http.StatusBadRequest,
+			token:    userToken,
+			payload: &model.UserPasswordUpdate{
+				OldPassword:        "noNewPassword",
+				NewPassword:        "noNewPassword",
+				NewPasswordConfirm: "noNewPassword",
 			},
 		},
 		{
@@ -1177,20 +1191,20 @@ func Test_UpdatePassword(t *testing.T) {
 		if fakeClaims != nil {
 			c.Locals("claims", fakeClaims)
 		}
-		ctr.UpdateProfile(c)
+		ctr.UpdatePassword(c)
 		resp := c.Response()
 		if resp.StatusCode() != tc.respCode {
 			t.Error("should equal, but got", resp.StatusCode(), "want", tc.respCode)
 		}
 
 		if resp.StatusCode() == http.StatusNoContent {
-			userByID, err := userRepo.GetByID(ctx, userID)
-			if err != nil || userByID == nil {
-				t.Error("should not error")
-			}
-
-			if userByID.Name != cases.Title(language.Und).String(tc.payload.Name) {
-				t.Error("shoudl equal")
+			token, loginErr := userSvc.Login(ctx, model.UserLogin{
+				Email:    userByID.Email,
+				Password: tc.payload.NewPassword,
+				IP:       helper.RandomIPAddress(),
+			})
+			if loginErr != nil || token == "" {
+				t.Error("login should success with new password")
 			}
 		}
 	}
