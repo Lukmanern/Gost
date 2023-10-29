@@ -1006,6 +1006,62 @@ func Test_Logout(t *testing.T) {
 			t.Fatal("panic ::", r)
 		}
 	}()
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		token    string
+	}{
+		{
+			caseName: "success",
+			respCode: http.StatusOK,
+			token:    userToken,
+		},
+		{
+			caseName: "failed: fake claims",
+			respCode: http.StatusUnauthorized,
+			token:    "fake-token",
+		},
+		{
+			caseName: "failed: payload nil, token nil",
+			respCode: http.StatusUnauthorized,
+			token:    "",
+		},
+	}
+
+	jwtHandler := middleware.NewJWTHandler()
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		fakeClaims := jwtHandler.GenerateClaims(tc.token)
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
+		}
+		ctr.Logout(c)
+		resp := c.Response()
+		if resp.StatusCode() != tc.respCode {
+			t.Error("should equal, but got", resp.StatusCode())
+		}
+
+		if resp.StatusCode() == http.StatusOK {
+			respBody := c.Response().Body()
+			respString := string(respBody)
+			respStruct := struct {
+				Message string `json:"message"`
+				Success bool   `json:"success"`
+			}{}
+
+			err := json.Unmarshal([]byte(respString), &respStruct)
+			if err != nil {
+				t.Errorf("Failed to parse response JSON: %v", err)
+			}
+
+			if !respStruct.Success {
+				t.Error("Expected success")
+			}
+		}
+	}
 }
 
 // req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
@@ -1128,6 +1184,69 @@ func Test_UpdateProfile(t *testing.T) {
 			t.Fatal("panic ::", r)
 		}
 	}()
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		token    string
+	}{
+		{
+			caseName: "success",
+			respCode: http.StatusOK,
+			token:    userToken,
+		},
+		{
+			caseName: "failed: fake claims",
+			respCode: http.StatusUnauthorized,
+			token:    "fake-token",
+		},
+		{
+			caseName: "failed: payload nil, token nil",
+			respCode: http.StatusUnauthorized,
+			token:    "",
+		},
+	}
+
+	jwtHandler := middleware.NewJWTHandler()
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		fakeClaims := jwtHandler.GenerateClaims(tc.token)
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
+		}
+		ctr.UpdateProfile(c)
+		resp := c.Response()
+		if resp.StatusCode() != tc.respCode {
+			t.Error("should equal, but got", resp.StatusCode())
+		}
+
+		if resp.StatusCode() == http.StatusOK {
+			respBody := c.Response().Body()
+			respString := string(respBody)
+			respStruct := struct {
+				Message string            `json:"message"`
+				Success bool              `json:"success"`
+				Data    model.UserProfile `json:"data"`
+			}{}
+
+			err := json.Unmarshal([]byte(respString), &respStruct)
+			if err != nil {
+				t.Errorf("Failed to parse response JSON: %v", err)
+			}
+
+			if !respStruct.Success {
+				t.Error("Expected success")
+			}
+			if respStruct.Message != response.MessageSuccessLoaded {
+				t.Error("Expected message to be equal")
+			}
+			if respStruct.Data.Email != createdUser.Email || respStruct.Data.Role.ID != createdUser.RoleID {
+				t.Error("email and other should equal")
+			}
+		}
+	}
 }
 
 func Test_MyProfile(t *testing.T) {
@@ -1200,12 +1319,12 @@ func Test_MyProfile(t *testing.T) {
 		},
 		{
 			caseName: "failed: fake claims",
-			respCode: http.StatusBadRequest,
+			respCode: http.StatusUnauthorized,
 			token:    "fake-token",
 		},
 		{
 			caseName: "failed: payload nil, token nil",
-			respCode: http.StatusBadRequest,
+			respCode: http.StatusUnauthorized,
 			token:    "",
 		},
 	}
