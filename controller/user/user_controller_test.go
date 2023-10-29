@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,6 +13,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
@@ -86,7 +88,7 @@ func Test_Register(t *testing.T) {
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic @ User_Test_Register ::", r)
+			t.Fatal("panic ::", r)
 		}
 	}()
 
@@ -273,7 +275,7 @@ func Test_AccountActivation(t *testing.T) {
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic @ User_Test_Register ::", r)
+			t.Fatal("panic ::", r)
 		}
 	}()
 
@@ -380,7 +382,7 @@ func Test_DeleteAccountActivation(t *testing.T) {
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic @ User_Test_Register ::", r)
+			t.Fatal("panic ::", r)
 		}
 	}()
 
@@ -505,9 +507,64 @@ func Test_ForgetPassword(t *testing.T) {
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic @ User_Test_Register ::", r)
+			t.Fatal("panic ::", r)
 		}
 	}()
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		payload  *model.UserForgetPassword
+	}{
+		{
+			caseName: "success forget password",
+			respCode: http.StatusAccepted,
+			payload: &model.UserForgetPassword{
+				Email: createdUser.Email,
+			},
+		},
+		{
+			caseName: "faield forget password: email not found",
+			respCode: http.StatusNotFound,
+			payload: &model.UserForgetPassword{
+				Email: "notfoundemail_9@gost.project",
+			},
+		},
+		{
+			caseName: "faield forget password: invalid email",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserForgetPassword{
+				Email: "invalid-email",
+			},
+		},
+	}
+
+	endp := "/user/forget-password"
+	for _, tc := range testCases {
+		log.Println(":::::::" + tc.caseName)
+		jsonObject, err := json.Marshal(&tc.payload)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		url := "http://127.0.0.1:9009" + endp
+		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
+		if httpReqErr != nil || req == nil {
+			t.Fatal("should not nil")
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		app := fiber.New()
+		app.Post(endp, ctr.ForgetPassword)
+		req.Close = true
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal, but got", resp.StatusCode)
+		}
+	}
 }
 
 func Test_ResetPassword(t *testing.T) {
@@ -521,7 +578,6 @@ func Test_ResetPassword(t *testing.T) {
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 }
 
-// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
 func Test_Login(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -531,6 +587,229 @@ func Test_Login(t *testing.T) {
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+	// create inactive user
+	createdUser := model.UserRegister{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(10),
+		RoleID:   1, // admin
+	}
+	userID, createErr := userSvc.Register(ctx, createdUser)
+	if createErr != nil || userID <= 0 {
+		t.Fatal("should success create user, user failed to create")
+	}
+	userByID, getErr := userRepo.GetByID(ctx, userID)
+	if getErr != nil || userByID == nil {
+		t.Fatal("should success get user by id")
+	}
+	vCode := userByID.VerificationCode
+	if vCode == nil || userByID.ActivatedAt != nil {
+		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
+	}
+	defer func() {
+		userRepo.Delete(ctx, userID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic ::", r)
+		}
+	}()
+
+	// create active user
+	createdActiveUser := entity.User{}
+	func() {
+		createdUser_2 := model.UserRegister{
+			Name:     helper.RandomString(10),
+			Email:    helper.RandomEmails(1)[0],
+			Password: helper.RandomString(10),
+			RoleID:   1, // admin
+		}
+		userID, createErr := userSvc.Register(ctx, createdUser_2)
+		if createErr != nil || userID <= 0 {
+			t.Fatal("should success create user, user failed to create")
+		}
+
+		userByID, getErr := userRepo.GetByID(ctx, userID)
+		if getErr != nil || userByID == nil {
+			t.Fatal("should success get user by id")
+		}
+		vCode := userByID.VerificationCode
+		if vCode == nil || userByID.ActivatedAt != nil {
+			t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
+		}
+
+		verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+		if verifyErr != nil {
+			t.Error("should not error")
+		}
+		userByID = nil
+		userByID, getErr = userRepo.GetByID(ctx, userID)
+		if getErr != nil || userByID == nil {
+			t.Fatal("should success get user by id")
+		}
+
+		createdActiveUser = *userByID
+		createdActiveUser.Password = createdUser_2.Password
+	}()
+
+	defer userRepo.Delete(ctx, createdActiveUser.ID)
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		payload  *model.UserLogin
+	}{
+		{
+			caseName: "success login",
+			respCode: http.StatusOK,
+			payload: &model.UserLogin{
+				Email:    strings.ToLower(createdActiveUser.Email),
+				Password: createdActiveUser.Password,
+				IP:       helper.RandomIPAddress(),
+			},
+		},
+		{
+			caseName: "failed login -1: account is inactive",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserLogin{
+				Email:    strings.ToLower(createdUser.Email),
+				Password: createdUser.Password,
+				IP:       helper.RandomIPAddress(),
+			},
+		},
+		{
+			caseName: "failed login -2: account is inactive",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserLogin{
+				Email:    strings.ToLower(createdUser.Email),
+				Password: createdUser.Password,
+				IP:       helper.RandomIPAddress(),
+			},
+		},
+		{
+			caseName: "failed login: wrong passwd",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserLogin{
+				Password: "wrongPass11",
+				Email:    createdUser.Email,
+				IP:       helper.RandomIPAddress(),
+			},
+		},
+		{
+			caseName: "failed login: invalid ip",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserLogin{
+				Password: "wrongPass11",
+				Email:    createdUser.Email,
+				IP:       "invalid-ip",
+			},
+		},
+		{
+			caseName: "faield login: email not found",
+			respCode: http.StatusNotFound,
+			payload: &model.UserLogin{
+				Password: "secret123",
+				Email:    "notfound" + createdUser.Email,
+				IP:       helper.RandomIPAddress(),
+			},
+		},
+		{
+			caseName: "faield login: invalid email",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserLogin{
+				Password: "secret",
+				Email:    "invalid-email",
+				IP:       helper.RandomIPAddress(),
+			},
+		},
+		{
+			caseName: "faield login: payload too short",
+			respCode: http.StatusBadRequest,
+			payload: &model.UserLogin{
+				Password: "",
+				Email:    "",
+				IP:       helper.RandomIPAddress(),
+			},
+		},
+	}
+
+	endp := "/user/login"
+	for _, tc := range testCases {
+		log.Println(":::::::" + tc.caseName)
+		jsonObject, err := json.Marshal(&tc.payload)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		url := "http://127.0.0.1:9009" + endp
+		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
+		if httpReqErr != nil || req == nil {
+			t.Fatal("should not nil")
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		app := fiber.New()
+		app.Post(endp, ctr.Login)
+		req.Close = true
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error(tc.caseName, "should equal, but got", resp.StatusCode, "want", tc.respCode)
+		}
+	}
+
+	// try blocking IP feature
+	clientIP := "127.0.0.3"
+	testCase := struct {
+		caseName string
+		respCode int
+		payload  *model.UserLogin
+	}{
+		caseName: "failed login: stacking redis",
+		respCode: http.StatusBadRequest,
+		payload: &model.UserLogin{
+			Email:    createdActiveUser.Email,
+			Password: "validpassword",
+			IP:       clientIP, // keep the ip same
+		},
+	}
+	for i := 0; i < 7; i++ {
+		log.Println(":::::::" + testCase.caseName)
+		jsonObject, err := json.Marshal(&testCase.payload)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		url := "http://127.0.0.1:9009" + endp
+		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
+		if httpReqErr != nil || req == nil {
+			t.Fatal("should not nil")
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		app := fiber.New()
+		app.Post(endp, ctr.Login)
+		req.Close = true
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != testCase.respCode {
+			t.Error(testCase.caseName, "should equal, but got", resp.StatusCode, "want", testCase.respCode)
+		}
+	}
+
+	redis := connector.LoadRedisDatabase()
+	if redis == nil {
+		t.Fatal("should not nil")
+	}
+	value := redis.Get("failed-login-" + clientIP).Val()
+	if value != "5" {
+		t.Error("should 5, get", value)
+	}
 }
 
 func Test_Logout(t *testing.T) {
@@ -544,6 +823,8 @@ func Test_Logout(t *testing.T) {
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 }
 
+// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+
 func Test_UpdatePassword(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -555,6 +836,8 @@ func Test_UpdatePassword(t *testing.T) {
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 }
 
+// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+
 func Test_UpdateProfile(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -565,6 +848,8 @@ func Test_UpdateProfile(t *testing.T) {
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 }
+
+// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
 
 func Test_MyProfile(t *testing.T) {
 	c := helper.NewFiberCtx()
