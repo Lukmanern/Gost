@@ -1058,6 +1058,11 @@ func Test_MyProfile(t *testing.T) {
 			token:    userToken,
 		},
 		{
+			caseName: "failed: fake claims",
+			respCode: http.StatusBadRequest,
+			token:    "fake-token",
+		},
+		{
 			caseName: "failed: payload nil, token nil",
 			respCode: http.StatusBadRequest,
 			token:    "",
@@ -1083,8 +1088,9 @@ func Test_MyProfile(t *testing.T) {
 			respBody := c.Response().Body()
 			respString := string(respBody)
 			respStruct := struct {
-				Message string `json:"message"`
-				Success bool   `json:"success"`
+				Message string            `json:"message"`
+				Success bool              `json:"success"`
+				Data    model.UserProfile `json:"data"`
 			}{}
 
 			err := json.Unmarshal([]byte(respString), &respStruct)
@@ -1098,8 +1104,9 @@ func Test_MyProfile(t *testing.T) {
 			if respStruct.Message != response.MessageSuccessLoaded {
 				t.Error("Expected message to be equal")
 			}
-
-			t.Error(respStruct)
+			if respStruct.Data.Email != createdUser.Email || respStruct.Data.Role.ID != createdUser.RoleID {
+				t.Error("email and other should equal")
+			}
 		}
 	}
 }
