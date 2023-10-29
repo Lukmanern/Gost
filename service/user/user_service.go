@@ -170,6 +170,9 @@ func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyC
 	if getByCodeErr != nil || userEntity == nil {
 		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
 	}
+	if userEntity.ActivatedAt != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "can not delete your data, your account is active")
+	}
 	deleteErr := svc.repository.Delete(ctx, userEntity.ID)
 	if deleteErr != nil {
 		return deleteErr

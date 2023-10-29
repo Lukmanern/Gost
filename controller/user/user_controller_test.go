@@ -1,22 +1,30 @@
 package controller
 
 import (
+	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
+	"github.com/Lukmanern/gost/internal/response"
+	repository "github.com/Lukmanern/gost/repository/user"
 	rbacService "github.com/Lukmanern/gost/service/rbac"
 	service "github.com/Lukmanern/gost/service/user"
 )
 
 var (
-	userSvc service.UserService
-	userCtr UserController
+	userSvc  service.UserService
+	userCtr  UserController
+	userRepo repository.UserRepository
 )
 
 func init() {
@@ -39,6 +47,7 @@ func init() {
 	roleService := rbacService.NewRoleService(permService)
 	userSvc = service.NewUserService(roleService)
 	userCtr = NewUserController(userSvc)
+	userRepo = repository.NewUserRepository()
 }
 
 func TestNewUserController(t *testing.T) {
@@ -54,18 +63,196 @@ func TestNewUserController(t *testing.T) {
 
 func Test_Register(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+	createdUser := model.UserRegister{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmails(1)[0],
+		Password: helper.RandomString(10),
+		RoleID:   1, // admin
+	}
+	userID, createErr := userSvc.Register(ctx, createdUser)
+	if createErr != nil || userID <= 0 {
+		t.Fatal("should success create user, user failed to create")
+	}
+	defer func() {
+		userRepo.Delete(ctx, userID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic @ User_Test_Register ::", r)
+		}
+	}()
+
+	testCases := []struct {
+		caseName string
+		wantErr  bool
+		respCode int
+		response response.Response
+		payload  *model.UserRegister
+	}{
+		{
+			caseName: "success register -1",
+			wantErr:  false,
+			respCode: http.StatusCreated,
+			response: response.Response{
+				Message: response.MessageSuccessCreated,
+				Success: true,
+				Data:    nil,
+			},
+			payload: &model.UserRegister{
+				Name:     helper.RandomString(10),
+				Email:    helper.RandomEmails(1)[0],
+				Password: helper.RandomString(10),
+				RoleID:   1, // admin
+			},
+		},
+		{
+			caseName: "success register -2",
+			wantErr:  false,
+			respCode: http.StatusCreated,
+			response: response.Response{
+				Message: response.MessageSuccessCreated,
+				Success: true,
+				Data:    nil,
+			},
+			payload: &model.UserRegister{
+				Name:     helper.RandomString(10),
+				Email:    helper.RandomEmails(1)[0],
+				Password: helper.RandomString(10),
+				RoleID:   1, // admin
+			},
+		},
+		{
+			caseName: "success register -3",
+			wantErr:  false,
+			respCode: http.StatusCreated,
+			response: response.Response{
+				Message: response.MessageSuccessCreated,
+				Success: true,
+				Data:    nil,
+			},
+			payload: &model.UserRegister{
+				Name:     helper.RandomString(10),
+				Email:    helper.RandomEmails(1)[0],
+				Password: helper.RandomString(10),
+				RoleID:   1, // admin
+			},
+		},
+		{
+			caseName: "failed register: email already used",
+			wantErr:  false,
+			respCode: http.StatusBadRequest,
+			response: response.Response{
+				Message: "",
+				Success: false,
+				Data:    nil,
+			},
+			payload: &model.UserRegister{
+				Name:     helper.RandomString(10),
+				Email:    createdUser.Email,
+				Password: helper.RandomString(10),
+				RoleID:   1, // admin
+			},
+		},
+		{
+			caseName: "failed register: name too short",
+			wantErr:  false,
+			respCode: http.StatusBadRequest,
+			response: response.Response{
+				Message: "",
+				Success: false,
+				Data:    nil,
+			},
+			payload: &model.UserRegister{
+				Name:     "",
+				Email:    helper.RandomEmails(1)[0],
+				Password: helper.RandomString(10),
+				RoleID:   1, // admin
+			},
+		},
+		{
+			caseName: "failed register: password too short",
+			wantErr:  false,
+			respCode: http.StatusBadRequest,
+			response: response.Response{
+				Message: "",
+				Success: false,
+				Data:    nil,
+			},
+			payload: &model.UserRegister{
+				Name:     helper.RandomString(10),
+				Email:    helper.RandomEmails(1)[0],
+				Password: "",
+				RoleID:   1, // admin
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(":::::::" + tc.caseName)
+
+		jsonObject, err := json.Marshal(&tc.payload)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		endp := "/user/register"
+		url := "http://127.0.0.1:9009" + endp
+		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
+		if httpReqErr != nil || req == nil {
+			t.Fatal("should not nil")
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		app := fiber.New()
+		app.Post(endp, ctr.Register)
+		req.Close = true
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal", resp.StatusCode)
+		}
+
+		if tc.payload != nil {
+			respModel := response.Response{}
+			decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
+			if decodeErr != nil {
+				t.Error("should not error", decodeErr)
+			}
+		}
+
+		if tc.response.Success {
+			userByEmail, getErr := userRepo.GetByEmail(ctx, tc.payload.Email)
+			if getErr != nil || userByEmail == nil {
+				t.Fatal("should success whilte create and get user")
+			}
+			if userByEmail.Name != cases.Title(language.Und).String(tc.payload.Name) {
+				t.Error("name should equal")
+			}
+
+			deleteErr := userRepo.Delete(ctx, userByEmail.ID)
+			if deleteErr != nil {
+				t.Fatal("should success whilte delete user by ID")
+			}
+		}
+	}
+
 }
 
 func Test_AccountActivation(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 	c.Method(http.MethodPost)
@@ -74,8 +261,9 @@ func Test_AccountActivation(t *testing.T) {
 
 func Test_DeleteAccountActivation(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 	c.Method(http.MethodPost)
@@ -84,8 +272,9 @@ func Test_DeleteAccountActivation(t *testing.T) {
 
 func Test_ForgetPassword(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 	c.Method(http.MethodPost)
@@ -94,18 +283,21 @@ func Test_ForgetPassword(t *testing.T) {
 
 func Test_ResetPassword(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 }
 
+// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
 func Test_Login(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 	c.Method(http.MethodPost)
@@ -114,8 +306,9 @@ func Test_Login(t *testing.T) {
 
 func Test_Logout(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 	c.Method(http.MethodPost)
@@ -124,8 +317,9 @@ func Test_Logout(t *testing.T) {
 
 func Test_UpdatePassword(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 	c.Method(http.MethodPost)
@@ -134,8 +328,9 @@ func Test_UpdatePassword(t *testing.T) {
 
 func Test_UpdateProfile(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 	c.Method(http.MethodPost)
@@ -144,8 +339,9 @@ func Test_UpdateProfile(t *testing.T) {
 
 func Test_MyProfile(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
 	c.Method(http.MethodGet)
