@@ -259,9 +259,6 @@ func Test_Get(t *testing.T) {
 		if err != nil {
 			t.Fatal("should not error")
 		}
-		if resp == nil {
-			t.Fatal("should not nil")
-		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
 			t.Error("should equal")
@@ -342,9 +339,6 @@ func Test_GetAll(t *testing.T) {
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal("should not error", err.Error())
-		}
-		if resp == nil {
-			t.Fatal("should not nil")
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
