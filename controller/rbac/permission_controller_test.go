@@ -201,7 +201,7 @@ func Test_Get(t *testing.T) {
 		{
 			caseName: "failed get: data not found",
 			respCode: http.StatusNotFound,
-			permID:   99999,
+			permID:   9999,
 		},
 	}
 
@@ -319,6 +319,64 @@ func Test_Update(t *testing.T) {
 		t.Error("should not nil")
 	}
 
+	testCases := []struct {
+		caseName string
+		respCode int
+		permID   int
+	}{
+		{
+			caseName: "success get -1",
+			respCode: http.StatusOK,
+			permID:   1,
+		},
+		{
+			caseName: "success get -2",
+			respCode: http.StatusOK,
+			permID:   1,
+		},
+		{
+			caseName: "failed get: invalid id",
+			respCode: http.StatusBadRequest,
+			permID:   -10,
+		},
+		{
+			caseName: "failed get: data not found",
+			respCode: http.StatusNotFound,
+			permID:   9999,
+		},
+	}
+
+	for _, tc := range testCases {
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/permission/%d", tc.permID), nil)
+		app := fiber.New()
+		app.Get("/permission/:id", permController.Get)
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal, want", tc.respCode, "but got", resp.StatusCode)
+		}
+		if resp.StatusCode == http.StatusOK {
+			var respStruct struct {
+				Message string              `json:"message"`
+				Success bool                `json:"success"`
+				Data    base.GetAllResponse `json:"data"`
+			}
+			err := json.NewDecoder(resp.Body).Decode(&respStruct)
+			if err != nil {
+				t.Errorf("Failed to parse response JSON: %v", err)
+			}
+			if !respStruct.Success {
+				t.Error("Expected success")
+			}
+			if respStruct.Message != response.MessageSuccessLoaded {
+				t.Error("Expected message to be equal")
+			}
+		}
+	}
+
 }
 
 func Test_Delete(t *testing.T) {
@@ -329,6 +387,63 @@ func Test_Delete(t *testing.T) {
 		t.Error("should not nil")
 	}
 
+	testCases := []struct {
+		caseName string
+		respCode int
+		permID   int
+	}{
+		{
+			caseName: "success get -1",
+			respCode: http.StatusOK,
+			permID:   1,
+		},
+		{
+			caseName: "success get -2",
+			respCode: http.StatusOK,
+			permID:   1,
+		},
+		{
+			caseName: "failed get: invalid id",
+			respCode: http.StatusBadRequest,
+			permID:   -10,
+		},
+		{
+			caseName: "failed get: data not found",
+			respCode: http.StatusNotFound,
+			permID:   9999,
+		},
+	}
+
+	for _, tc := range testCases {
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/permission/%d", tc.permID), nil)
+		app := fiber.New()
+		app.Get("/permission/:id", permController.Get)
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal, want", tc.respCode, "but got", resp.StatusCode)
+		}
+		if resp.StatusCode == http.StatusOK {
+			var respStruct struct {
+				Message string              `json:"message"`
+				Success bool                `json:"success"`
+				Data    base.GetAllResponse `json:"data"`
+			}
+			err := json.NewDecoder(resp.Body).Decode(&respStruct)
+			if err != nil {
+				t.Errorf("Failed to parse response JSON: %v", err)
+			}
+			if !respStruct.Success {
+				t.Error("Expected success")
+			}
+			if respStruct.Message != response.MessageSuccessLoaded {
+				t.Error("Expected message to be equal")
+			}
+		}
+	}
 }
 
 func createUserAndToken() (userID int, token string) {

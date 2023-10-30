@@ -239,7 +239,7 @@ func Test_Get(t *testing.T) {
 		},
 		{
 			caseName: "failed get user: user not found",
-			userID:   "199999990",
+			userID:   "9999",
 			respCode: http.StatusNotFound,
 			wantErr:  true,
 		},

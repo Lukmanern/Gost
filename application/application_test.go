@@ -208,19 +208,19 @@ func TestRunApp_HTTP_GET(t *testing.T) {
 	}{
 		{"http://localhost:9009/not-found-path", http.StatusNotFound},
 		// development user / user management
-		{"http://localhost:9009/user-management/99999999", http.StatusNotFound},
+		{"http://localhost:9009/user-management/9999", http.StatusNotFound},
 		{"http://localhost:9009/user-management/0", http.StatusBadRequest},
 		{"http://localhost:9009/user-management/-1", http.StatusBadRequest},
 		{"http://localhost:9009/user-management/stringID", http.StatusBadRequest},
 		// user
 		{"http://localhost:9009/user/my-profile", http.StatusUnauthorized},
 		// permission (need auth)
-		{"http://localhost:9009/permission/99999999", http.StatusUnauthorized},
+		{"http://localhost:9009/permission/9999", http.StatusUnauthorized},
 		{"http://localhost:9009/permission/0", http.StatusUnauthorized},
 		{"http://localhost:9009/permission/-1", http.StatusUnauthorized},
 		{"http://localhost:9009/permission/stringID", http.StatusUnauthorized},
 		// permission (need auth)
-		{"http://localhost:9009/role/99999999", http.StatusUnauthorized},
+		{"http://localhost:9009/role/9999", http.StatusUnauthorized},
 		{"http://localhost:9009/role/0", http.StatusUnauthorized},
 		{"http://localhost:9009/role/-1", http.StatusUnauthorized},
 		{"http://localhost:9009/role/stringID", http.StatusUnauthorized},
