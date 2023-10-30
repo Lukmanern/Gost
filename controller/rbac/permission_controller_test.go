@@ -64,12 +64,12 @@ func Test_NewPermissionController(t *testing.T) {
 
 func Test_Create(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := permController
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
 }
 
 func Test_Get(t *testing.T) {
@@ -79,8 +79,6 @@ func Test_Get(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	userID, userToken := createUserAndToken()
 	if userID < 1 || len(userToken) < 2 {
@@ -123,6 +121,7 @@ func Test_Get(t *testing.T) {
 		},
 	}
 
+	createdIDs := make([]float64, 0)
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
@@ -144,58 +143,165 @@ func Test_Get(t *testing.T) {
 			t.Error("should equal, but got", resp.StatusCode())
 		}
 
-		if resp.StatusCode() == http.StatusOK {
+		if resp.StatusCode() == http.StatusCreated {
 			respBody := c.Response().Body()
 			respString := string(respBody)
 			respStruct := struct {
-				Message string            `json:"message"`
-				Success bool              `json:"success"`
-				Data    model.UserProfile `json:"data"`
+				Message string         `json:"message"`
+				Success bool           `json:"success"`
+				Data    map[string]any `json:"data"`
 			}{}
 
 			err := json.Unmarshal([]byte(respString), &respStruct)
 			if err != nil {
 				t.Errorf("Failed to parse response JSON: %v", err)
 			}
-
 			if !respStruct.Success {
 				t.Error("Expected success")
 			}
-			if respStruct.Message != response.MessageSuccessLoaded {
+			if respStruct.Message != response.MessageSuccessCreated {
 				t.Error("Expected message to be equal")
 			}
+			if id, ok := respStruct.Data["id"].(float64); !ok || id < 1 {
+				t.Error("should be a positive integer")
+			} else {
+				createdIDs = append(createdIDs, id)
+			}
+		}
+	}
+
+	for _, id := range createdIDs {
+		err := permService.Delete(ctx, int(id))
+		if err != nil {
+			t.Error("deleting permission/s should not error")
 		}
 	}
 }
 
 func Test_GetAll(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := permController
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+	userID, userToken := createUserAndToken()
+	if userID < 1 || len(userToken) < 2 {
+		t.Error("should more")
+	}
+
+	defer func() {
+		userRepo.Delete(ctx, userID)
+	}()
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		payload  model.PermissionCreate
+		token    string // jwt into claims (fake claims)
+	}{
+		{
+			caseName: "success create",
+			respCode: http.StatusCreated,
+			payload: model.PermissionCreate{
+				Name:        "example-permission-001",
+				Description: "example-description-of-permission-001",
+			},
+			token: userToken,
+		},
+		{
+			caseName: "failed create: name already used",
+			respCode: http.StatusBadRequest,
+			payload: model.PermissionCreate{
+				Name:        "example-permission-001",
+				Description: "example-description-of-permission-001",
+			},
+			token: userToken,
+		},
+		{
+			caseName: "failed create: name/desc too short",
+			respCode: http.StatusBadRequest,
+			payload:  model.PermissionCreate{},
+			token:    userToken,
+		},
+	}
+
+	createdIDs := make([]float64, 0)
+	jwtHandler := middleware.NewJWTHandler()
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", tc.token))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		requestBody, err := json.Marshal(tc.payload)
+		if err != nil {
+			t.Fatal("Error while serializing payload to request body")
+		}
+		c.Request().SetBody(requestBody)
+
+		fakeClaims := jwtHandler.GenerateClaims(tc.token)
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
+		}
+		ctr.Create(c)
+		resp := c.Response()
+		if resp.StatusCode() != tc.respCode {
+			t.Error("should equal, but got", resp.StatusCode())
+		}
+
+		if resp.StatusCode() == http.StatusCreated {
+			respBody := c.Response().Body()
+			respString := string(respBody)
+			respStruct := struct {
+				Message string         `json:"message"`
+				Success bool           `json:"success"`
+				Data    map[string]any `json:"data"`
+			}{}
+
+			err := json.Unmarshal([]byte(respString), &respStruct)
+			if err != nil {
+				t.Errorf("Failed to parse response JSON: %v", err)
+			}
+			if !respStruct.Success {
+				t.Error("Expected success")
+			}
+			if respStruct.Message != response.MessageSuccessCreated {
+				t.Error("Expected message to be equal")
+			}
+			if id, ok := respStruct.Data["id"].(float64); !ok || id < 1 {
+				t.Error("should be a positive integer")
+			} else {
+				createdIDs = append(createdIDs, id)
+			}
+		}
+	}
+
+	for _, id := range createdIDs {
+		err := permService.Delete(ctx, int(id))
+		if err != nil {
+			t.Error("deleting permission/s should not error")
+		}
+	}
 }
 
 func Test_Update(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := permController
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
 }
 
 func Test_Delete(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := permController
-	if ctr == nil || c == nil {
+	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
 }
 
 func createUserAndToken() (userID int, token string) {
