@@ -194,39 +194,64 @@ func Test_Role_Connect(t *testing.T) {
 	testCases := []struct {
 		caseName string
 		respCode int
-		roleID   int
+		payload  model.RoleConnectToPermissions
 	}{
 		{
 			caseName: "success update -1",
-			respCode: http.StatusOK,
-			roleID:   roleID,
+			respCode: http.StatusCreated,
+			payload: model.RoleConnectToPermissions{
+				RoleID:        roleID,
+				PermissionsID: permIDs,
+			},
 		},
 		{
 			caseName: "success update -2",
-			respCode: http.StatusOK,
-			roleID:   roleID,
+			respCode: http.StatusCreated,
+			payload: model.RoleConnectToPermissions{
+				RoleID:        roleID,
+				PermissionsID: permIDs,
+			},
 		},
 		{
 			caseName: "failed update: status not found",
 			respCode: http.StatusNotFound,
-			roleID:   roleID + 99,
+			payload: model.RoleConnectToPermissions{
+				RoleID:        roleID + 99,
+				PermissionsID: permIDs,
+			},
+		},
+		{
+			caseName: "failed update: invalid role id",
+			respCode: http.StatusBadRequest,
+			payload: model.RoleConnectToPermissions{
+				RoleID:        -1,
+				PermissionsID: permIDs,
+			},
 		},
 		{
 			caseName: "failed update: invalid id",
 			respCode: http.StatusBadRequest,
-			roleID:   -10,
+			payload: model.RoleConnectToPermissions{
+				RoleID:        roleID,
+				PermissionsID: []int{-1, 2, 3},
+			},
 		},
 	}
 
 	for _, tc := range testCases {
-		url := fmt.Sprintf("http://127.0.0.1:9009/role/%d", tc.roleID)
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		log.Println(":::::::" + tc.caseName)
+		jsonObject, err := json.Marshal(tc.payload)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		url := "http://127.0.0.1:9009/role/connect"
+		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Get("/role/:id", roleController.Get)
+		app.Post("/role/connect", roleController.Connect)
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal("should not error")
@@ -238,6 +263,16 @@ func Test_Role_Connect(t *testing.T) {
 		var data response.Response
 		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 			t.Fatal("failed to decode JSON:", err)
+		}
+		if resp.StatusCode == http.StatusOK {
+			role, getErr := roleService.GetByID(ctx, tc.payload.RoleID)
+			if getErr != nil || role == nil {
+				t.Fatal("should not error while getting role")
+			}
+
+			if len(role.Permissions) != len(tc.payload.PermissionsID) {
+				t.Error("should equal")
+			}
 		}
 	}
 }
