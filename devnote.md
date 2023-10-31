@@ -3,12 +3,7 @@
 ### Todo / OnDev
 
 1. Add middleware for payload-inspection
-
-? github.com/Lukmanern/gost [no test files]
-? github.com/Lukmanern/gost/controller/dev [no test files]
-? github.com/Lukmanern/gost/controller/rbac [no test files]
-? github.com/Lukmanern/gost/controller/user [no test files]
-? github.com/Lukmanern/gost/controller/user_dev [no test files]
+2. Make code more clean
 
 ### Done / OnTest
 
