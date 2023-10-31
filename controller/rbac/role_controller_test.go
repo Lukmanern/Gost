@@ -57,6 +57,93 @@ func Test_Role_Create(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
 	}
+
+	permIDs := make([]int, 0)
+	for i := 0; i < 4; i++ {
+		// create 1 permission
+		permID, createErr := permService2.Create(ctx, model.PermissionCreate{
+			Name:        helper.RandomString(11),
+			Description: helper.RandomString(30),
+		})
+		if createErr != nil || permID < 1 {
+			t.Fatal("should not error while creating permission")
+		}
+		defer func() {
+			permService2.Delete(ctx, permID)
+		}()
+
+		permIDs = append(permIDs, permID)
+	}
+
+	createdRole := model.RoleCreate{
+		Name:          helper.RandomString(9),
+		Description:   helper.RandomString(30),
+		PermissionsID: permIDs,
+	}
+	roleID, createErr := roleService.Create(ctx, createdRole)
+	if createErr != nil || roleID <= 0 {
+		t.Fatal("should not error while creating new Role")
+	}
+	roleByID, getErr := roleService.GetByID(ctx, roleID)
+	if getErr != nil || roleByID == nil {
+		t.Fatal("should not error while getting Role")
+	}
+	if len(roleByID.Permissions) != 4 {
+		t.Error("the length should equal")
+	}
+	defer func() {
+		roleService.Delete(ctx, roleID)
+	}()
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		roleID   int
+	}{
+		{
+			caseName: "success update -1",
+			respCode: http.StatusOK,
+			roleID:   roleID,
+		},
+		{
+			caseName: "success update -2",
+			respCode: http.StatusOK,
+			roleID:   roleID,
+		},
+		{
+			caseName: "failed update: status not found",
+			respCode: http.StatusNotFound,
+			roleID:   roleID + 99,
+		},
+		{
+			caseName: "failed update: invalid id",
+			respCode: http.StatusBadRequest,
+			roleID:   -10,
+		},
+	}
+
+	for _, tc := range testCases {
+		url := fmt.Sprintf("http://127.0.0.1:9009/role/%d", tc.roleID)
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		app := fiber.New()
+		app.Get("/role/:id", roleController.Get)
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal, want", tc.respCode, "but got", resp.StatusCode)
+		}
+		var data response.Response
+		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			t.Fatal("failed to decode JSON:", err)
+		}
+	}
 }
 
 func Test_Role_Connect(t *testing.T) {
@@ -65,6 +152,93 @@ func Test_Role_Connect(t *testing.T) {
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error("should not nil")
+	}
+
+	permIDs := make([]int, 0)
+	for i := 0; i < 4; i++ {
+		// create 1 permission
+		permID, createErr := permService2.Create(ctx, model.PermissionCreate{
+			Name:        helper.RandomString(11),
+			Description: helper.RandomString(30),
+		})
+		if createErr != nil || permID < 1 {
+			t.Fatal("should not error while creating permission")
+		}
+		defer func() {
+			permService2.Delete(ctx, permID)
+		}()
+
+		permIDs = append(permIDs, permID)
+	}
+
+	createdRole := model.RoleCreate{
+		Name:          helper.RandomString(9),
+		Description:   helper.RandomString(30),
+		PermissionsID: permIDs,
+	}
+	roleID, createErr := roleService.Create(ctx, createdRole)
+	if createErr != nil || roleID <= 0 {
+		t.Fatal("should not error while creating new Role")
+	}
+	roleByID, getErr := roleService.GetByID(ctx, roleID)
+	if getErr != nil || roleByID == nil {
+		t.Fatal("should not error while getting Role")
+	}
+	if len(roleByID.Permissions) != 4 {
+		t.Error("the length should equal")
+	}
+	defer func() {
+		roleService.Delete(ctx, roleID)
+	}()
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		roleID   int
+	}{
+		{
+			caseName: "success update -1",
+			respCode: http.StatusOK,
+			roleID:   roleID,
+		},
+		{
+			caseName: "success update -2",
+			respCode: http.StatusOK,
+			roleID:   roleID,
+		},
+		{
+			caseName: "failed update: status not found",
+			respCode: http.StatusNotFound,
+			roleID:   roleID + 99,
+		},
+		{
+			caseName: "failed update: invalid id",
+			respCode: http.StatusBadRequest,
+			roleID:   -10,
+		},
+	}
+
+	for _, tc := range testCases {
+		url := fmt.Sprintf("http://127.0.0.1:9009/role/%d", tc.roleID)
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		app := fiber.New()
+		app.Get("/role/:id", roleController.Get)
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal("should not error")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != tc.respCode {
+			t.Error("should equal, want", tc.respCode, "but got", resp.StatusCode)
+		}
+		var data response.Response
+		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			t.Fatal("failed to decode JSON:", err)
+		}
 	}
 }
 
