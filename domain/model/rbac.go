@@ -31,7 +31,7 @@ type PermissionCreate struct {
 }
 
 type PermissionUpdate struct {
-	ID          int    `validate:"required,numeric,min=1" json:"id"`
+	ID          int    `validate:"required,numeric,min=1"`
 	Name        string `validate:"required,min=1,max=60" json:"name"`
 	Description string `validate:"required,min=1,max=100" json:"description"`
 }

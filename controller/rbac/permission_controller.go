@@ -123,10 +123,10 @@ func (ctr PermissionControllerImpl) Update(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid id")
 	}
 	var permission model.PermissionUpdate
+	permission.ID = id
 	if err := c.BodyParser(&permission); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
-	permission.ID = id
 	validate := validator.New()
 	if err := validate.Struct(&permission); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
