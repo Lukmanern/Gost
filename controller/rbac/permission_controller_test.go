@@ -58,7 +58,7 @@ func init() {
 	rbac.PermissionHashMap = rbac.PermissionsHashMap()
 }
 
-func Test_NewPermissionController(t *testing.T) {
+func Test_Perm_NewPermissionController(t *testing.T) {
 	permSvc := service.NewPermissionService()
 	permCtr := NewPermissionController(permSvc)
 
@@ -67,7 +67,7 @@ func Test_NewPermissionController(t *testing.T) {
 	}
 }
 
-func Test_Create(t *testing.T) {
+func Test_Perm_Create(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -173,7 +173,7 @@ func Test_Create(t *testing.T) {
 	}
 }
 
-func Test_Get(t *testing.T) {
+func Test_Perm_Get(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -240,7 +240,7 @@ func Test_Get(t *testing.T) {
 	}
 }
 
-func Test_GetAll(t *testing.T) {
+func Test_Perm_GetAll(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -314,7 +314,7 @@ func Test_GetAll(t *testing.T) {
 	}
 }
 
-func Test_Update(t *testing.T) {
+func Test_Perm_Update(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -342,7 +342,7 @@ func Test_Update(t *testing.T) {
 		payload  model.PermissionUpdate
 	}{
 		{
-			caseName: "success get -1",
+			caseName: "success update -1",
 			respCode: http.StatusNoContent,
 			permID:   permID,
 			payload: model.PermissionUpdate{
@@ -352,7 +352,7 @@ func Test_Update(t *testing.T) {
 			},
 		},
 		{
-			caseName: "success get -2",
+			caseName: "success update -2",
 			respCode: http.StatusNoContent,
 			permID:   permID,
 			payload: model.PermissionUpdate{
@@ -362,12 +362,22 @@ func Test_Update(t *testing.T) {
 			},
 		},
 		{
-			caseName: "failed get: invalid id",
+			caseName: "failed update: invalid name/description",
+			respCode: http.StatusBadRequest,
+			permID:   permID,
+			payload: model.PermissionUpdate{
+				ID:          permID,
+				Name:        "",
+				Description: "",
+			},
+		},
+		{
+			caseName: "failed update: invalid id",
 			respCode: http.StatusBadRequest,
 			permID:   -10,
 		},
 		{
-			caseName: "failed get: data not found",
+			caseName: "failed update: data not found",
 			respCode: http.StatusNotFound,
 			permID:   permID + 99,
 			payload: model.PermissionUpdate{
@@ -420,7 +430,7 @@ func Test_Update(t *testing.T) {
 
 }
 
-func Test_Delete(t *testing.T) {
+func Test_Perm_Delete(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController

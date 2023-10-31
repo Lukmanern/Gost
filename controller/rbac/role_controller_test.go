@@ -2,9 +2,11 @@ package controller
 
 import (
 	"log"
+	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/rbac"
 
 	service "github.com/Lukmanern/gost/service/rbac"
@@ -38,4 +40,58 @@ func init() {
 	// dump all permissions into hashMap
 	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
 	rbac.PermissionHashMap = rbac.PermissionsHashMap()
+}
+
+func Test_Role_Create(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	ctr := permController
+	if ctr == nil || c == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+}
+
+func Test_Role_Connect(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	ctr := permController
+	if ctr == nil || c == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+}
+
+func Test_Role_Get(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	ctr := permController
+	if ctr == nil || c == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+}
+
+func Test_Role_GetAll(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	ctr := permController
+	if ctr == nil || c == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+}
+
+func Test_Role_Update(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	ctr := permController
+	if ctr == nil || c == nil || ctx == nil {
+		t.Error("should not nil")
+	}
+}
+
+func Test_Role_Delete(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	ctr := permController
+	if ctr == nil || c == nil || ctx == nil {
+		t.Error("should not nil")
+	}
 }
