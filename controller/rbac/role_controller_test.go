@@ -98,39 +98,67 @@ func Test_Role_Create(t *testing.T) {
 	testCases := []struct {
 		caseName string
 		respCode int
-		roleID   int
+		payload  model.RoleCreate
 	}{
 		{
-			caseName: "success update -1",
-			respCode: http.StatusOK,
-			roleID:   roleID,
+			caseName: "success create -1",
+			respCode: http.StatusCreated,
+			payload: model.RoleCreate{
+				Name:        helper.RandomString(10),
+				Description: helper.RandomString(30),
+			},
 		},
 		{
-			caseName: "success update -2",
-			respCode: http.StatusOK,
-			roleID:   roleID,
+			caseName: "success create -2",
+			respCode: http.StatusCreated,
+			payload: model.RoleCreate{
+				Name:        helper.RandomString(10),
+				Description: helper.RandomString(30),
+			},
 		},
 		{
-			caseName: "failed update: status not found",
+			caseName: "failed create: permissions not found",
 			respCode: http.StatusNotFound,
-			roleID:   roleID + 99,
+			payload: model.RoleCreate{
+				Name:          helper.RandomString(10),
+				Description:   helper.RandomString(30),
+				PermissionsID: []int{permIDs[0] + 90},
+			},
 		},
 		{
-			caseName: "failed update: invalid id",
+			caseName: "failed create: invalid name, too short",
 			respCode: http.StatusBadRequest,
-			roleID:   -10,
+			payload: model.RoleCreate{
+				Name:          "",
+				Description:   helper.RandomString(30),
+				PermissionsID: []int{permIDs[0] - 90},
+			},
+		},
+		{
+			caseName: "failed create: invalid description, too short",
+			respCode: http.StatusBadRequest,
+			payload: model.RoleCreate{
+				Name:          helper.RandomString(10),
+				Description:   "",
+				PermissionsID: []int{permIDs[0]},
+			},
 		},
 	}
 
 	for _, tc := range testCases {
-		url := fmt.Sprintf("http://127.0.0.1:9009/role/%d", tc.roleID)
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		log.Println(":::::::" + tc.caseName)
+		jsonObject, err := json.Marshal(tc.payload)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		url := "http://127.0.0.1:9009/role"
+		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Get("/role/:id", roleController.Get)
+		app.Post("/role", roleController.Create)
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal("should not error")
@@ -142,6 +170,25 @@ func Test_Role_Create(t *testing.T) {
 		var data response.Response
 		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 			t.Fatal("failed to decode JSON:", err)
+		}
+
+		if resp.StatusCode == http.StatusCreated {
+			data, ok1 := data.Data.(map[string]interface{})
+			if !ok1 {
+				t.Error("should ok1")
+			}
+			anyId, ok2 := data["id"]
+			if !ok2 {
+				t.Error("should ok2")
+			}
+			intId, ok3 := anyId.(float64)
+			if !ok3 {
+				t.Error("should ok3")
+			}
+			deleteErr := roleService.Delete(ctx, int(intId))
+			if deleteErr != nil {
+				t.Error("should not error")
+			}
 		}
 	}
 }
@@ -197,7 +244,7 @@ func Test_Role_Connect(t *testing.T) {
 		payload  model.RoleConnectToPermissions
 	}{
 		{
-			caseName: "success update -1",
+			caseName: "success connect -1",
 			respCode: http.StatusCreated,
 			payload: model.RoleConnectToPermissions{
 				RoleID:        roleID,
@@ -205,7 +252,7 @@ func Test_Role_Connect(t *testing.T) {
 			},
 		},
 		{
-			caseName: "success update -2",
+			caseName: "success connect -2",
 			respCode: http.StatusCreated,
 			payload: model.RoleConnectToPermissions{
 				RoleID:        roleID,
@@ -213,7 +260,7 @@ func Test_Role_Connect(t *testing.T) {
 			},
 		},
 		{
-			caseName: "failed update: status not found",
+			caseName: "failed connect: status not found",
 			respCode: http.StatusNotFound,
 			payload: model.RoleConnectToPermissions{
 				RoleID:        roleID + 99,
@@ -221,7 +268,7 @@ func Test_Role_Connect(t *testing.T) {
 			},
 		},
 		{
-			caseName: "failed update: invalid role id",
+			caseName: "failed connect: invalid role id",
 			respCode: http.StatusBadRequest,
 			payload: model.RoleConnectToPermissions{
 				RoleID:        -1,
@@ -229,7 +276,7 @@ func Test_Role_Connect(t *testing.T) {
 			},
 		},
 		{
-			caseName: "failed update: invalid id",
+			caseName: "failed connect: invalid id",
 			respCode: http.StatusBadRequest,
 			payload: model.RoleConnectToPermissions{
 				RoleID:        roleID,
@@ -328,22 +375,22 @@ func Test_Role_Get(t *testing.T) {
 		roleID   int
 	}{
 		{
-			caseName: "success update -1",
+			caseName: "success get -1",
 			respCode: http.StatusOK,
 			roleID:   roleID,
 		},
 		{
-			caseName: "success update -2",
+			caseName: "success get -2",
 			respCode: http.StatusOK,
 			roleID:   roleID,
 		},
 		{
-			caseName: "failed update: status not found",
+			caseName: "failed get: status not found",
 			respCode: http.StatusNotFound,
 			roleID:   roleID + 99,
 		},
 		{
-			caseName: "failed update: invalid id",
+			caseName: "failed get: invalid id",
 			respCode: http.StatusBadRequest,
 			roleID:   -10,
 		},
@@ -424,17 +471,17 @@ func Test_Role_GetAll(t *testing.T) {
 		params   string
 	}{
 		{
-			caseName: "success update -1",
+			caseName: "success getAll -1",
 			respCode: http.StatusOK,
 			params:   "limit=10&page=1",
 		},
 		{
-			caseName: "success update -2",
+			caseName: "success getAll -2",
 			respCode: http.StatusOK,
 			params:   "limit=100&page=1",
 		},
 		{
-			caseName: "failed update: invalid limit/page",
+			caseName: "failed getAll: invalid limit/page",
 			respCode: http.StatusBadRequest,
 			params:   "limit=-10&page=-1",
 		},
