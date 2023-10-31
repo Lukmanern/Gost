@@ -28,10 +28,13 @@ var (
 	userRepo   repository.UserRepository
 	ctx        context.Context
 	userEntt   entity.User
+	appUrl     string
 )
 
 func init() {
 	env.ReadConfig("./../.env")
+	c := env.Configuration()
+	appUrl = c.AppUrl
 
 	jwtHandler = middleware.NewJWTHandler()
 	idHashMap = rbac.PermissionsHashMap()
@@ -136,25 +139,25 @@ func TestRunApp_NOT_FOUND(t *testing.T) {
 	}{
 		{
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/not-found-path",
+			URL:          appUrl + "not-found-path",
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"message":"Cannot GET /not-found-path"}`,
 		},
 		{
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/not-found-path",
+			URL:          appUrl + "not-found-path",
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"message":"Cannot POST /not-found-path"}`,
 		},
 		{
 			HTTPMethod:   "PUT",
-			URL:          "http://localhost:9009/not-found-path",
+			URL:          appUrl + "not-found-path",
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"message":"Cannot PUT /not-found-path"}`,
 		},
 		{
 			HTTPMethod:   "DELETE",
-			URL:          "http://localhost:9009/not-found-path",
+			URL:          appUrl + "not-found-path",
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"message":"Cannot DELETE /not-found-path"}`,
 		},
@@ -206,31 +209,31 @@ func TestRunApp_HTTP_GET(t *testing.T) {
 		URL          string
 		ExpectedCode int
 	}{
-		{"http://localhost:9009/not-found-path", http.StatusNotFound},
+		{appUrl + "not-found-path", http.StatusNotFound},
 		// development user / user management
-		{"http://localhost:9009/user-management/9999", http.StatusNotFound},
-		{"http://localhost:9009/user-management/0", http.StatusBadRequest},
-		{"http://localhost:9009/user-management/-1", http.StatusBadRequest},
-		{"http://localhost:9009/user-management/stringID", http.StatusBadRequest},
+		{appUrl + "user-management/9999", http.StatusNotFound},
+		{appUrl + "user-management/0", http.StatusBadRequest},
+		{appUrl + "user-management/-1", http.StatusBadRequest},
+		{appUrl + "user-management/stringID", http.StatusBadRequest},
 		// user
-		{"http://localhost:9009/user/my-profile", http.StatusUnauthorized},
+		{appUrl + "user/my-profile", http.StatusUnauthorized},
 		// permission (need auth)
-		{"http://localhost:9009/permission/9999", http.StatusUnauthorized},
-		{"http://localhost:9009/permission/0", http.StatusUnauthorized},
-		{"http://localhost:9009/permission/-1", http.StatusUnauthorized},
-		{"http://localhost:9009/permission/stringID", http.StatusUnauthorized},
+		{appUrl + "permission/9999", http.StatusUnauthorized},
+		{appUrl + "permission/0", http.StatusUnauthorized},
+		{appUrl + "permission/-1", http.StatusUnauthorized},
+		{appUrl + "permission/stringID", http.StatusUnauthorized},
 		// permission (need auth)
-		{"http://localhost:9009/role/9999", http.StatusUnauthorized},
-		{"http://localhost:9009/role/0", http.StatusUnauthorized},
-		{"http://localhost:9009/role/-1", http.StatusUnauthorized},
-		{"http://localhost:9009/role/stringID", http.StatusUnauthorized},
+		{appUrl + "role/9999", http.StatusUnauthorized},
+		{appUrl + "role/0", http.StatusUnauthorized},
+		{appUrl + "role/-1", http.StatusUnauthorized},
+		{appUrl + "role/stringID", http.StatusUnauthorized},
 		// dev
-		{"http://localhost:9009/development/ping/db", http.StatusOK},
-		{"http://localhost:9009/development/ping/redis", http.StatusOK},
-		{"http://localhost:9009/development/panic", http.StatusInternalServerError},
-		{"http://localhost:9009/development/new-jwt", http.StatusOK},
-		{"http://localhost:9009/development/storing-to-redis", http.StatusCreated},
-		{"http://localhost:9009/development/get-from-redis", http.StatusOK},
+		{appUrl + "development/ping/db", http.StatusOK},
+		{appUrl + "development/ping/redis", http.StatusOK},
+		{appUrl + "development/panic", http.StatusInternalServerError},
+		{appUrl + "development/new-jwt", http.StatusOK},
+		{appUrl + "development/storing-to-redis", http.StatusCreated},
+		{appUrl + "development/get-from-redis", http.StatusOK},
 		// ...
 		// Add more test cases here as needed.
 	}
@@ -290,20 +293,20 @@ func TestRunApp_USER_ROUTE(t *testing.T) {
 	}{
 		{
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/user",
+			URL:          appUrl + "user",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/user/my-profile",
+			URL:          appUrl + "user/my-profile",
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "", // to long
 			AddToken:     true,
 		},
 		{
 			HTTPMethod:   "PUT",
-			URL:          "http://localhost:9009/user/profile-update",
+			URL:          appUrl + "user/profile-update",
 			ExpectedCode: http.StatusNoContent,
 			ReqBody:      []byte(`{"name": "new-name"}`),
 			ExpectedBody: "", // no-content
@@ -311,7 +314,7 @@ func TestRunApp_USER_ROUTE(t *testing.T) {
 		},
 		{
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/user/update-password",
+			URL:          appUrl + "user/update-password",
 			ExpectedCode: http.StatusBadRequest,
 			ReqBody:      []byte(`{"password": "password","new_password":"password00DIF","new_password_confirm": "password00"}`),
 			ExpectedBody: "", // no-content
@@ -393,42 +396,42 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 		{
 			AddToken:     true,
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/role",
+			URL:          appUrl + "role",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			AddToken:     true,
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/role/1",
+			URL:          appUrl + "role/1",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			AddToken:     true,
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/role",
+			URL:          appUrl + "role",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			AddToken:     true,
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/permission",
+			URL:          appUrl + "permission",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			AddToken:     true,
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/permission",
+			URL:          appUrl + "permission",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			AddToken:     true,
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/permission/1",
+			URL:          appUrl + "permission/1",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},

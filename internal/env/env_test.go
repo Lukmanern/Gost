@@ -1,6 +1,7 @@
 package env
 
 import (
+	"net/url"
 	"testing"
 )
 
@@ -46,29 +47,26 @@ func TestReadConfigAndConfiguration(t *testing.T) {
 	}
 }
 
-func TestConfig_GetDatabaseURI(t *testing.T) {
+func TestConfig_GetPublicKeyAndGetPrivateKey(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			t.Error("should not panic")
+		}
+	}()
+
 	ReadConfig(validPath)
 	c := Configuration()
-	dbURI := c.GetDatabaseURI()
 
-	if dbURI != c.GetDatabaseURI() {
-		t.Error("Expected the same Database URI, but got different URIs")
+	dbUri := c.GetDatabaseURI()
+	if len(dbUri) < 1 {
+		t.Error("should more long")
 	}
-}
 
-func TestConfig_GetAppInProduction(t *testing.T) {
-	ReadConfig(validPath)
-	c := Configuration()
 	isProd := c.GetAppInProduction()
-
 	if c.AppInProduction != isProd {
 		t.Error("Expected AppInProduction to match the configuration, but it doesn't")
 	}
-}
-
-func TestConfig_GetPublicKeyAndGetPrivateKey(t *testing.T) {
-	ReadConfig(validPath)
-	c := Configuration()
 
 	pubKey := c.GetPublicKey()
 	if pubKey == nil {
@@ -79,10 +77,11 @@ func TestConfig_GetPublicKeyAndGetPrivateKey(t *testing.T) {
 	if privKey == nil {
 		t.Error("Private Key should not be nil")
 	}
-}
 
-func TestConfig_ShowConfig(t *testing.T) {
-	ReadConfig(validPath)
-	c := Configuration()
 	c.ShowConfig()
+	c.setAppUrl()
+	_, parseUrlErr := url.Parse(c.AppUrl)
+	if parseUrlErr != nil {
+		t.Error("should not error while parsing url")
+	}
 }
