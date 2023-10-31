@@ -1,7 +1,6 @@
-package service
+package controller
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -321,20 +320,34 @@ func Test_Update(t *testing.T) {
 		t.Error("should not nil")
 	}
 
+	// create 1 permission
+	permID, createErr := permService.Create(ctx, model.PermissionCreate{
+		Name:        "example-permission-001",
+		Description: "description-of-example-permission-001",
+	})
+	if createErr != nil || permID < 1 {
+		t.Fatal("should not error while creating permission")
+	}
+
+	defer func() {
+		permService.Delete(ctx, permID)
+	}()
+
 	testCases := []struct {
 		caseName string
 		respCode int
 		permID   int
+		payload  model.PermissionUpdate
 	}{
 		{
 			caseName: "success get -1",
-			respCode: http.StatusOK,
-			permID:   1,
+			respCode: http.StatusNoContent,
+			permID:   permID,
 		},
 		{
 			caseName: "success get -2",
-			respCode: http.StatusOK,
-			permID:   1,
+			respCode: http.StatusNoContent,
+			permID:   permID,
 		},
 		{
 			caseName: "failed get: invalid id",
@@ -359,23 +372,6 @@ func Test_Update(t *testing.T) {
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
 			t.Error("should equal, want", tc.respCode, "but got", resp.StatusCode)
-		}
-		if resp.StatusCode == http.StatusOK {
-			var respStruct struct {
-				Message string              `json:"message"`
-				Success bool                `json:"success"`
-				Data    base.GetAllResponse `json:"data"`
-			}
-			err := json.NewDecoder(resp.Body).Decode(&respStruct)
-			if err != nil {
-				t.Errorf("Failed to parse response JSON: %v", err)
-			}
-			if !respStruct.Success {
-				t.Error("Expected success")
-			}
-			if respStruct.Message != response.MessageSuccessLoaded {
-				t.Error("Expected message to be equal")
-			}
 		}
 	}
 
@@ -406,49 +402,38 @@ func Test_Delete(t *testing.T) {
 		caseName string
 		respCode int
 		permID   int
-		payload  model.PermissionUpdate
 	}{
 		{
 			caseName: "success get -1",
 			respCode: http.StatusNoContent,
 			permID:   permID,
-			payload: model.PermissionUpdate{
-				ID:          permID,
-				Name:        "new-name-of-permision-001",
-				Description: "description-of-new-name-of-permision-001",
-			},
 		},
-		// {
-		// 	caseName: "success get -2",
-		// 	respCode: http.StatusOK,
-		// 	permID:   1,
-		// },
-		// {
-		// 	caseName: "failed get: invalid id",
-		// 	respCode: http.StatusBadRequest,
-		// 	permID:   -10,
-		// },
-		// {
-		// 	caseName: "failed get: data not found",
-		// 	respCode: http.StatusNotFound,
-		// 	permID:   9999,
-		// },
+		{
+			caseName: "failed: not found / already deleted",
+			respCode: http.StatusNotFound,
+			permID:   permID,
+		},
+		{
+			caseName: "failed: not found",
+			respCode: http.StatusNotFound,
+			permID:   permID + 100,
+		},
+		{
+			caseName: "failed: invalid id",
+			respCode: http.StatusBadRequest,
+			permID:   -10,
+		},
 	}
 
 	for _, tc := range testCases {
-		log.Println(tc.caseName)
-		jsonObject, err := json.Marshal(&tc.payload)
-		if err != nil {
-			t.Error("should not error", err.Error())
-		}
-		url := "http://127.0.0.1:9009/permission/" + strconv.Itoa(tc.payload.ID)
-		req, httpReqErr := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
+		url := "http://127.0.0.1:9009/permission/" + strconv.Itoa(tc.permID)
+		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
 		if httpReqErr != nil || req == nil {
 			t.Fatal("should not nil")
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Put("/permission/:id", permController.Update)
+		app.Delete("/permission/:id", permController.Delete)
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal("should not error")
@@ -457,22 +442,6 @@ func Test_Delete(t *testing.T) {
 		if resp.StatusCode != tc.respCode {
 			t.Error("should equal, want", tc.respCode, "but got", resp.StatusCode)
 		}
-		var respStruct struct {
-			Message string              `json:"message"`
-			Success bool                `json:"success"`
-			Data    base.GetAllResponse `json:"data"`
-		}
-		decodeErr := json.NewDecoder(resp.Body).Decode(&respStruct)
-		if decodeErr != nil {
-			t.Errorf("Failed to parse response JSON: %v", decodeErr)
-		}
-		t.Error(respStruct)
-		// if !respStruct.Success {
-		// 	t.Error("Expected success")
-		// }
-		// if respStruct.Message != response.MessageSuccessLoaded {
-		// 	t.Error("Expected message to be equal")
-		// }
 	}
 }
 
