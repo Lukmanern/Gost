@@ -394,7 +394,7 @@ func Test_Perm_Update(t *testing.T) {
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := fmt.Sprintf("http://127.0.0.1:9009/permission/%d", tc.permID)
+		url := fmt.Sprintf(appUrl+"permission/%d", tc.permID)
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error("should not error", err.Error())
@@ -478,7 +478,7 @@ func Test_Perm_Delete(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		url := "http://127.0.0.1:9009/permission/" + strconv.Itoa(tc.permID)
+		url := appUrl + "permission/" + strconv.Itoa(tc.permID)
 		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
 		if httpReqErr != nil || req == nil {
 			t.Fatal("should not nil")

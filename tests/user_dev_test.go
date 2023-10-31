@@ -27,6 +27,7 @@ import (
 var (
 	userDevService    service.UserDevService
 	userDevController controller.UserDevController
+	appUrl            string
 )
 
 func init() {
@@ -34,6 +35,7 @@ func init() {
 	// Check env and database
 	env.ReadConfig("./../.env")
 	config := env.Configuration()
+	appUrl = config.AppUrl
 	dbURI := config.GetDatabaseURI()
 	privKey := config.GetPrivateKey()
 	pubKey := config.GetPublicKey()
@@ -127,7 +129,7 @@ func Test_Create(t *testing.T) {
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		req, httpReqErr := http.NewRequest(http.MethodPost, "http://127.0.0.1:9009/user-management/create", strings.NewReader(string(jsonObject)))
+		req, httpReqErr := http.NewRequest(http.MethodPost, appUrl+"user-management/create", strings.NewReader(string(jsonObject)))
 		if httpReqErr != nil {
 			t.Fatal("should not nil")
 		}

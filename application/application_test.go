@@ -475,16 +475,16 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 
 func TestRunApp_MIDDLEWARE_ADMIN_TEST(t *testing.T) {
 	adminEndpoints := []string{
-		"http://127.0.0.1:9009/middleware/create-rhp",
-		"http://127.0.0.1:9009/middleware/view-rhp",
-		"http://127.0.0.1:9009/middleware/update-rhp",
-		"http://127.0.0.1:9009/middleware/delete-rhp",
+		appUrl + "middleware/create-rhp",
+		appUrl + "middleware/view-rhp",
+		appUrl + "middleware/update-rhp",
+		appUrl + "middleware/delete-rhp",
 	}
 	userEndpoints := []string{
-		"http://127.0.0.1:9009/middleware/create-exmpl",
-		"http://127.0.0.1:9009/middleware/view-exmpl",
-		"http://127.0.0.1:9009/middleware/update-exmpl",
-		"http://127.0.0.1:9009/middleware/delete-exmpl",
+		appUrl + "middleware/create-exmpl",
+		appUrl + "middleware/view-exmpl",
+		appUrl + "middleware/update-exmpl",
+		appUrl + "middleware/delete-exmpl",
 	}
 
 	admin := createUser(1)
@@ -572,16 +572,16 @@ func TestRunApp_MIDDLEWARE_ADMIN_TEST(t *testing.T) {
 
 func TestRunApp_MIDDLEWARE_USER_TEST(t *testing.T) {
 	adminEndpoints := []string{
-		"http://127.0.0.1:9009/middleware/create-rhp",
-		"http://127.0.0.1:9009/middleware/view-rhp",
-		"http://127.0.0.1:9009/middleware/update-rhp",
-		"http://127.0.0.1:9009/middleware/delete-rhp",
+		appUrl + "middleware/create-rhp",
+		appUrl + "middleware/view-rhp",
+		appUrl + "middleware/update-rhp",
+		appUrl + "middleware/delete-rhp",
 	}
 	userEndpoints := []string{
-		"http://127.0.0.1:9009/middleware/create-exmpl",
-		"http://127.0.0.1:9009/middleware/view-exmpl",
-		"http://127.0.0.1:9009/middleware/update-exmpl",
-		"http://127.0.0.1:9009/middleware/delete-exmpl",
+		appUrl + "middleware/create-exmpl",
+		appUrl + "middleware/view-exmpl",
+		appUrl + "middleware/update-exmpl",
+		appUrl + "middleware/delete-exmpl",
 	}
 
 	user := createUser(2)

@@ -24,6 +24,7 @@ var (
 	permService2   service.PermissionService
 	roleService    service.RoleService
 	roleController RoleController
+	appUrl         string
 )
 
 func init() {
@@ -31,6 +32,7 @@ func init() {
 	// Check env and database
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
+	appUrl = config.AppUrl
 	dbURI := config.GetDatabaseURI()
 	privKey := config.GetPrivateKey()
 	pubKey := config.GetPublicKey()
@@ -151,7 +153,7 @@ func Test_Role_Create(t *testing.T) {
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := "http://127.0.0.1:9009/role"
+		url := appUrl + "role"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error("should not error", err.Error())
@@ -291,7 +293,7 @@ func Test_Role_Connect(t *testing.T) {
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := "http://127.0.0.1:9009/role/connect"
+		url := appUrl + "role/connect"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error("should not error", err.Error())
@@ -397,7 +399,7 @@ func Test_Role_Get(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		url := fmt.Sprintf("http://127.0.0.1:9009/role/%d", tc.roleID)
+		url := fmt.Sprintf(appUrl+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
 			t.Error("should not error", err.Error())
@@ -488,7 +490,7 @@ func Test_Role_GetAll(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		url := "http://127.0.0.1:9009/role?" + tc.params
+		url := appUrl + "role?" + tc.params
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
 			t.Error("should not error", err.Error())
@@ -615,7 +617,7 @@ func Test_Role_Update(t *testing.T) {
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := fmt.Sprintf("http://127.0.0.1:9009/role/%d", tc.roleID)
+		url := fmt.Sprintf(appUrl+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error("should not error", err.Error())
@@ -723,7 +725,7 @@ func Test_Role_Delete(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		url := fmt.Sprintf("http://127.0.0.1:9009/role/%d", tc.roleID)
+		url := fmt.Sprintf(appUrl+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		if err != nil {
 			t.Error("should not error", err.Error())
