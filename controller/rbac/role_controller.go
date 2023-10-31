@@ -169,10 +169,10 @@ func (ctr RoleControllerImpl) Update(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid id")
 	}
 	var role model.RoleUpdate
+	role.ID = id
 	if err := c.BodyParser(&role); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
-	role.ID = id
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
