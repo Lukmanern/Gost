@@ -1,12 +1,14 @@
 package controller
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -343,11 +345,21 @@ func Test_Update(t *testing.T) {
 			caseName: "success get -1",
 			respCode: http.StatusNoContent,
 			permID:   permID,
+			payload: model.PermissionUpdate{
+				ID:          permID,
+				Name:        helper.RandomString(12),
+				Description: helper.RandomString(20),
+			},
 		},
 		{
 			caseName: "success get -2",
 			respCode: http.StatusNoContent,
 			permID:   permID,
+			payload: model.PermissionUpdate{
+				ID:          permID,
+				Name:        helper.RandomString(12),
+				Description: helper.RandomString(20),
+			},
 		},
 		{
 			caseName: "failed get: invalid id",
@@ -357,14 +369,29 @@ func Test_Update(t *testing.T) {
 		{
 			caseName: "failed get: data not found",
 			respCode: http.StatusNotFound,
-			permID:   9999,
+			permID:   permID + 99,
+			payload: model.PermissionUpdate{
+				ID:          permID + 99,
+				Name:        helper.RandomString(12),
+				Description: helper.RandomString(20),
+			},
 		},
 	}
 
 	for _, tc := range testCases {
-		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/permission/%d", tc.permID), nil)
+		log.Println(":::::::" + tc.caseName)
+		jsonObject, err := json.Marshal(tc.payload)
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		url := fmt.Sprintf("http://127.0.0.1:9009/permission/%d", tc.permID)
+		req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
+		if err != nil {
+			t.Error("should not error", err.Error())
+		}
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Get("/permission/:id", permController.Get)
+		app.Put("/permission/:id", permController.Update)
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal("should not error")
@@ -372,6 +399,22 @@ func Test_Update(t *testing.T) {
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
 			t.Error("should equal, want", tc.respCode, "but got", resp.StatusCode)
+		}
+		if resp.StatusCode != http.StatusNoContent {
+			var data response.Response
+			if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+				t.Fatal("failed to decode JSON:", err)
+			}
+		}
+		if resp.StatusCode == http.StatusNoContent {
+			perm, getErr := permService.GetByID(ctx, permID)
+			if getErr != nil || perm == nil {
+				t.Error("should not nil while get permission")
+			}
+			if perm.Name != strings.ToLower(tc.payload.Name) ||
+				perm.Description != tc.payload.Description {
+				t.Error("should equal")
+			}
 		}
 	}
 
