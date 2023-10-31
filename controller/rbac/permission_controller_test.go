@@ -419,7 +419,7 @@ func Test_Perm_Update(t *testing.T) {
 		if resp.StatusCode == http.StatusNoContent {
 			perm, getErr := permService.GetByID(ctx, permID)
 			if getErr != nil || perm == nil {
-				t.Error("should not nil while get permission")
+				t.Error("should not error while get permission")
 			}
 			if perm.Name != strings.ToLower(tc.payload.Name) ||
 				perm.Description != tc.payload.Description {
