@@ -78,7 +78,6 @@ func (svc UserManagementServiceImpl) Create(ctx context.Context, user model.User
 	if err != nil {
 		return 0, err
 	}
-
 	return id, nil
 }
 
@@ -95,7 +94,6 @@ func (svc UserManagementServiceImpl) GetByID(ctx context.Context, id int) (user 
 		Name:  userEntity.Name,
 		Email: userEntity.Email,
 	}
-
 	return user, nil
 }
 
@@ -113,7 +111,6 @@ func (svc UserManagementServiceImpl) GetByEmail(ctx context.Context, email strin
 		Name:  userEntity.Name,
 		Email: userEntity.Email,
 	}
-
 	return user, nil
 }
 

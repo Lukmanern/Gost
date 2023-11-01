@@ -79,7 +79,6 @@ func (ctr PermissionControllerImpl) Get(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+getErr.Error())
 	}
-
 	return response.SuccessLoaded(c, permission)
 }
 

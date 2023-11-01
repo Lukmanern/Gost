@@ -65,7 +65,7 @@ func (svc RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (i
 	if err != nil {
 		return 0, err
 	}
-	return
+	return id, nil
 }
 
 func (svc RoleServiceImpl) ConnectPermissions(ctx context.Context, data model.RoleConnectToPermissions) (err error) {
@@ -104,7 +104,6 @@ func (svc RoleServiceImpl) GetByID(ctx context.Context, id int) (role *entity.Ro
 	if role == nil {
 		return nil, fiber.NewError(fiber.StatusNotFound, "role not found")
 	}
-
 	return role, nil
 }
 

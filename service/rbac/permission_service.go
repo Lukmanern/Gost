@@ -76,7 +76,6 @@ func (svc PermissionServiceImpl) GetByID(ctx context.Context, id int) (permissio
 		Name:        permissionEntity.Name,
 		Description: permissionEntity.Description,
 	}
-
 	return permission, nil
 }
 
@@ -96,7 +95,6 @@ func (svc PermissionServiceImpl) GetAll(ctx context.Context, filter base.Request
 
 		permissions = append(permissions, newPermission)
 	}
-
 	return permissions, total, nil
 }
 

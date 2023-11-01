@@ -136,15 +136,16 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	message := "Hello, My name is <b>Bot001</b> from Project Gost: Golang Starter By Lukmanern."
 	message += "<br/>Your account has already been created but is not yet active. To activate your account,"
 	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
-	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
+	message += " on Project Gost, you can request data deletion too."
 	message += "<br />Thank You, Best Regards <b>Bot001</b>."
 	message += "<br /><br /><br /> Code : " + verifCode
 
 	sendingErr := svc.emailService.SendMail(toEmail, subject, message)
 	if sendingErr != nil {
-		return 0, sendingErr
+		message := "account is created, but confimation email failed sending: "
+		message += sendingErr.Error()
+		return 0, errors.New(message)
 	}
-
 	return id, nil
 }
 
@@ -198,7 +199,6 @@ func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (co
 			return 0, errors.New("storing data to redis")
 		}
 	}
-
 	return counter, nil
 }
 
@@ -247,7 +247,6 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 		message := "token is too large, more than 2800 characters (too large for http header)"
 		return "", errors.New(message)
 	}
-
 	return token, nil
 }
 
@@ -308,16 +307,15 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 	message += " Your account has already been created but is not yet active. To activate your account,"
 	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
 	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
-	message += "\n\n\n\rThank You, Best Regards <b>Bot001</b>."
-	message += " Code : " + verifCode
-
-	// Todo : refactor
+	message += "<br /><br />Thank You, Best Regards <b>Bot001</b>."
+	message += "<br /><br />Code : " + verifCode
 
 	sendingErr := svc.emailService.SendMail(toEmail, subject, message)
 	if sendingErr != nil {
-		return sendingErr
+		message := "token forget password is created, but confimation email failed sending: "
+		message += sendingErr.Error()
+		return errors.New(message)
 	}
-
 	return nil
 }
 
@@ -409,7 +407,6 @@ func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPa
 	if updatePwErr != nil {
 		return updatePwErr
 	}
-
 	return nil
 }
 
