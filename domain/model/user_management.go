@@ -16,4 +16,6 @@ type UserResponse struct {
 type UserProfileUpdate struct {
 	ID   int    `validate:"required,numeric,min=1"`
 	Name string `validate:"required,min=5,max=60" json:"name"`
+	// ...
+	// add more fields
 }

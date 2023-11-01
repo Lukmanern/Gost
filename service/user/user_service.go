@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -68,19 +69,21 @@ func NewUserService(roleService roleService.RoleService) UserService {
 }
 
 func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {
-	// search email
+	// search user by email
+	// if exist, return error
 	userByEmail, getUserErr := svc.repository.GetByEmail(ctx, user.Email)
 	if getUserErr == nil || userByEmail != nil {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "email has been used")
 	}
 
-	// search role
+	// search role, if not exist return error
 	roleByID, getRoleErr := svc.roleService.GetByID(ctx, user.RoleID)
 	if getRoleErr != nil || roleByID == nil {
 		return 0, fiber.NewError(fiber.StatusNotFound, "role not found")
 	}
 
 	// create verification code
+	// for user (must unique)
 	var (
 		verifCode      string
 		passwordHashed string
@@ -101,7 +104,7 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 			return 0, errors.New("failed generating verification code")
 		}
 	}
-	// generate password
+	// generate password hashed
 	counter = 0
 	for {
 		passwordHashed, hashErr = hash.Generate(user.Password)
@@ -121,6 +124,7 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 		VerificationCode: &verifCode,
 		ActivatedAt:      nil,
 	}
+	// set created_at and updated_at equal to now
 	userEntity.SetCreateTimes()
 	id, err = svc.repository.Create(ctx, userEntity, user.RoleID)
 	if err != nil {
@@ -129,11 +133,11 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 
 	toEmail := []string{user.Email}
 	subject := "Gost Project: Activation Account"
-	message := "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern."
-	message += " Your account has already been created but is not yet active. To activate your account,"
+	message := "Hello, My name is <b>Bot001</b> from Project Gost: Golang Starter By Lukmanern."
+	message += "<br/>Your account has already been created but is not yet active. To activate your account,"
 	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
 	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
-	message += "<br />Thank You, Best Regards BotGostProject001."
+	message += "<br />Thank You, Best Regards <b>Bot001</b>."
 	message += "<br /><br /><br /> Code : " + verifCode
 
 	sendingErr := svc.emailService.SendMail(toEmail, subject, message)
@@ -145,12 +149,15 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 }
 
 func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) (err error) {
+	// search user by code, if not exist return error
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
 		"verification_code =": verifyCode,
 	})
 	if getByCodeErr != nil || userEntity == nil {
 		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
 	}
+	// set updated_at, activated_at and
+	// nulling verification code
 	userEntity.SetActivateAccount()
 	userEntity.SetUpdateTime()
 	updateErr := svc.repository.Update(ctx, *userEntity)
@@ -161,14 +168,16 @@ func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) 
 }
 
 func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) {
+	// search user by code, if not exist return error
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
 		"verification_code =": verifyCode,
 	})
 	if getByCodeErr != nil || userEntity == nil {
 		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
 	}
+	// check if account active or inactive
 	if userEntity.ActivatedAt != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "can not delete your data, your account is active")
+		return fiber.NewError(fiber.StatusBadRequest, "can not delete your account, your account is active")
 	}
 	deleteErr := svc.repository.Delete(ctx, userEntity.ID)
 	if deleteErr != nil {
@@ -178,6 +187,7 @@ func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyC
 }
 
 func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
+	// set key for banned counter
 	key := "failed-login-" + userIP
 	getStatus := svc.redis.Get(key)
 	counter, _ = strconv.Atoi(getStatus.Val())
@@ -193,6 +203,8 @@ func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (co
 }
 
 func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
+	// search user by email
+	// if not exist/found, return error
 	userEntity, err := svc.repository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -211,9 +223,12 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 	if !res {
 		return "", fiber.NewError(fiber.StatusBadRequest, "wrong password")
 	}
+	// if exist but not activated
+	// return error
 	if userEntity.ActivatedAt == nil {
-		errMsg := "Your account is already exist in our system, but it's still inactive, please check Your email inbox to activated-it"
-		return "", fiber.NewError(fiber.StatusBadRequest, errMsg)
+		message := "Your account is already exist in our system, but it's still inactive, "
+		message += "please check Your email inbox to activated-it"
+		return "", fiber.NewError(fiber.StatusBadRequest, message)
 	}
 
 	userRole := userEntity.Roles[0]
@@ -225,10 +240,12 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 	expired := time.Now().Add(config.AppAccessTokenTTL)
 	token, generetaErr := svc.jwtHandler.GenerateJWT(userEntity.ID, user.Email, userRole.Name, permissionMapID, expired)
 	if generetaErr != nil {
-		return "", fiber.NewError(fiber.StatusInternalServerError, "system error while generating token ("+generetaErr.Error()+")")
+		message := fmt.Sprintf("system error while generating token (%s)", generetaErr.Error())
+		return "", fiber.NewError(fiber.StatusInternalServerError, message)
 	}
 	if len(token) > 2800 {
-		return "", errors.New("token is too large, more than 2800 characters (too large for http header)")
+		message := "token is too large, more than 2800 characters (too large for http header)"
+		return "", errors.New(message)
 	}
 
 	return token, nil
@@ -287,11 +304,11 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 	// Todo : refactor
 	toEmail := []string{user.Email}
 	subject := "Gost Project: Reset Password"
-	message := "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern."
+	message := "Hello, My name is <b>Bot001</b> from Project Gost: Golang Starter By Lukmanern."
 	message += " Your account has already been created but is not yet active. To activate your account,"
 	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
 	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
-	message += "\n\n\n\rThank You, Best Regards BotGostProject001."
+	message += "\n\n\n\rThank You, Best Regards <b>Bot001</b>."
 	message += " Code : " + verifCode
 
 	// Todo : refactor
@@ -318,8 +335,9 @@ func (svc UserServiceImpl) ResetPassword(ctx context.Context, user model.UserRes
 		return fiber.NewError(fiber.StatusNotFound, "user not found")
 	}
 	if userByCode.ActivatedAt == nil {
-		errMsg := "Your account is already exist in our system, but it's still inactive, please check Your email inbox to activated-it"
-		return fiber.NewError(fiber.StatusBadRequest, errMsg)
+		message := "Your account is already exist in our system, but it's still "
+		message += "inactive, please check Your email inbox to activated-it"
+		return fiber.NewError(fiber.StatusBadRequest, message)
 	}
 
 	var (
@@ -396,6 +414,7 @@ func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPa
 }
 
 func (svc UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
+	// search profile by ID
 	user, err := svc.repository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -408,20 +427,19 @@ func (svc UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model
 		return profile, fiber.NewError(fiber.StatusInternalServerError, "error while checking user")
 	}
 
-	userRoles := entity.Role{}
-	if len(user.Roles) > 0 {
-		userRoles = user.Roles[0]
-	}
+	// set response
 	profile = model.UserProfile{
 		Name:  user.Name,
 		Email: user.Email,
-		Role:  userRoles,
 	}
-
+	if len(user.Roles) > 0 {
+		profile.Role = user.Roles[0]
+	}
 	return profile, nil
 }
 
 func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
+	// search profile by ID
 	userByID, getErr := svc.repository.GetByID(ctx, user.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {

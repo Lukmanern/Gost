@@ -60,6 +60,7 @@ func (svc RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (i
 		Name:        data.Name,
 		Description: data.Description,
 	}
+	entityRole.SetCreateTimes()
 	id, err = svc.repository.Create(ctx, entityRole, data.PermissionsID)
 	if err != nil {
 		return 0, err
@@ -120,10 +121,8 @@ func (svc RoleServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll
 			Name:        roleEntity.Name,
 			Description: roleEntity.Description,
 		}
-
 		roles = append(roles, newRole)
 	}
-
 	return roles, total, nil
 }
 

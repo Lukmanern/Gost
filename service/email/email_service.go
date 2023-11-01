@@ -62,6 +62,5 @@ func (svc EmailServiceImpl) SendMail(emails []string, subject, message string) e
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
