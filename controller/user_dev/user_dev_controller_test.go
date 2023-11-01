@@ -32,8 +32,6 @@ var (
 )
 
 func init() {
-	// controller\user_dev\user_dev_controller_test.go
-	// Check env and database
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
 	appUrl = config.AppUrl

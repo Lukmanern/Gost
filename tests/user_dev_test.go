@@ -31,8 +31,6 @@ var (
 )
 
 func init() {
-	// controller\user_dev\user_dev_controller_test.go
-	// Check env and database
 	env.ReadConfig("./../.env")
 	config := env.Configuration()
 	appUrl = config.AppUrl
@@ -57,7 +55,7 @@ func init() {
 
 func Test_Create(t *testing.T) {
 	go application.RunApp()
-	time.Sleep(2 * time.Second)
+	time.Sleep(4 * time.Second)
 
 	ctr := userDevController
 	if ctr == nil {

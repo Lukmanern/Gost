@@ -45,8 +45,8 @@ func TestNewUserDevService(t *testing.T) {
 // -> get all and check >= 1
 // -> update
 // -> delete
-// -> get by id
-// -> get by email
+// -> get by id (checking)
+// -> get by email (checking)
 
 func TestSuccessCRUD(t *testing.T) {
 	c := helper.NewFiberCtx()

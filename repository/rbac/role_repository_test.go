@@ -53,7 +53,10 @@ func createOneRole(t *testing.T, namePrefix string) *entity.Role {
 }
 
 func TestNewRoleRepository(t *testing.T) {
-	_ = NewRoleRepository()
+	roleRepo := NewRoleRepository()
+	if roleRepo == nil {
+		t.Error("should not nil")
+	}
 }
 
 func TestRoleRepositoryImpl_Create(t *testing.T) {

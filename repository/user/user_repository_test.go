@@ -26,7 +26,7 @@ func init() {
 func TestNewUserRepository(t *testing.T) {
 	userRepository := NewUserRepository()
 	if userRepository == nil {
-		t.Error("shouldn't nil")
+		t.Error("should not nil")
 	}
 }
 
