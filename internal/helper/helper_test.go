@@ -48,3 +48,25 @@ func TestRandomIPAddress(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateEmails(t *testing.T) {
+	err1 := ValidateEmails("f", "a")
+	if err1 == nil {
+		t.Error("should err not nil")
+	}
+
+	err2 := ValidateEmails("validemail0987@gmail.com")
+	if err2 != nil {
+		t.Error("should err not nil")
+	}
+
+	err3 := ValidateEmails("validemail0987@gmail.com", "invalidemail0987@.gmail.com")
+	if err3 == nil {
+		t.Error("should err not nil")
+	}
+
+	err4 := ValidateEmails("validemail0987@gmail.com", "validemail0987@gmail.com", "invalidemail0987@gmail.com.")
+	if err4 == nil {
+		t.Error("should err not nil")
+	}
+}

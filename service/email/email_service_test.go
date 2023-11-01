@@ -42,28 +42,6 @@ func TestNewEmailServiceAndFuncsGet(t *testing.T) {
 	}
 }
 
-func TestValidateEmails(t *testing.T) {
-	err1 := validateEmails("f", "a")
-	if err1 == nil {
-		t.Error("should err not nil")
-	}
-
-	err2 := validateEmails("validemail@gmail.com")
-	if err2 != nil {
-		t.Error("should err not nil")
-	}
-
-	err3 := validateEmails("validemail@gmail.com", "invalidemail@.gmail.com")
-	if err3 == nil {
-		t.Error("should err not nil")
-	}
-
-	err4 := validateEmails("validemail@gmail.com", "validemail@gmail.com", "invalidemail@gmail.com.")
-	if err4 == nil {
-		t.Error("should err not nil")
-	}
-}
-
 func TestTestingHandler(t *testing.T) {
 	c := helper.NewFiberCtx()
 	svc := NewEmailService()

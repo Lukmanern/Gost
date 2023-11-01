@@ -1,8 +1,10 @@
 package helper
 
 import (
+	"errors"
 	"math/rand"
 	"net"
+	"net/mail"
 	"strings"
 	"time"
 
@@ -50,4 +52,14 @@ func RandomIPAddress() string {
 	ip := net.IPv4(byte(a), byte(b), byte(c), byte(d))
 
 	return ip.String()
+}
+
+func ValidateEmails(emails ...string) error {
+	for _, email := range emails {
+		_, err := mail.ParseAddress(email)
+		if err != nil {
+			return errors.New("one or more email/s is invalid " + email)
+		}
+	}
+	return nil
 }
