@@ -66,7 +66,7 @@ func (svc UserDevServiceImpl) Create(ctx context.Context, user model.UserCreate)
 		Email:    user.Email,
 		Password: passwordHashed,
 	}
-	userEntity.SetTimes()
+	userEntity.SetCreateTimes()
 
 	roleID := entity.USER
 	if user.IsAdmin {

@@ -121,7 +121,7 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 		VerificationCode: &verifCode,
 		ActivatedAt:      nil,
 	}
-	userEntity.SetTimes()
+	userEntity.SetCreateTimes()
 	id, err = svc.repository.Create(ctx, userEntity, user.RoleID)
 	if err != nil {
 		return 0, err

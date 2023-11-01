@@ -63,9 +63,9 @@ Inactive Account.`
 		})
 	}
 	if res == nil {
-		return response.Error(c, "internal server error: failed sending email")
+		message := "internal server error: failed sending email"
+		return response.Error(c, message)
 	}
-
 	message := "success sending emails"
 	return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
 }
@@ -108,7 +108,8 @@ func (svc EmailServiceImpl) Send(emails []string, subject string, message string
 	for i, email := range emails {
 		if errorSends[i] != nil {
 			res[email] = false
-			hasError = errors.New("emails may have failed, check $res for detail, in $res true for success")
+			errMsg := "emails may have failed, check $res for detail, in $res true for success"
+			hasError = errors.New(errMsg)
 			continue
 		}
 		res[email] = true

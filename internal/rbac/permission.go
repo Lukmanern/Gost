@@ -95,7 +95,7 @@ func AllPermissions() []entity.Permission {
 		newPermissionEntity := entity.Permission{
 			Name: name,
 		}
-		newPermissionEntity.SetTimes()
+		newPermissionEntity.SetCreateTimes()
 		permissions = append(permissions, newPermissionEntity)
 	}
 
