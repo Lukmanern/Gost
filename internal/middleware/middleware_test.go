@@ -43,7 +43,7 @@ func init() {
 			7: 1,
 			8: 1,
 		},
-		Exp:     timeNow.Add(60 * time.Minute),
+		Exp:     timeNow.Add(5 * time.Minute),
 		wantErr: false,
 	}
 }

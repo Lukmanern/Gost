@@ -268,7 +268,7 @@ func TestRunApp_USER_ROUTE(t *testing.T) {
 	for _, permission := range userRole.Permissions {
 		permissionMapID[uint8(permission.ID)] = 0b_0001
 	}
-	expAt := timeNow.Add(10 * time.Minute)
+	expAt := timeNow.Add(6 * time.Minute)
 	token, generateErr := jwtHandler.GenerateJWT(getUserByID.ID, getUserByID.Email, getUserByID.Roles[0].Name, permissionMapID, expAt)
 	if generateErr != nil || token == "" {
 		t.Error("generateJWT :: should not error or not void string")
@@ -375,7 +375,7 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 	for _, permission := range userRole.Permissions {
 		permissionMapID[uint8(permission.ID)] = 0b_0001
 	}
-	expAt := timeNow.Add(10 * time.Minute)
+	expAt := timeNow.Add(6 * time.Minute)
 	token, generateErr := jwtHandler.GenerateJWT(getUserByID.ID, getUserByID.Email, getUserByID.Roles[0].Name, permissionMapID, expAt)
 	if generateErr != nil || token == "" {
 		t.Error("generateJWT :: should not error or not void string")
@@ -502,7 +502,7 @@ func TestRunApp_MIDDLEWARE_ADMIN_TEST(t *testing.T) {
 	for _, permission := range adminRole.Permissions {
 		adminPermissionMapID[uint8(permission.ID)] = 0b_0001
 	}
-	expAt := timeNow.Add(10 * time.Minute)
+	expAt := timeNow.Add(6 * time.Minute)
 	adminToken, generateErr := jwtHandler.GenerateJWT(adminByID.ID, adminByID.Email, adminByID.Roles[0].Name, adminPermissionMapID, expAt)
 	if generateErr != nil || adminToken == "" {
 		t.Error("generateJWT :: should not error or not void string")
@@ -599,7 +599,7 @@ func TestRunApp_MIDDLEWARE_USER_TEST(t *testing.T) {
 	for _, permission := range userRole.Permissions {
 		userPermissionMapID[uint8(permission.ID)] = 0b_0001
 	}
-	expAt := timeNow.Add(10 * time.Minute)
+	expAt := timeNow.Add(6 * time.Minute)
 	userToken, generateErr := jwtHandler.GenerateJWT(userByID.ID, userByID.Email, userByID.Roles[0].Name, userPermissionMapID, expAt)
 	if generateErr != nil || userToken == "" {
 		t.Error("generateJWT :: should not error or not void string")

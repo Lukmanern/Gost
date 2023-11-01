@@ -8,13 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis"
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
-	"github.com/go-redis/redis"
-	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type JWTHandler struct {
@@ -91,7 +92,8 @@ func (j JWTHandler) InvalidateToken(c *fiber.Ctx) error {
 	claims := Claims{}
 	token, err := jwt.ParseWithClaims(cookie, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
 		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fiber.NewError(fiber.StatusUnauthorized, fmt.Sprintf("unexpected method: %s", jwtToken.Header["alg"]))
+			message := fmt.Sprintf("unexpected method: %s", jwtToken.Header["alg"])
+			return nil, fiber.NewError(fiber.StatusUnauthorized, message)
 		}
 
 		return j.publicKey, nil
@@ -120,7 +122,8 @@ func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 	claims := Claims{}
 	token, err := jwt.ParseWithClaims(cookie, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
 		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fiber.NewError(fiber.StatusUnauthorized, fmt.Sprintf("unexpected method: %s", jwtToken.Header["alg"]))
+			message := fmt.Sprintf("unexpected method: %s", jwtToken.Header["alg"])
+			return nil, fiber.NewError(fiber.StatusUnauthorized, message)
 		}
 
 		return j.publicKey, nil
@@ -165,7 +168,8 @@ func (j JWTHandler) GenerateClaims(cookieToken string) *Claims {
 	claims := Claims{}
 	token, err := jwt.ParseWithClaims(cookieToken, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
 		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fiber.NewError(fiber.StatusUnauthorized, fmt.Sprintf("unexpected method: %s", jwtToken.Header["alg"]))
+			message := fmt.Sprintf("unexpected method: %s", jwtToken.Header["alg"])
+			return nil, fiber.NewError(fiber.StatusUnauthorized, message)
 		}
 
 		return j.publicKey, nil
