@@ -21,13 +21,13 @@ import (
 	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
 
-	controller "github.com/Lukmanern/gost/controller/user_dev"
-	service "github.com/Lukmanern/gost/service/user_dev"
+	controller "github.com/Lukmanern/gost/controller/user_management"
+	service "github.com/Lukmanern/gost/service/user_management"
 )
 
 var (
-	userDevService    service.UserDevService
-	userDevController controller.UserDevController
+	userDevService    service.UserManagementService
+	userDevController controller.UserManagementController
 	appUrl            string
 )
 
@@ -50,8 +50,8 @@ func init() {
 	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
 	rbac.PermissionHashMap = rbac.PermissionIDsHashMap()
 
-	userDevService = service.NewUserDevService()
-	userDevController = controller.NewUserDevController(userDevService)
+	userDevService = service.NewUserManagementService()
+	userDevController = controller.NewUserManagementController(userDevService)
 }
 
 func Test_Create(t *testing.T) {

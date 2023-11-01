@@ -32,8 +32,8 @@ func init() {
 	rbac.PermissionHashMap = rbac.PermissionIDsHashMap()
 }
 
-func TestNewUserDevService(t *testing.T) {
-	svc := NewUserDevService()
+func TestNewUserManagementService(t *testing.T) {
+	svc := NewUserManagementService()
 	if svc == nil {
 		t.Error("should not nil")
 	}
@@ -51,7 +51,7 @@ func TestNewUserDevService(t *testing.T) {
 func TestSuccessCRUD(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	svc := NewUserDevService()
+	svc := NewUserManagementService()
 	if svc == nil || ctx == nil {
 		t.Error("should not nil")
 	}

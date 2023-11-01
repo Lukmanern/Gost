@@ -7,18 +7,18 @@ package application
 import (
 	"github.com/gofiber/fiber/v2"
 
-	controller "github.com/Lukmanern/gost/controller/user_dev"
-	service "github.com/Lukmanern/gost/service/user_dev"
+	controller "github.com/Lukmanern/gost/controller/user_management"
+	service "github.com/Lukmanern/gost/service/user_management"
 )
 
 var (
-	userDevService    service.UserDevService
-	userDevController controller.UserDevController
+	userDevService    service.UserManagementService
+	userDevController controller.UserManagementController
 )
 
-func getUserDevRoutes(router fiber.Router) {
-	userDevService = service.NewUserDevService()
-	userDevController = controller.NewUserDevController(userDevService)
+func getUserManagementRoutes(router fiber.Router) {
+	userDevService = service.NewUserManagementService()
+	userDevController = controller.NewUserManagementController(userDevService)
 
 	userDevRoute := router.Group("user-management")
 	userDevRoute.Post("create", userDevController.Create)

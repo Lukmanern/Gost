@@ -14,7 +14,7 @@ var (
 	devController controller.DevController
 )
 
-func getDevRouter(router fiber.Router) {
+func getDevopmentRouter(router fiber.Router) {
 	devController = controller.NewDevControllerImpl()
 	// Developement 'helper' Process
 	devRouter := router.Group("development")

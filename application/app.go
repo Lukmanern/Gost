@@ -100,8 +100,8 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getDevRouter(router)              // don't use for production
-	getUserDevRoutes(router)          // don't use for production
+	getDevopmentRouter(router)        // don't use for production
+	getUserManagementRoutes(router)   // don't use for production
 	getMiddlewareTestingRoute(router) // don't use for production
 
 	getUserRoutes(router)

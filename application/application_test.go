@@ -113,13 +113,13 @@ func Test_getUserAuthRoutes(t *testing.T) {
 func Test_getUserRoutes(t *testing.T) {
 	env.ReadConfig("./../.env")
 	router := fiber.New()
-	getUserDevRoutes(router)
+	getUserManagementRoutes(router)
 }
 
 func Test_getEmailRouter(t *testing.T) {
 	env.ReadConfig("./../.env")
 	router := fiber.New()
-	getDevRouter(router)
+	getDevopmentRouter(router)
 }
 
 func Test_getRBACAuthRoutes(t *testing.T) {
