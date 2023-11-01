@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/smtp"
+	"strings"
 	"sync"
 
 	"github.com/Lukmanern/gost/internal/env"
@@ -13,6 +14,7 @@ import (
 )
 
 type EmailService interface {
+	SendMail(emails []string, subject, message string) error
 	Send(emails []string, subject string, message string) (res map[string]bool, err error)
 	getAuth() smtp.Auth
 	getSMTPAddr() string
@@ -43,6 +45,20 @@ func NewEmailService() EmailService {
 	})
 
 	return emailService
+}
+
+func (svc EmailServiceImpl) SendMail(emails []string, subject, message string) error {
+	body := "From: " + "CONFIG_SENDER_NAME" + "\n" +
+		"To: " + strings.Join(emails, ",") + "\n" +
+		"Subject: " + subject + svc.getMime() + "\n\n" +
+		message
+
+	err := smtp.SendMail(svc.getSMTPAddr(), svc.getAuth(), svc.Email, emails, []byte(body))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (svc EmailServiceImpl) Send(emails []string, subject string, message string) (map[string]bool, error) {

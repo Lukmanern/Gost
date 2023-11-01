@@ -129,13 +129,20 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 
 	toEmail := []string{user.Email}
 	subject := "Gost Project Activation Account"
-	message := "Verification Code : " + verifCode
+	message := `Hello. This is Your Verification Code : ` + verifCode
+	message += "<br /><br />Thank You for registration."
 
-	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
+	// resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
+	// if sendingErr != nil {
+	// 	resString, _ := json.Marshal(resMap)
+	// 	errMsg := fmt.Sprintf("%s ($data: %s). User Verification Code : %s",
+	// 		sendingErr, string(resString), verifCode)
+	// 	return 0, errors.New(errMsg)
+	// }
+
+	sendingErr := svc.emailService.SendMail(toEmail, subject, message)
 	if sendingErr != nil {
-		resString, _ := json.Marshal(resMap)
-		return 0, errors.New(sendingErr.Error() + " ($data: " +
-			string(resString) + "). User Verification Code : " + verifCode)
+		return 0, sendingErr
 	}
 
 	return id, nil
