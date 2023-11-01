@@ -5,9 +5,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-redis/redis"
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/response"
-	"github.com/gofiber/fiber/v2"
 )
 
 type DevController interface {
@@ -18,7 +21,10 @@ type DevController interface {
 	GetFromRedis(c *fiber.Ctx) error
 }
 
-type DevControllerImpl struct{}
+type DevControllerImpl struct {
+	redis *redis.Client
+	db    *gorm.DB
+}
 
 var (
 	devImpl     *DevControllerImpl
@@ -27,14 +33,20 @@ var (
 
 func NewDevControllerImpl() DevController {
 	devImplOnce.Do(func() {
-		devImpl = &DevControllerImpl{}
+		devImpl = &DevControllerImpl{
+			redis: connector.LoadRedisDatabase(),
+			db:    connector.LoadDatabase(),
+		}
 	})
 
 	return devImpl
 }
 
 func (ctr DevControllerImpl) PingDatabase(c *fiber.Ctx) error {
-	db := connector.LoadDatabase()
+	db := ctr.db
+	if db == nil {
+		return response.Error(c, "failed db is nil")
+	}
 	sqldb, sqlErr := db.DB()
 	if sqlErr != nil {
 		return response.Error(c, "failed get sql-db")
@@ -50,7 +62,10 @@ func (ctr DevControllerImpl) PingDatabase(c *fiber.Ctx) error {
 }
 
 func (ctr DevControllerImpl) PingRedis(c *fiber.Ctx) error {
-	redis := connector.LoadRedisDatabase()
+	redis := ctr.redis
+	if redis == nil {
+		return response.Error(c, "redis nil value")
+	}
 	for i := 0; i < 5; i++ {
 		status := redis.Ping()
 		if status.Err() != nil {
@@ -74,7 +89,7 @@ func (ctr DevControllerImpl) Panic(c *fiber.Ctx) error {
 }
 
 func (ctr DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
-	redis := connector.LoadRedisDatabase()
+	redis := ctr.redis
 	if redis == nil {
 		return response.Error(c, "redis nil value")
 	}
@@ -88,7 +103,7 @@ func (ctr DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
 }
 
 func (ctr DevControllerImpl) GetFromRedis(c *fiber.Ctx) error {
-	redis := connector.LoadRedisDatabase()
+	redis := ctr.redis
 	if redis == nil {
 		return response.Error(c, "redis nil value")
 	}

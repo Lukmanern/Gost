@@ -15,7 +15,7 @@ import (
 
 type RoleController interface {
 	Create(c *fiber.Ctx) error
-	Connect(c *fiber.Ctx) error // Add/connect more permissions to role. Table : role_has_permissions
+	Connect(c *fiber.Ctx) error
 	Get(c *fiber.Ctx) error
 	GetAll(c *fiber.Ctx) error
 	Update(c *fiber.Ctx) error
@@ -106,7 +106,6 @@ func (ctr RoleControllerImpl) Connect(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+connectErr.Error())
 	}
-
 	return response.SuccessCreated(c, "role and permissions success connected")
 }
 
@@ -125,7 +124,6 @@ func (ctr RoleControllerImpl) Get(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+getErr.Error())
 	}
-
 	return response.SuccessLoaded(c, role)
 }
 
@@ -150,7 +148,6 @@ func (ctr RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 	for i := range roles {
 		data[i] = roles[i]
 	}
-
 	responseData := base.GetAllResponse{
 		Meta: base.PageMeta{
 			Total: total,
@@ -159,7 +156,6 @@ func (ctr RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 		},
 		Data: data,
 	}
-
 	return response.SuccessLoaded(c, responseData)
 }
 
@@ -187,7 +183,6 @@ func (ctr RoleControllerImpl) Update(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+updateErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }
 
@@ -206,6 +201,5 @@ func (ctr RoleControllerImpl) Delete(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+deleteErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }

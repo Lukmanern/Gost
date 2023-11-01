@@ -104,7 +104,6 @@ func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 	for i := range permissions {
 		data[i] = permissions[i]
 	}
-
 	responseData := base.GetAllResponse{
 		Meta: base.PageMeta{
 			Total: total,
@@ -113,7 +112,6 @@ func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 		},
 		Data: data,
 	}
-
 	return response.SuccessLoaded(c, responseData)
 }
 
@@ -141,7 +139,6 @@ func (ctr PermissionControllerImpl) Update(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+updateErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }
 
@@ -160,6 +157,5 @@ func (ctr PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+deleteErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }

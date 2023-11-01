@@ -67,8 +67,8 @@ func (ctr UserControllerImpl) Register(c *fiber.Ctx) error {
 		return response.Error(c, "internal server error: "+regisErr.Error())
 	}
 
-	message := "Account success created. please check " + user.Email +
-		" inbox, our system has sended verification code or link."
+	message := "Account success created. please check " + user.Email + " "
+	message += "inbox, our system has sended verification code or link."
 	data := map[string]any{
 		"id": id,
 	}
@@ -94,8 +94,8 @@ func (ctr UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 		return response.Error(c, "internal server error: "+err.Error())
 	}
 
-	return response.CreateResponse(c, fiber.StatusOK, true,
-		"Thank you for your confirmation. Your account is active now.", nil)
+	message := "Thank you for your confirmation. Your account is active now."
+	return response.CreateResponse(c, fiber.StatusOK, true, message, nil)
 }
 
 func (ctr UserControllerImpl) DeleteAccountActivation(c *fiber.Ctx) error {
@@ -169,12 +169,10 @@ func (ctr UserControllerImpl) Logout(c *fiber.Ctx) error {
 	if !ok || userClaims == nil {
 		return response.Unauthorized(c)
 	}
-
 	logoutErr := ctr.service.Logout(c)
 	if logoutErr != nil {
 		return response.Error(c, "internal server error: "+logoutErr.Error())
 	}
-
 	return response.CreateResponse(c, fiber.StatusOK, true, "success logout", nil)
 }
 

@@ -76,7 +76,6 @@ func (ctr UserManagementControllerImpl) Get(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+getErr.Error())
 	}
-
 	return response.SuccessLoaded(c, userProfile)
 }
 
@@ -101,7 +100,6 @@ func (ctr UserManagementControllerImpl) GetAll(c *fiber.Ctx) error {
 	for i := range users {
 		data[i] = users[i]
 	}
-
 	responseData := base.GetAllResponse{
 		Meta: base.PageMeta{
 			Total: total,
@@ -110,7 +108,6 @@ func (ctr UserManagementControllerImpl) GetAll(c *fiber.Ctx) error {
 		},
 		Data: data,
 	}
-
 	return response.SuccessLoaded(c, responseData)
 }
 
@@ -138,7 +135,6 @@ func (ctr UserManagementControllerImpl) Update(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+updateErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }
 
@@ -157,6 +153,5 @@ func (ctr UserManagementControllerImpl) Delete(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+deleteErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }
