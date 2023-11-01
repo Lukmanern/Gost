@@ -49,11 +49,10 @@ func NewEmailService() EmailService {
 	return emailService
 }
 
-// Todo : refactor
-
 func (svc EmailServiceImpl) TestingHandler(c *fiber.Ctx) (err error) {
-	const simpleMessage = `Just Testing Message`
-	var testEmails = []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com"}
+	simpleMessage := `Just Testing Message`
+	simpleMessage += "<br /><br /> <b>Testing for enter and font-bold</b>"
+	testEmails := []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com"}
 	res, err := svc.Send(testEmails, "Testing Gost Project", simpleMessage)
 	if err != nil {
 		return response.ErrorWithData(c, "internal server error: "+err.Error(), fiber.Map{
