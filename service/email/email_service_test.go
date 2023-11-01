@@ -6,7 +6,6 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
-	"github.com/Lukmanern/gost/internal/rbac"
 )
 
 func init() {
@@ -22,21 +21,25 @@ func init() {
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
-
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionIDsHashMap()
 }
 
-func TestNewEmailServiceAndFuncsGet(t *testing.T) {
-	svc := NewEmailService()
-	if svc.getAuth() == nil {
+func Test_SendEmail(t *testing.T) {
+	emailService := NewEmailService()
+	if emailService == nil {
 		t.Error("should not nil")
 	}
-	if svc.getSMTPAddr() == "" {
-		t.Error("should not nil")
+	invalidEmail := []string{"invalid-email-address"}
+	subject := "valid-subject"
+	message := "simple-example-message"
+	sendErr := emailService.SendMail(invalidEmail, subject, message)
+	if sendErr == nil {
+		t.Error("should error, because invalid email")
 	}
-	if svc.getMime() == "" {
-		t.Error("should not nil")
+	// reset value
+	sendErr = nil
+	validEmail := []string{"your_valid_email_001@gost.project"} // enter your valid email address
+	sendErr = emailService.SendMail(validEmail, subject, message)
+	if sendErr != nil {
+		t.Error("should not error, but got error:", sendErr.Error())
 	}
 }

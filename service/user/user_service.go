@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"strconv"
 	"sync"
@@ -83,9 +82,10 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 
 	// create verification code
 	var (
-		passwordHashed, verifCode string
-		hashErr                   error
-		counter                   int = 0
+		verifCode      string
+		passwordHashed string
+		hashErr        error
+		counter        int = 0
 	)
 	for {
 		verifCode = ""
@@ -128,17 +128,13 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	}
 
 	toEmail := []string{user.Email}
-	subject := "Gost Project Activation Account"
-	message := `Hello. This is Your Verification Code : ` + verifCode
-	message += "<br /><br />Thank You for registration."
-
-	// resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
-	// if sendingErr != nil {
-	// 	resString, _ := json.Marshal(resMap)
-	// 	errMsg := fmt.Sprintf("%s ($data: %s). User Verification Code : %s",
-	// 		sendingErr, string(resString), verifCode)
-	// 	return 0, errors.New(errMsg)
-	// }
+	subject := "Gost Project: Activation Account"
+	message := "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern."
+	message += " Your account has already been created but is not yet active. To activate your account,"
+	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
+	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
+	message += "<br />Thank You, Best Regards BotGostProject001."
+	message += "<br /><br /><br /> Code : " + verifCode
 
 	sendingErr := svc.emailService.SendMail(toEmail, subject, message)
 	if sendingErr != nil {
@@ -290,7 +286,7 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 
 	// Todo : refactor
 	toEmail := []string{user.Email}
-	subject := "Gost Project Reset Password"
+	subject := "Gost Project: Reset Password"
 	message := "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern."
 	message += " Your account has already been created but is not yet active. To activate your account,"
 	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
@@ -300,11 +296,9 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 
 	// Todo : refactor
 
-	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
+	sendingErr := svc.emailService.SendMail(toEmail, subject, message)
 	if sendingErr != nil {
-		resString, _ := json.Marshal(resMap)
-		return errors.New(sendingErr.Error() + " ($data: " + string(resString) +
-			"). User Verification Code : " + verifCode)
+		return sendingErr
 	}
 
 	return nil
@@ -453,9 +447,3 @@ func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserPro
 	}
 	return nil
 }
-
-// message := "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern."
-// message += " Your account has already been created but is not yet active. To activate your account,"
-// message += " you can click on the Activation Link. If you do not registering for an account or any activity"
-// message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
-// message += "\n\n\n\rThank You, Best Regards BotGostProject001."

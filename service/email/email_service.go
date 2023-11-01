@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"net/smtp"
 	"strings"
@@ -9,23 +8,21 @@ import (
 
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 type EmailService interface {
 	SendMail(emails []string, subject, message string) error
-	Send(emails []string, subject string, message string) (res map[string]bool, err error)
-	getAuth() smtp.Auth
-	getSMTPAddr() string
-	getMime() string
 }
 
+// SMTP => Simple Mail Transfer Protocol
 type EmailServiceImpl struct {
 	Server   string
 	Port     int
 	Email    string
 	Password string
+	SmptAuth smtp.Auth
+	SmptMime string
+	SmptAddr string
 }
 
 var (
@@ -42,79 +39,29 @@ func NewEmailService() EmailService {
 			Email:    config.SMTPEmail,
 			Password: config.SMTPPassword,
 		}
+
+		emailService.SmptAuth = smtp.PlainAuth("", emailService.Email, emailService.Password, emailService.Server)
+		emailService.SmptAddr = fmt.Sprintf("%s:%d", emailService.Server, emailService.Port)
+		emailService.SmptMime = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
 	})
 
 	return emailService
 }
 
 func (svc EmailServiceImpl) SendMail(emails []string, subject, message string) error {
+	validateErr := helper.ValidateEmails(emails...)
+	if validateErr != nil {
+		return validateErr
+	}
 	body := "From: " + "CONFIG_SENDER_NAME" + "\n" +
 		"To: " + strings.Join(emails, ",") + "\n" +
-		"Subject: " + subject + svc.getMime() + "\n\n" +
+		"Subject: " + subject + "\n" + svc.SmptMime + "\n\n" +
 		message
 
-	err := smtp.SendMail(svc.getSMTPAddr(), svc.getAuth(), svc.Email, emails, []byte(body))
+	err := smtp.SendMail(svc.SmptAddr, svc.SmptAuth, svc.Email, emails, []byte(body))
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (svc EmailServiceImpl) Send(emails []string, subject string, message string) (map[string]bool, error) {
-	if validateErr := helper.ValidateEmails(emails...); validateErr != nil {
-		return nil, validateErr
-	}
-
-	subject = cases.Title(language.Und).String(subject)
-	lenEmails := len(emails)
-	errorSends := make([]error, lenEmails)
-	var wg sync.WaitGroup
-
-	addr := svc.getSMTPAddr()
-	auth := svc.getAuth()
-	mime := svc.getMime()
-	for i, email := range emails {
-		body := "From: " + svc.Email + "\n" +
-			"To: " + email + "\n" +
-			"Subject: " + subject + "\n" + mime +
-			message
-		wg.Add(1)
-		go func(i int, email string) {
-			defer wg.Done()
-			errSend := smtp.SendMail(addr, auth, svc.Email, []string{email}, []byte(body))
-			if errSend != nil {
-				errorSends[i] = errSend
-			}
-		}(i, email)
-	}
-	wg.Wait()
-
-	var hasError error = nil
-	res := make(map[string]bool, lenEmails)
-	for i, email := range emails {
-		if errorSends[i] != nil {
-			res[email] = false
-			errMsg := "emails may have failed, check $res for detail, in $res true for success"
-			hasError = errors.New(errMsg)
-			continue
-		}
-		res[email] = true
-	}
-	if hasError != nil {
-		return res, hasError
-	}
-	return res, nil
-}
-
-func (svc EmailServiceImpl) getAuth() smtp.Auth {
-	return smtp.PlainAuth("", svc.Email, svc.Password, svc.Server)
-}
-
-func (svc EmailServiceImpl) getSMTPAddr() string {
-	return fmt.Sprintf("%s:%d", svc.Server, svc.Port)
-}
-
-func (svc EmailServiceImpl) getMime() string {
-	return "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
 }
