@@ -531,7 +531,7 @@ func Test_ForgetPassword(t *testing.T) {
 			caseName: "faield forget password: email not found",
 			respCode: http.StatusNotFound,
 			payload: &model.UserForgetPassword{
-				Email: "notfoundemail_9@gost.project",
+				Email: helper.RandomEmails(1)[0],
 			},
 		},
 		{

@@ -24,7 +24,6 @@ func RandomEmails(n uint) []string {
 	for uint(len(emailsMap)) < n {
 		body := strings.ToLower(RandomString(7) + RandomString(7) + RandomString(7))
 		randEmail := body + "@gost.project"
-		randEmail = strings.ToLower(randEmail)
 		emailsMap[randEmail] += 1
 	}
 

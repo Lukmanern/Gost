@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
@@ -30,7 +31,7 @@ func init() {
 	timeNow := time.Now()
 	params = GenTokenParams{
 		ID:    1,
-		Email: "test_email@gost.project",
+		Email: helper.RandomEmails(1)[0],
 		Role:  "test-role",
 		Per: map[uint8]uint8{
 			1: 1,
@@ -146,7 +147,7 @@ func TestJWTHandler_InvalidateToken(t *testing.T) {
 func TestJWTHandler_IsBlacklisted(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	cookie, err := jwtHandler.GenerateJWT(1000,
-		"example@email.com12x", "example-role",
+		helper.RandomEmails(1)[0], "example-role",
 		params.Per, time.Now().Add(1*time.Hour))
 	if err != nil {
 		t.Error("generate cookie/token should not error")

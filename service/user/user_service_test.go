@@ -393,17 +393,3 @@ func Test_Banned_IP_Address(t *testing.T) {
 		}
 	}
 }
-
-// Register(ctx context.Context, user model.UserRegister) (id int, err error) Done
-// Verification(ctx context.Context, verifyCode string) (err error) Done
-// DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) Done : half
-// FailedLoginCounter(userIP string, increment bool) (counter int, err error) Done
-// Login(ctx context.Context, user model.UserLogin) (token string, err error) Done
-// Logout(c *fiber.Ctx) (err error) Done
-// ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) Done
-// ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) Done
-// UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) Done
-// UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) Done
-// MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) Done
-
-// Todo : add login failed 5 times for banned testing of IP 4-5x times

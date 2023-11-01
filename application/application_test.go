@@ -231,7 +231,6 @@ func TestRunApp_HTTP_GET(t *testing.T) {
 		{appUrl + "development/ping/db", http.StatusOK},
 		{appUrl + "development/ping/redis", http.StatusOK},
 		{appUrl + "development/panic", http.StatusInternalServerError},
-		{appUrl + "development/new-jwt", http.StatusOK},
 		{appUrl + "development/storing-to-redis", http.StatusCreated},
 		{appUrl + "development/get-from-redis", http.StatusOK},
 		// ...

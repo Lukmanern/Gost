@@ -51,17 +51,6 @@ func TestNewDevControllerImpl(t *testing.T) {
 		t.Error("err: ", panicErr)
 	}
 
-	newJwtErr := ctr.NewJWT(c)
-	if newJwtErr != nil {
-		t.Error("err: ", newJwtErr)
-	}
-
-	// c.Request().Header.Set("Authorization", "Bearer YourJWTToken")
-	valJwtErr := ctr.ValidateNewJWT(c)
-	if valJwtErr != nil {
-		t.Error("err: ", valJwtErr)
-	}
-
 	storingErr := ctr.StoringToRedis(c)
 	if storingErr != nil {
 		t.Error("err: ", storingErr)

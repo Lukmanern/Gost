@@ -3,7 +3,36 @@
 ### Todo / OnDev
 
 1. Add middleware for payload-inspection
-2. Make code more clean
+2. Add file management (upload and download)
+3. Make code more clean
+4. Fix email sender
+
+```
+
+// uint8 is the lowest memory cost in Golang
+// maximum value length is 255
+type (
+	PermissionMap     = map[uint8]uint8
+	PermissionNameMap = map[string]uint8
+)
+
+var (
+	PermissionHashMap     PermissionMap
+	PermissionNameHashMap PermissionNameMap
+)
+
+// Run once at app.go setupfunc
+func PermissionsHashMap() PermissionMap {
+	PermissionHashMap := make(PermissionMap, 0)
+	permissions := AllPermissions()
+	for i := range permissions {
+		PermissionHashMap[uint8(i+1)] = 0b_0001
+	}
+
+	return PermissionHashMap
+}
+
+```
 
 ### Done / OnTest
 
