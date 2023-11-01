@@ -137,6 +137,8 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	message += "\n\n\n\rThank You, Best Regards BotGostProject001."
 	message += " Code : " + verifCode
 
+	// Todo : refactor
+
 	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
 	if sendingErr != nil {
 		resString, _ := json.Marshal(resMap)
@@ -154,7 +156,7 @@ func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) 
 	if getByCodeErr != nil || userEntity == nil {
 		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
 	}
-	userEntity.ActivatedAccount()
+	userEntity.SetActivateAccount()
 	userEntity.SetUpdateTime()
 	updateErr := svc.repository.Update(ctx, *userEntity)
 	if updateErr != nil {
@@ -287,6 +289,7 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 		return err
 	}
 
+	// Todo : refactor
 	toEmail := []string{user.Email}
 	subject := "Gost Project Reset Password"
 	message := "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern."
@@ -295,6 +298,9 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
 	message += "\n\n\n\rThank You, Best Regards BotGostProject001."
 	message += " Code : " + verifCode
+
+	// Todo : refactor
+
 	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
 	if sendingErr != nil {
 		resString, _ := json.Marshal(resMap)

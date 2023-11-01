@@ -49,6 +49,8 @@ func NewEmailService() EmailService {
 	return emailService
 }
 
+// Todo : refactor
+
 func (svc EmailServiceImpl) TestingHandler(c *fiber.Ctx) (err error) {
 	const simpleMessage = `Hello, I am RobotAdmin001 from Project Gost: Golang Starter By Lukmanern. 
 Your account has already been created but is not yet active. To activate your account, 

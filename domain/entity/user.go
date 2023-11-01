@@ -17,7 +17,7 @@ type User struct {
 	base.TimeFields
 }
 
-func (e *User) ActivatedAccount() {
+func (e *User) SetActivateAccount() {
 	timeNow := time.Now()
 	e.ActivatedAt = &timeNow
 	e.VerificationCode = nil
