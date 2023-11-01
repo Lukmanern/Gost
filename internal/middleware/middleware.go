@@ -28,7 +28,6 @@ type Claims struct {
 	Email       string             `json:"email"`
 	Role        string             `json:"role"`
 	Permissions rbac.PermissionMap `json:"permissions"`
-	Label       *string            `json:"label"`
 	jwt.RegisteredClaims
 }
 
@@ -87,31 +86,6 @@ func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions rbac.Pe
 	return t, nil
 }
 
-// This func used for forget-password or any.
-func (j *JWTHandler) GenerateJWTWithLabel(label string, expired time.Time) (t string, err error) {
-	lenLabel := len(label)
-	if lenLabel <= 2 || lenLabel > 50 {
-		errStr := "label too small or to large (min:3 and max:50)"
-		return "", errors.New(errStr)
-	}
-	// Create the Claims
-	claims := Claims{
-		Label: &label,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: &jwt.NumericDate{Time: expired},
-			NotBefore: &jwt.NumericDate{Time: time.Now()},
-		},
-	}
-
-	// Create token
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	t, err = token.SignedString(j.privateKey)
-	if err != nil {
-		return "", err
-	}
-	return t, nil
-}
-
 func (j JWTHandler) InvalidateToken(c *fiber.Ctx) error {
 	cookie := extractToken(c)
 	claims := Claims{}
@@ -134,9 +108,7 @@ func (j JWTHandler) InvalidateToken(c *fiber.Ctx) error {
 
 func (j JWTHandler) IsBlacklisted(cookie string) bool {
 	status := j.cache.Get(cookie)
-
 	val, _ := status.Result()
-
 	return val != ""
 }
 
@@ -175,17 +147,6 @@ func (j JWTHandler) IsTokenValid(cookie string) bool {
 	return true
 }
 
-func (j JWTHandler) ValidateWithClaim(token string) (claim jwt.MapClaims, err error) {
-	claims := jwt.MapClaims{}
-	jwt, err := jwt.ParseWithClaims(token, &claims, func(t *jwt.Token) (interface{}, error) {
-		return j.publicKey, nil
-	})
-	if err != nil || !jwt.Valid {
-		return nil, fiber.NewError(fiber.StatusBadRequest, "invalid token")
-	}
-	return claims, nil
-}
-
 func extractToken(c *fiber.Ctx) string {
 	bearerToken := c.Get("Authorization")
 	// Normally Authorization HTTP header.
@@ -195,18 +156,6 @@ func extractToken(c *fiber.Ctx) string {
 	}
 
 	return ""
-}
-
-func (j JWTHandler) verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
-	tokenString := extractToken(c)
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
-		return j.publicKey, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return token, nil
 }
 
 func (j JWTHandler) GenerateClaims(cookieToken string) *Claims {
@@ -267,34 +216,4 @@ func (j JWTHandler) CheckHasRole(role string) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		return j.HasRole(c, role)
 	}
-}
-
-// ExtractTokenMetadata func to extract metadata from JWT.
-func (j JWTHandler) ExtractTokenMetadata(c *fiber.Ctx) (*Claims, error) {
-	token, err := j.verifyToken(c)
-	if err != nil {
-		return nil, err
-	}
-
-	// Setting and checking token and credentials.
-	claims, ok := token.Claims.(*jwt.MapClaims) // Todo : MapClaims -> RegisteredClaims
-	if ok && token.Valid {
-		condensedClaims := *claims
-		// Expires time.
-		expires := condensedClaims["exp"]
-		expiresTime, ok := expires.(time.Time)
-		if !ok {
-			return nil, err
-		}
-
-		return &Claims{
-			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: &jwt.NumericDate{Time: expiresTime},
-				NotBefore: &jwt.NumericDate{Time: time.Now()},
-			},
-			Email: condensedClaims["email"].(string),
-		}, nil
-	}
-
-	return nil, err
 }

@@ -2,10 +2,8 @@
 
 ### Todo / OnDev
 
-1. Add middleware for payload-inspection
-2. Add file management (upload and download)
-3. Make code more clean
-4. Fix email sender
+1. Add file management (upload and download)
+2. Make code more clean
 
 ```
 

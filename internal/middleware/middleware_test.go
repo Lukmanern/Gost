@@ -91,35 +91,6 @@ func TestGenerateClaims(t *testing.T) {
 	}
 }
 
-func TestJWTHandler_GenerateJWTWithLabel(t *testing.T) {
-	type params struct {
-		Email   string
-		Exp     time.Time
-		wantErr bool
-	}
-	timeNow := time.Now()
-	paramStruct := []params{
-		{
-			Email:   "Example Label",
-			Exp:     timeNow.Add(60 * time.Hour),
-			wantErr: false,
-		},
-		{
-			wantErr: true,
-		},
-	}
-	jwtHandler := NewJWTHandler()
-	for _, p := range paramStruct {
-		token, err := jwtHandler.GenerateJWTWithLabel(p.Email, p.Exp)
-		if (err != nil) != p.wantErr {
-			t.Error("error while generating")
-		}
-		if token == "" && !p.wantErr {
-			t.Error("error : token void")
-		}
-	}
-}
-
 func TestJWTHandler_InvalidateToken(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
@@ -236,63 +207,6 @@ func TestJWTHandler_IsTokenValid(t *testing.T) {
 
 	isValid = jwtHandler.IsTokenValid("invalidToken")
 	assert.False(t, isValid, "Invalid token should be considered invalid")
-}
-
-func TestJWTHandler_ValidateWithClaim(t *testing.T) {
-	jwtHandler := NewJWTHandler()
-	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
-	if err != nil {
-		t.Error("Error while generating token:", err)
-	}
-	if token == "" {
-		t.Error("Error: Token is empty")
-	}
-
-	claim, validateErr := jwtHandler.ValidateWithClaim(token)
-	if validateErr != nil {
-		t.Error("Error while validating token:", validateErr)
-	}
-	if claim == nil {
-		t.Error("Error: Claim is nil")
-	}
-
-	claim2, validateErr2 := jwtHandler.ValidateWithClaim("invalid-token")
-	if validateErr2 == nil {
-		t.Error("Error: Validation should result in an error")
-	}
-	if claim2 != nil {
-		t.Error("Error: Claim should not be nil")
-	}
-}
-
-func TestJWTHandler_ExtractTokenMetadata(t *testing.T) {
-	jwtHandler := NewJWTHandler()
-	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
-	if err != nil {
-		t.Error("Error while generating token:", err)
-	}
-	if token == "" {
-		t.Error("Error: Token is empty")
-	}
-
-	app := fiber.New()
-	c := app.AcquireCtx(&fasthttp.RequestCtx{})
-	claims, err := jwtHandler.ExtractTokenMetadata(c)
-	if err == nil {
-		t.Error("should error")
-	}
-	if claims != nil {
-		t.Error("should nil")
-	}
-
-	c.Request().Header.Add("Authorization", "Bearer "+token)
-	_, err2 := jwtHandler.ExtractTokenMetadata(c)
-	if err2 != nil {
-		t.Error("shouldn't error")
-	}
-	// if claims2 != nil {
-	// 	t.Error("should nil")
-	// }
 }
 
 func TestJWTHandler_HasPermission(t *testing.T) {
