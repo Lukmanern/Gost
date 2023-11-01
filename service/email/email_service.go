@@ -52,11 +52,7 @@ func NewEmailService() EmailService {
 // Todo : refactor
 
 func (svc EmailServiceImpl) TestingHandler(c *fiber.Ctx) (err error) {
-	const simpleMessage = `Hello, I am RobotAdmin001 from Project Gost: Golang Starter By Lukmanern. 
-Your account has already been created but is not yet active. To activate your account, 
-you can click on the Activation Link. If you do not recall registering for an account 
-on Project Gost, you can request data deletion by clicking the Link Request Delete 
-Inactive Account.`
+	const simpleMessage = `Just Testing Message`
 	var testEmails = []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com"}
 	res, err := svc.Send(testEmails, "Testing Gost Project", simpleMessage)
 	if err != nil {
@@ -90,13 +86,9 @@ func (svc EmailServiceImpl) Send(emails []string, subject string, message string
 			"To: " + email + "\n" +
 			"Subject: " + subject + "\n" + mime +
 			message
-
 		wg.Add(1)
 		go func(i int, email string) {
-			defer func() {
-				wg.Done()
-			}()
-
+			defer wg.Done()
 			errSend := smtp.SendMail(addr, auth, svc.Email, []string{email}, []byte(body))
 			if errSend != nil {
 				errorSends[i] = errSend
@@ -116,7 +108,6 @@ func (svc EmailServiceImpl) Send(emails []string, subject string, message string
 		}
 		res[email] = true
 	}
-
 	if hasError != nil {
 		return res, hasError
 	}

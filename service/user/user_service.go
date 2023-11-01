@@ -127,17 +127,9 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 		return 0, err
 	}
 
-	// sending verify email
 	toEmail := []string{user.Email}
 	subject := "Gost Project Activation Account"
-	message := "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern."
-	message += " Your account has already been created but is not yet active. To activate your account,"
-	message += " you can click on the Activation Link. If you do not registering for an account or any activity"
-	message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
-	message += "\n\n\n\rThank You, Best Regards BotGostProject001."
-	message += " Code : " + verifCode
-
-	// Todo : refactor
+	message := "Verification Code : " + verifCode
 
 	resMap, sendingErr := svc.emailService.Send(toEmail, subject, message)
 	if sendingErr != nil {
@@ -454,3 +446,9 @@ func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserPro
 	}
 	return nil
 }
+
+// message := "Hello, My name is BotGostProject001 from Project Gost: Golang Starter By Lukmanern."
+// message += " Your account has already been created but is not yet active. To activate your account,"
+// message += " you can click on the Activation Link. If you do not registering for an account or any activity"
+// message += " on Project Gost, you can request data deletion by clicking the Link Request Delete."
+// message += "\n\n\n\rThank You, Best Regards BotGostProject001."
