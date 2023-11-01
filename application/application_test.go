@@ -37,7 +37,7 @@ func init() {
 	appUrl = c.AppUrl
 
 	jwtHandler = middleware.NewJWTHandler()
-	idHashMap = rbac.PermissionsHashMap()
+	idHashMap = rbac.PermissionIDsHashMap()
 	timeNow = time.Now()
 	userRepo = repository.NewUserRepository()
 	ctx = context.Background()

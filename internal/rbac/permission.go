@@ -19,7 +19,7 @@ var (
 )
 
 // Run once at app.go setupfunc
-func PermissionsHashMap() PermissionMap {
+func PermissionIDsHashMap() PermissionMap {
 	PermissionHashMap := make(PermissionMap, 0)
 	permissions := AllPermissions()
 	for i := range permissions {

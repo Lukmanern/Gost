@@ -30,7 +30,7 @@ func TestCountPermissions(t *testing.T) {
 }
 
 func Test_AllPermissionsIDHashMap(t *testing.T) {
-	hashMap := PermissionsHashMap()
+	hashMap := PermissionIDsHashMap()
 	if len(hashMap) < 1 {
 		t.Error("len of $hashMap should more than one")
 	}

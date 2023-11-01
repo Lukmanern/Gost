@@ -55,7 +55,7 @@ func init() {
 
 	// dump all permissions into hashMap
 	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionsHashMap()
+	rbac.PermissionHashMap = rbac.PermissionIDsHashMap()
 }
 
 func Test_Perm_NewPermissionController(t *testing.T) {
