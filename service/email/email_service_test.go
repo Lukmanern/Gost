@@ -6,7 +6,6 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
-	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/rbac"
 )
 
@@ -39,14 +38,5 @@ func TestNewEmailServiceAndFuncsGet(t *testing.T) {
 	}
 	if svc.getMime() == "" {
 		t.Error("should not nil")
-	}
-}
-
-func TestTestingHandler(t *testing.T) {
-	c := helper.NewFiberCtx()
-	svc := NewEmailService()
-	err := svc.TestingHandler(c)
-	if err != nil {
-		t.Error("should not error")
 	}
 }

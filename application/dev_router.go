@@ -8,11 +8,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	controller "github.com/Lukmanern/gost/controller/dev"
-	service "github.com/Lukmanern/gost/service/email"
 )
 
 var (
-	emailService  service.EmailService
 	devController controller.DevController
 )
 
@@ -25,9 +23,4 @@ func getDevRouter(router fiber.Router) {
 	devRouter.Get("panic", devController.Panic)
 	devRouter.Get("storing-to-redis", devController.StoringToRedis)
 	devRouter.Get("get-from-redis", devController.GetFromRedis)
-
-	// dev email
-	emailService = service.NewEmailService()
-	emailRoutes := router.Group("email")
-	emailRoutes.Post("send-bulk", emailService.TestingHandler)
 }

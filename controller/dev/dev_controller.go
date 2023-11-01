@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -10,12 +11,9 @@ import (
 )
 
 type DevController interface {
-	// Database
 	PingDatabase(c *fiber.Ctx) error
 	PingRedis(c *fiber.Ctx) error
-	// Handler
 	Panic(c *fiber.Ctx) error
-	// Redis
 	StoringToRedis(c *fiber.Ctx) error
 	GetFromRedis(c *fiber.Ctx) error
 }
@@ -67,7 +65,8 @@ func (ctr DevControllerImpl) Panic(c *fiber.Ctx) error {
 	defer func() error {
 		r := recover()
 		if r != nil {
-			return response.Error(c, "message panic: "+r.(string))
+			message := "message panic: " + r.(string)
+			return response.Error(c, message)
 		}
 		return nil
 	}()
@@ -81,7 +80,8 @@ func (ctr DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
 	}
 	redisStatus := redis.Set("example-key", "example-value", 50*time.Minute)
 	if redisStatus.Err() != nil {
-		return response.Error(c, "redis status error ("+redisStatus.Err().Error()+")")
+		message := fmt.Sprintf("redis status error (%s)", redisStatus.Err().Error())
+		return response.Error(c, message)
 	}
 
 	return response.SuccessCreated(c, nil)
@@ -94,11 +94,13 @@ func (ctr DevControllerImpl) GetFromRedis(c *fiber.Ctx) error {
 	}
 	redisStatus := redis.Get("example-key")
 	if redisStatus.Err() != nil {
-		return response.Error(c, "redis status error ("+redisStatus.Err().Error()+")")
+		message := fmt.Sprintf("redis status error (%s)", redisStatus.Err().Error())
+		return response.Error(c, message)
 	}
 	res, resErr := redisStatus.Result()
 	if resErr != nil {
-		return response.Error(c, "redis result error ("+resErr.Error()+")")
+		message := fmt.Sprintf("redis result error (%s)", resErr.Error())
+		return response.Error(c, message)
 	}
 
 	return response.SuccessLoaded(c, res)

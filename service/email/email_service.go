@@ -8,16 +8,12 @@ import (
 
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
-	"github.com/Lukmanern/gost/internal/response"
-	"github.com/gofiber/fiber/v2"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
 type EmailService interface {
-	TestingHandler(c *fiber.Ctx) (err error)
 	Send(emails []string, subject string, message string) (res map[string]bool, err error)
-
 	getAuth() smtp.Auth
 	getSMTPAddr() string
 	getMime() string
@@ -47,24 +43,6 @@ func NewEmailService() EmailService {
 	})
 
 	return emailService
-}
-
-func (svc EmailServiceImpl) TestingHandler(c *fiber.Ctx) (err error) {
-	simpleMessage := `Just Testing Message`
-	simpleMessage += "<br /><br /> <b>Testing for enter and font-bold</b>"
-	testEmails := []string{"lukmanernandi16@gmail.com", "unsurlukman@gmail.com"}
-	res, err := svc.Send(testEmails, "Testing Gost Project", simpleMessage)
-	if err != nil {
-		return response.ErrorWithData(c, "internal server error: "+err.Error(), fiber.Map{
-			"res": res,
-		})
-	}
-	if res == nil {
-		message := "internal server error: failed sending email"
-		return response.Error(c, message)
-	}
-	message := "success sending emails"
-	return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
 }
 
 func (svc EmailServiceImpl) Send(emails []string, subject string, message string) (map[string]bool, error) {
