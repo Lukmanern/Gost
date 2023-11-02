@@ -1,3 +1,7 @@
+// Don't run test per file without -p 1
+// or simply run test per func or run
+// project test using make test command
+// check Makefile file
 package application
 
 import (
@@ -23,7 +27,6 @@ var (
 	userRoleID  int = 2
 
 	jwtHandler *middleware.JWTHandler
-	idHashMap  rbac.PermissionMap
 	timeNow    time.Time
 	userRepo   repository.UserRepository
 	ctx        context.Context
@@ -37,7 +40,6 @@ func init() {
 	appUrl = c.AppUrl
 
 	jwtHandler = middleware.NewJWTHandler()
-	idHashMap = rbac.PermissionIDsHashMap()
 	timeNow = time.Now()
 	userRepo = repository.NewUserRepository()
 	ctx = context.Background()

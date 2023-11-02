@@ -1,3 +1,7 @@
+// Don't run test per file without -p 1
+// or simply run test per func or run
+// project test using make test command
+// check Makefile file
 package test
 
 import (
@@ -14,7 +18,6 @@ import (
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
-	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/text/cases"
@@ -44,10 +47,6 @@ func init() {
 	connector.LoadDatabase()
 	r := connector.LoadRedisDatabase()
 	r.FlushAll() // clear all key:value in redis
-
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionIDsHashMap()
 
 	userDevService = service.NewUserManagementService()
 	userDevController = controller.NewUserManagementController(userDevService)

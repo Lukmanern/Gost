@@ -1,3 +1,7 @@
+// Don't run test per file without -p 1
+// or simply run test per func or run
+// project test using make test command
+// check Makefile file
 package service
 
 import (
@@ -13,7 +17,6 @@ import (
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
-	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
 	rbacService "github.com/Lukmanern/gost/service/rbac"
 )
@@ -31,10 +34,6 @@ func init() {
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
-
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionIDsHashMap()
 }
 
 func TestNewUserService(t *testing.T) {
