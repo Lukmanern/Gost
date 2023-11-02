@@ -7,7 +7,7 @@ type TimeFields struct {
 	UpdatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"updated_at"`
 }
 
-func (att *TimeFields) SetTimes() {
+func (att *TimeFields) SetCreateTimes() {
 	timeNow := time.Now()
 	att.CreatedAt = &timeNow
 	att.UpdatedAt = &timeNow

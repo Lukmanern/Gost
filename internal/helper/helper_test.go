@@ -2,6 +2,7 @@ package helper
 
 import (
 	"net"
+	"strings"
 	"testing"
 )
 
@@ -18,11 +19,14 @@ func TestRandomEmails(t *testing.T) {
 	for i := 1; i <= 20; i++ {
 		emails := RandomEmails(uint(i))
 		if len(emails) != i {
-			t.Error("len of emails should equal")
+			t.Error("total of emails should equal")
 		}
 		for _, email := range emails {
-			if len(email) < 33 {
-				t.Error("len of an email should not less than 33")
+			if len(email) < 10 {
+				t.Error("length of an email should not less than 10")
+			}
+			if email != strings.ToLower(email) {
+				t.Error("email should lower by results")
 			}
 		}
 	}
@@ -42,5 +46,27 @@ func TestRandomIPAddress(t *testing.T) {
 		if ip == nil {
 			t.Error("should not nil")
 		}
+	}
+}
+
+func TestValidateEmails(t *testing.T) {
+	err1 := ValidateEmails("f", "a")
+	if err1 == nil {
+		t.Error("should err not nil")
+	}
+
+	err2 := ValidateEmails("validemail0987@gmail.com")
+	if err2 != nil {
+		t.Error("should err not nil")
+	}
+
+	err3 := ValidateEmails("validemail0987@gmail.com", "invalidemail0987@.gmail.com")
+	if err3 == nil {
+		t.Error("should err not nil")
+	}
+
+	err4 := ValidateEmails("validemail0987@gmail.com", "validemail0987@gmail.com", "invalidemail0987@gmail.com.")
+	if err4 == nil {
+		t.Error("should err not nil")
 	}
 }

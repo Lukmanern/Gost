@@ -2,9 +2,15 @@ package rbac
 
 import (
 	"log"
+	"sync"
 
+	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/internal/env"
+	"gorm.io/gorm"
 )
+
+// Todo : refactor
 
 // uint8 is the lowest memory cost in Golang
 // maximum value length is 255
@@ -16,13 +22,27 @@ type (
 var (
 	PermissionHashMap     PermissionMap
 	PermissionNameHashMap PermissionNameMap
+
+	db                 *gorm.DB
+	allPermissions     []entity.Permission
+	allPermissionsOnce sync.Once
 )
 
+func resetAllPermissions() {
+	allPermissionsOnce.Do(func() {
+		env.ReadConfig("./../../.env")
+		db = connector.LoadDatabase()
+	})
+	allPermissions = []entity.Permission{}
+	db.Find(&allPermissions)
+}
+
 // Run once at app.go setupfunc
-func PermissionsHashMap() PermissionMap {
+func PermissionIDsHashMap() PermissionMap {
 	PermissionHashMap := make(PermissionMap, 0)
-	permissions := AllPermissions()
-	for i := range permissions {
+	resetAllPermissions()
+	// allPermissions := AllPermissions()
+	for i := range allPermissions {
 		PermissionHashMap[uint8(i+1)] = 0b_0001
 	}
 
@@ -31,7 +51,8 @@ func PermissionsHashMap() PermissionMap {
 
 // Run once at app.go setupfunc
 func PermissionNamesHashMap() PermissionNameMap {
-	allPermissions := AllPermissions()
+	resetAllPermissions()
+	// allPermissions := AllPermissions()
 	if len(allPermissions) > 255 {
 		// if you want make more than 255 permissions/ access
 		// you can modified type:PermissionMap and using
@@ -95,7 +116,7 @@ func AllPermissions() []entity.Permission {
 		newPermissionEntity := entity.Permission{
 			Name: name,
 		}
-		newPermissionEntity.SetTimes()
+		newPermissionEntity.SetCreateTimes()
 		permissions = append(permissions, newPermissionEntity)
 	}
 

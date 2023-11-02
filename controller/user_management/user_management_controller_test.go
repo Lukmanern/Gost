@@ -1,3 +1,7 @@
+// Don't run test per file without -p 1
+// or simply run test per func or run
+// project test using make test command
+// check Makefile file
 package controller_test
 
 import (
@@ -18,23 +22,22 @@ import (
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
-	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
 
-	controller "github.com/Lukmanern/gost/controller/user_dev"
-	service "github.com/Lukmanern/gost/service/user_dev"
+	controller "github.com/Lukmanern/gost/controller/user_management"
+	service "github.com/Lukmanern/gost/service/user_management"
 )
 
 var (
-	userDevService    service.UserDevService
-	userDevController controller.UserDevController
+	userDevService    service.UserManagementService
+	userDevController controller.UserManagementController
+	appUrl            string
 )
 
 func init() {
-	// controller\user_dev\user_dev_controller_test.go
-	// Check env and database
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
+	appUrl = config.AppUrl
 	dbURI := config.GetDatabaseURI()
 	privKey := config.GetPrivateKey()
 	pubKey := config.GetPublicKey()
@@ -46,12 +49,8 @@ func init() {
 	r := connector.LoadRedisDatabase()
 	r.FlushAll() // clear all key:value in redis
 
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionsHashMap()
-
-	userDevService = service.NewUserDevService()
-	userDevController = controller.NewUserDevController(userDevService)
+	userDevService = service.NewUserManagementService()
+	userDevController = controller.NewUserManagementController(userDevService)
 }
 
 func Test_Create(t *testing.T) {
@@ -239,7 +238,7 @@ func Test_Get(t *testing.T) {
 		},
 		{
 			caseName: "failed get user: user not found",
-			userID:   "199999990",
+			userID:   "9999",
 			respCode: http.StatusNotFound,
 			wantErr:  true,
 		},
@@ -258,9 +257,6 @@ func Test_Get(t *testing.T) {
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal("should not error")
-		}
-		if resp == nil {
-			t.Fatal("should not nil")
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -342,9 +338,6 @@ func Test_GetAll(t *testing.T) {
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal("should not error", err.Error())
-		}
-		if resp == nil {
-			t.Fatal("should not nil")
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -459,7 +452,7 @@ func Test_Update(t *testing.T) {
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := "http://127.0.0.1:9009/user-management/" + strconv.Itoa(tc.payload.ID)
+		url := appUrl + "user-management/" + strconv.Itoa(tc.payload.ID)
 		req, httpReqErr := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal("should not nil")
@@ -541,7 +534,7 @@ func Test_Delete(t *testing.T) {
 
 	for _, tc := range testCases {
 		log.Println(tc.caseName)
-		url := "http://127.0.0.1:9009/user-management/" + strconv.Itoa(tc.paramID)
+		url := appUrl + "user-management/" + strconv.Itoa(tc.paramID)
 		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
 		if httpReqErr != nil || req == nil {
 			t.Fatal("should not nil")

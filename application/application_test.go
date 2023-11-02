@@ -1,3 +1,7 @@
+// Don't run test per file without -p 1
+// or simply run test per func or run
+// project test using make test command
+// check Makefile file
 package application
 
 import (
@@ -23,18 +27,19 @@ var (
 	userRoleID  int = 2
 
 	jwtHandler *middleware.JWTHandler
-	idHashMap  rbac.PermissionMap
 	timeNow    time.Time
 	userRepo   repository.UserRepository
 	ctx        context.Context
 	userEntt   entity.User
+	appUrl     string
 )
 
 func init() {
 	env.ReadConfig("./../.env")
+	c := env.Configuration()
+	appUrl = c.AppUrl
 
 	jwtHandler = middleware.NewJWTHandler()
-	idHashMap = rbac.PermissionsHashMap()
 	timeNow = time.Now()
 	userRepo = repository.NewUserRepository()
 	ctx = context.Background()
@@ -110,13 +115,13 @@ func Test_getUserAuthRoutes(t *testing.T) {
 func Test_getUserRoutes(t *testing.T) {
 	env.ReadConfig("./../.env")
 	router := fiber.New()
-	getUserDevRoutes(router)
+	getUserManagementRoutes(router)
 }
 
 func Test_getEmailRouter(t *testing.T) {
 	env.ReadConfig("./../.env")
 	router := fiber.New()
-	getDevRouter(router)
+	getDevopmentRouter(router)
 }
 
 func Test_getRBACAuthRoutes(t *testing.T) {
@@ -136,25 +141,25 @@ func TestRunApp_NOT_FOUND(t *testing.T) {
 	}{
 		{
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/not-found-path",
+			URL:          appUrl + "not-found-path",
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"message":"Cannot GET /not-found-path"}`,
 		},
 		{
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/not-found-path",
+			URL:          appUrl + "not-found-path",
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"message":"Cannot POST /not-found-path"}`,
 		},
 		{
 			HTTPMethod:   "PUT",
-			URL:          "http://localhost:9009/not-found-path",
+			URL:          appUrl + "not-found-path",
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"message":"Cannot PUT /not-found-path"}`,
 		},
 		{
 			HTTPMethod:   "DELETE",
-			URL:          "http://localhost:9009/not-found-path",
+			URL:          appUrl + "not-found-path",
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"message":"Cannot DELETE /not-found-path"}`,
 		},
@@ -206,31 +211,30 @@ func TestRunApp_HTTP_GET(t *testing.T) {
 		URL          string
 		ExpectedCode int
 	}{
-		{"http://localhost:9009/not-found-path", http.StatusNotFound},
+		{appUrl + "not-found-path", http.StatusNotFound},
 		// development user / user management
-		{"http://localhost:9009/user-management/99999999", http.StatusNotFound},
-		{"http://localhost:9009/user-management/0", http.StatusBadRequest},
-		{"http://localhost:9009/user-management/-1", http.StatusBadRequest},
-		{"http://localhost:9009/user-management/stringID", http.StatusBadRequest},
+		{appUrl + "user-management/9999", http.StatusNotFound},
+		{appUrl + "user-management/0", http.StatusBadRequest},
+		{appUrl + "user-management/-1", http.StatusBadRequest},
+		{appUrl + "user-management/stringID", http.StatusBadRequest},
 		// user
-		{"http://localhost:9009/user/my-profile", http.StatusUnauthorized},
+		{appUrl + "user/my-profile", http.StatusUnauthorized},
 		// permission (need auth)
-		{"http://localhost:9009/permission/99999999", http.StatusUnauthorized},
-		{"http://localhost:9009/permission/0", http.StatusUnauthorized},
-		{"http://localhost:9009/permission/-1", http.StatusUnauthorized},
-		{"http://localhost:9009/permission/stringID", http.StatusUnauthorized},
+		{appUrl + "permission/9999", http.StatusUnauthorized},
+		{appUrl + "permission/0", http.StatusUnauthorized},
+		{appUrl + "permission/-1", http.StatusUnauthorized},
+		{appUrl + "permission/stringID", http.StatusUnauthorized},
 		// permission (need auth)
-		{"http://localhost:9009/role/99999999", http.StatusUnauthorized},
-		{"http://localhost:9009/role/0", http.StatusUnauthorized},
-		{"http://localhost:9009/role/-1", http.StatusUnauthorized},
-		{"http://localhost:9009/role/stringID", http.StatusUnauthorized},
+		{appUrl + "role/9999", http.StatusUnauthorized},
+		{appUrl + "role/0", http.StatusUnauthorized},
+		{appUrl + "role/-1", http.StatusUnauthorized},
+		{appUrl + "role/stringID", http.StatusUnauthorized},
 		// dev
-		{"http://localhost:9009/development/ping/db", http.StatusOK},
-		{"http://localhost:9009/development/ping/redis", http.StatusOK},
-		{"http://localhost:9009/development/panic", http.StatusInternalServerError},
-		{"http://localhost:9009/development/new-jwt", http.StatusOK},
-		{"http://localhost:9009/development/storing-to-redis", http.StatusCreated},
-		{"http://localhost:9009/development/get-from-redis", http.StatusOK},
+		{appUrl + "development/ping/db", http.StatusOK},
+		{appUrl + "development/ping/redis", http.StatusOK},
+		{appUrl + "development/panic", http.StatusInternalServerError},
+		{appUrl + "development/storing-to-redis", http.StatusCreated},
+		{appUrl + "development/get-from-redis", http.StatusOK},
 		// ...
 		// Add more test cases here as needed.
 	}
@@ -266,7 +270,7 @@ func TestRunApp_USER_ROUTE(t *testing.T) {
 	for _, permission := range userRole.Permissions {
 		permissionMapID[uint8(permission.ID)] = 0b_0001
 	}
-	expAt := timeNow.Add(10 * time.Minute)
+	expAt := timeNow.Add(6 * time.Minute)
 	token, generateErr := jwtHandler.GenerateJWT(getUserByID.ID, getUserByID.Email, getUserByID.Roles[0].Name, permissionMapID, expAt)
 	if generateErr != nil || token == "" {
 		t.Error("generateJWT :: should not error or not void string")
@@ -290,20 +294,20 @@ func TestRunApp_USER_ROUTE(t *testing.T) {
 	}{
 		{
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/user",
+			URL:          appUrl + "user",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/user/my-profile",
+			URL:          appUrl + "user/my-profile",
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "", // to long
 			AddToken:     true,
 		},
 		{
 			HTTPMethod:   "PUT",
-			URL:          "http://localhost:9009/user/profile-update",
+			URL:          appUrl + "user/profile-update",
 			ExpectedCode: http.StatusNoContent,
 			ReqBody:      []byte(`{"name": "new-name"}`),
 			ExpectedBody: "", // no-content
@@ -311,7 +315,7 @@ func TestRunApp_USER_ROUTE(t *testing.T) {
 		},
 		{
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/user/update-password",
+			URL:          appUrl + "user/update-password",
 			ExpectedCode: http.StatusBadRequest,
 			ReqBody:      []byte(`{"password": "password","new_password":"password00DIF","new_password_confirm": "password00"}`),
 			ExpectedBody: "", // no-content
@@ -373,7 +377,7 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 	for _, permission := range userRole.Permissions {
 		permissionMapID[uint8(permission.ID)] = 0b_0001
 	}
-	expAt := timeNow.Add(10 * time.Minute)
+	expAt := timeNow.Add(6 * time.Minute)
 	token, generateErr := jwtHandler.GenerateJWT(getUserByID.ID, getUserByID.Email, getUserByID.Roles[0].Name, permissionMapID, expAt)
 	if generateErr != nil || token == "" {
 		t.Error("generateJWT :: should not error or not void string")
@@ -393,42 +397,42 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 		{
 			AddToken:     true,
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/role",
+			URL:          appUrl + "role",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			AddToken:     true,
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/role/1",
+			URL:          appUrl + "role/1",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			AddToken:     true,
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/role",
+			URL:          appUrl + "role",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			AddToken:     true,
 			HTTPMethod:   "POST",
-			URL:          "http://localhost:9009/permission",
+			URL:          appUrl + "permission",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			AddToken:     true,
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/permission",
+			URL:          appUrl + "permission",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
 		{
 			AddToken:     true,
 			HTTPMethod:   "GET",
-			URL:          "http://localhost:9009/permission/1",
+			URL:          appUrl + "permission/1",
 			ExpectedCode: http.StatusUnauthorized,
 			ExpectedBody: `{"message":"unauthorized","success":false,"data":null}`,
 		},
@@ -472,16 +476,16 @@ func TestRunApp_RBAC_TEST(t *testing.T) {
 
 func TestRunApp_MIDDLEWARE_ADMIN_TEST(t *testing.T) {
 	adminEndpoints := []string{
-		"http://127.0.0.1:9009/middleware/create-rhp",
-		"http://127.0.0.1:9009/middleware/view-rhp",
-		"http://127.0.0.1:9009/middleware/update-rhp",
-		"http://127.0.0.1:9009/middleware/delete-rhp",
+		appUrl + "middleware/create-rhp",
+		appUrl + "middleware/view-rhp",
+		appUrl + "middleware/update-rhp",
+		appUrl + "middleware/delete-rhp",
 	}
 	userEndpoints := []string{
-		"http://127.0.0.1:9009/middleware/create-exmpl",
-		"http://127.0.0.1:9009/middleware/view-exmpl",
-		"http://127.0.0.1:9009/middleware/update-exmpl",
-		"http://127.0.0.1:9009/middleware/delete-exmpl",
+		appUrl + "middleware/create-exmpl",
+		appUrl + "middleware/view-exmpl",
+		appUrl + "middleware/update-exmpl",
+		appUrl + "middleware/delete-exmpl",
 	}
 
 	admin := createUser(1)
@@ -500,7 +504,7 @@ func TestRunApp_MIDDLEWARE_ADMIN_TEST(t *testing.T) {
 	for _, permission := range adminRole.Permissions {
 		adminPermissionMapID[uint8(permission.ID)] = 0b_0001
 	}
-	expAt := timeNow.Add(10 * time.Minute)
+	expAt := timeNow.Add(6 * time.Minute)
 	adminToken, generateErr := jwtHandler.GenerateJWT(adminByID.ID, adminByID.Email, adminByID.Roles[0].Name, adminPermissionMapID, expAt)
 	if generateErr != nil || adminToken == "" {
 		t.Error("generateJWT :: should not error or not void string")
@@ -569,16 +573,16 @@ func TestRunApp_MIDDLEWARE_ADMIN_TEST(t *testing.T) {
 
 func TestRunApp_MIDDLEWARE_USER_TEST(t *testing.T) {
 	adminEndpoints := []string{
-		"http://127.0.0.1:9009/middleware/create-rhp",
-		"http://127.0.0.1:9009/middleware/view-rhp",
-		"http://127.0.0.1:9009/middleware/update-rhp",
-		"http://127.0.0.1:9009/middleware/delete-rhp",
+		appUrl + "middleware/create-rhp",
+		appUrl + "middleware/view-rhp",
+		appUrl + "middleware/update-rhp",
+		appUrl + "middleware/delete-rhp",
 	}
 	userEndpoints := []string{
-		"http://127.0.0.1:9009/middleware/create-exmpl",
-		"http://127.0.0.1:9009/middleware/view-exmpl",
-		"http://127.0.0.1:9009/middleware/update-exmpl",
-		"http://127.0.0.1:9009/middleware/delete-exmpl",
+		appUrl + "middleware/create-exmpl",
+		appUrl + "middleware/view-exmpl",
+		appUrl + "middleware/update-exmpl",
+		appUrl + "middleware/delete-exmpl",
 	}
 
 	user := createUser(2)
@@ -597,7 +601,7 @@ func TestRunApp_MIDDLEWARE_USER_TEST(t *testing.T) {
 	for _, permission := range userRole.Permissions {
 		userPermissionMapID[uint8(permission.ID)] = 0b_0001
 	}
-	expAt := timeNow.Add(10 * time.Minute)
+	expAt := timeNow.Add(6 * time.Minute)
 	userToken, generateErr := jwtHandler.GenerateJWT(userByID.ID, userByID.Email, userByID.Roles[0].Name, userPermissionMapID, expAt)
 	if generateErr != nil || userToken == "" {
 		t.Error("generateJWT :: should not error or not void string")

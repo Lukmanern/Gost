@@ -7,18 +7,15 @@ package application
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/Lukmanern/gost/internal/middleware"
-
 	controller "github.com/Lukmanern/gost/controller/dev"
-	service "github.com/Lukmanern/gost/service/email"
+	"github.com/Lukmanern/gost/internal/middleware"
 )
 
 var (
-	emailService  service.EmailService
 	devController controller.DevController
 )
 
-func getDevRouter(router fiber.Router) {
+func getDevopmentRouter(router fiber.Router) {
 	jwtHandler := middleware.NewJWTHandler()
 	devController = controller.NewDevControllerImpl()
 	// Developement 'helper' Process
@@ -26,15 +23,14 @@ func getDevRouter(router fiber.Router) {
 	devRouter.Get("ping/db", devController.PingDatabase)
 	devRouter.Get("ping/redis", devController.PingRedis)
 	devRouter.Get("panic", devController.Panic)
-	devRouter.Get("new-jwt", devController.NewJWT)
 	devRouter.Get("storing-to-redis", devController.StoringToRedis)
 	devRouter.Get("get-from-redis", devController.GetFromRedis)
 
-	devAuthRoute := devRouter.Use(jwtHandler.IsAuthenticated)
-	devAuthRoute.Get("validate-jwt", devController.ValidateNewJWT)
-
-	// dev email
-	emailService = service.NewEmailService()
-	emailRoutes := router.Group("email")
-	emailRoutes.Post("send-bulk", emailService.TestingHandler)
+	// you should create new role named new-role-001 and new permission
+	// named new-permission-001 from RBAC-endpoints to test these endpoints
+	devRouterAuth := devRouter.Group("auth").Use(jwtHandler.IsAuthenticated)
+	devRouterAuth.Get("test-new-role",
+		jwtHandler.CheckHasRole("new-role-001"), devController.CheckNewRole)
+	devRouterAuth.Get("test-new-permission",
+		jwtHandler.CheckHasPermission("new-permission-001"), devController.CheckNewPermission)
 }

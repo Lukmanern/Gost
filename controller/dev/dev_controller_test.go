@@ -1,3 +1,7 @@
+// Don't run test per file without -p 1
+// or simply run test per func or run
+// project test using make test command
+// check Makefile file
 package controller
 
 import (
@@ -7,7 +11,6 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
-	"github.com/Lukmanern/gost/internal/rbac"
 )
 
 func init() {
@@ -23,10 +26,6 @@ func init() {
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
-
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionsHashMap()
 }
 
 func TestNewDevControllerImpl(t *testing.T) {
@@ -49,17 +48,6 @@ func TestNewDevControllerImpl(t *testing.T) {
 	panicErr := ctr.Panic(c)
 	if panicErr != nil {
 		t.Error("err: ", panicErr)
-	}
-
-	newJwtErr := ctr.NewJWT(c)
-	if newJwtErr != nil {
-		t.Error("err: ", newJwtErr)
-	}
-
-	// c.Request().Header.Set("Authorization", "Bearer YourJWTToken")
-	valJwtErr := ctr.ValidateNewJWT(c)
-	if valJwtErr != nil {
-		t.Error("err: ", valJwtErr)
 	}
 
 	storingErr := ctr.StoringToRedis(c)

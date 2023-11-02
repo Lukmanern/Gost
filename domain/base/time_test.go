@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func TestTimeFields_SetTimes(t *testing.T) {
+func TestTimeFields_SetCreateTimes(t *testing.T) {
 	tests := []struct {
 		name string
 		att  *TimeFields
@@ -18,7 +18,7 @@ func TestTimeFields_SetTimes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.att.SetTimes()
+			tt.att.SetCreateTimes()
 			currentTime := time.Now()
 			if tt.att.CreatedAt == nil || tt.att.UpdatedAt == nil {
 				t.Errorf("Expected CreatedAt and UpdatedAt to be set, but one or both are nil")

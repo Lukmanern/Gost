@@ -48,7 +48,10 @@ func createOnePermission(t *testing.T, namePrefix string) *entity.Permission {
 }
 
 func TestNewPermissionRepository(t *testing.T) {
-	_ = NewPermissionRepository()
+	permRepo := NewPermissionRepository()
+	if permRepo == nil {
+		t.Error("should not nil")
+	}
 }
 
 func TestPermissionRepositoryImpl_Create(t *testing.T) {

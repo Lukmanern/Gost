@@ -6,8 +6,6 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
-	"github.com/Lukmanern/gost/internal/helper"
-	"github.com/Lukmanern/gost/internal/rbac"
 )
 
 func init() {
@@ -23,52 +21,25 @@ func init() {
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
-
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionsHashMap()
 }
 
-func TestNewEmailServiceAndFuncsGet(t *testing.T) {
-	svc := NewEmailService()
-	if svc.getAuth() == nil {
+func Test_SendEmail(t *testing.T) {
+	emailService := NewEmailService()
+	if emailService == nil {
 		t.Error("should not nil")
 	}
-	if svc.getSMTPAddr() == "" {
-		t.Error("should not nil")
+	invalidEmail := []string{"invalid-email-address"}
+	subject := "valid-subject"
+	message := "simple-example-message"
+	sendErr := emailService.SendMail(invalidEmail, subject, message)
+	if sendErr == nil {
+		t.Error("should error, because invalid email")
 	}
-	if svc.getMime() == "" {
-		t.Error("should not nil")
-	}
-}
-
-func TestValidateEmails(t *testing.T) {
-	err1 := validateEmails("f", "a")
-	if err1 == nil {
-		t.Error("should err not nil")
-	}
-
-	err2 := validateEmails("validemail@gmail.com")
-	if err2 != nil {
-		t.Error("should err not nil")
-	}
-
-	err3 := validateEmails("validemail@gmail.com", "invalidemail@.gmail.com")
-	if err3 == nil {
-		t.Error("should err not nil")
-	}
-
-	err4 := validateEmails("validemail@gmail.com", "validemail@gmail.com", "invalidemail@gmail.com.")
-	if err4 == nil {
-		t.Error("should err not nil")
-	}
-}
-
-func TestTestingHandler(t *testing.T) {
-	c := helper.NewFiberCtx()
-	svc := NewEmailService()
-	err := svc.TestingHandler(c)
-	if err != nil {
-		t.Error("should not error")
+	// reset value
+	sendErr = nil
+	validEmail := []string{"your_valid_email_001@gost.project"} // enter your valid email address
+	sendErr = emailService.SendMail(validEmail, subject, message)
+	if sendErr != nil {
+		t.Error("should not error, but got error:", sendErr.Error())
 	}
 }

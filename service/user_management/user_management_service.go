@@ -22,7 +22,7 @@ import (
 	repository "github.com/Lukmanern/gost/repository/user"
 )
 
-type UserDevService interface {
+type UserManagementService interface {
 	Create(ctx context.Context, user model.UserCreate) (id int, err error)
 	GetByID(ctx context.Context, id int) (user *model.UserResponse, err error)
 	GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error)
@@ -31,26 +31,26 @@ type UserDevService interface {
 	Delete(ctx context.Context, id int) (err error)
 }
 
-type UserDevServiceImpl struct {
+type UserManagementServiceImpl struct {
 	repository repository.UserRepository
 }
 
 var (
-	userService     *UserDevServiceImpl
-	userServiceOnce sync.Once
+	userManagementService     *UserManagementServiceImpl
+	userManagementServiceOnce sync.Once
 )
 
-func NewUserDevService() UserDevService {
-	userServiceOnce.Do(func() {
-		userService = &UserDevServiceImpl{
+func NewUserManagementService() UserManagementService {
+	userManagementServiceOnce.Do(func() {
+		userManagementService = &UserManagementServiceImpl{
 			repository: repository.NewUserRepository(),
 		}
 	})
 
-	return userService
+	return userManagementService
 }
 
-func (svc UserDevServiceImpl) Create(ctx context.Context, user model.UserCreate) (id int, err error) {
+func (svc UserManagementServiceImpl) Create(ctx context.Context, user model.UserCreate) (id int, err error) {
 	userCheck, getErr := svc.GetByEmail(ctx, user.Email)
 	if getErr == nil || userCheck != nil {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "email has been used")
@@ -58,7 +58,8 @@ func (svc UserDevServiceImpl) Create(ctx context.Context, user model.UserCreate)
 
 	passwordHashed, hashErr := hash.Generate(user.Password)
 	if hashErr != nil {
-		return 0, errors.New("something failed while hashing data, please try again")
+		message := "something failed while hashing data, please try again"
+		return 0, errors.New(message)
 	}
 
 	userEntity := entity.User{
@@ -66,7 +67,7 @@ func (svc UserDevServiceImpl) Create(ctx context.Context, user model.UserCreate)
 		Email:    user.Email,
 		Password: passwordHashed,
 	}
-	userEntity.SetTimes()
+	userEntity.SetCreateTimes()
 
 	roleID := entity.USER
 	if user.IsAdmin {
@@ -77,11 +78,10 @@ func (svc UserDevServiceImpl) Create(ctx context.Context, user model.UserCreate)
 	if err != nil {
 		return 0, err
 	}
-
 	return id, nil
 }
 
-func (svc UserDevServiceImpl) GetByID(ctx context.Context, id int) (user *model.UserResponse, err error) {
+func (svc UserManagementServiceImpl) GetByID(ctx context.Context, id int) (user *model.UserResponse, err error) {
 	userEntity, err := svc.repository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -94,29 +94,27 @@ func (svc UserDevServiceImpl) GetByID(ctx context.Context, id int) (user *model.
 		Name:  userEntity.Name,
 		Email: userEntity.Email,
 	}
-
 	return user, nil
 }
 
-func (svc UserDevServiceImpl) GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error) {
+func (svc UserManagementServiceImpl) GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error) {
 	email = strings.ToLower(email)
-	userEntity, err := svc.repository.GetByEmail(ctx, email)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+	userEntity, getErr := svc.repository.GetByEmail(ctx, email)
+	if getErr != nil {
+		if getErr == gorm.ErrRecordNotFound {
 			return nil, fiber.NewError(fiber.StatusNotFound, "data not found")
 		}
-		return nil, err
+		return nil, getErr
 	}
 	user = &model.UserResponse{
 		ID:    userEntity.ID,
 		Name:  userEntity.Name,
 		Email: userEntity.Email,
 	}
-
 	return user, nil
 }
 
-func (svc UserDevServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error) {
+func (svc UserManagementServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error) {
 	userEntities, total, err := svc.repository.GetAll(ctx, filter)
 	if err != nil {
 		return nil, 0, err
@@ -129,32 +127,28 @@ func (svc UserDevServiceImpl) GetAll(ctx context.Context, filter base.RequestGet
 			Name:  userEntity.Name,
 			Email: userEntity.Email,
 		}
-
 		users = append(users, newUserResponse)
 	}
-
 	return users, total, nil
 }
 
-func (svc UserDevServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
-	isUserExist := func() bool {
-		getUser, getErr := svc.repository.GetByID(ctx, user.ID)
-		if getErr != nil {
-			return false
+func (svc UserManagementServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
+	getUser, getErr := svc.repository.GetByID(ctx, user.ID)
+	if getErr != nil {
+		if getErr == gorm.ErrRecordNotFound {
+			return fiber.NewError(fiber.StatusNotFound, "data not found")
 		}
-		if getUser == nil {
-			return false
-		}
-
-		return true
+		return getErr
 	}
-	if !isUserExist() {
+	if getUser == nil {
 		return fiber.NewError(fiber.StatusNotFound, "data not found")
 	}
 
 	userEntity := entity.User{
 		ID:   user.ID,
 		Name: cases.Title(language.Und).String(user.Name),
+		// ...
+		// add more fields
 	}
 	userEntity.SetUpdateTime()
 
@@ -162,23 +156,18 @@ func (svc UserDevServiceImpl) Update(ctx context.Context, user model.UserProfile
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func (svc UserDevServiceImpl) Delete(ctx context.Context, id int) (err error) {
-	isUserExist := func() bool {
-		getUser, getErr := svc.repository.GetByID(ctx, id)
-		if getErr != nil {
-			return false
+func (svc UserManagementServiceImpl) Delete(ctx context.Context, id int) (err error) {
+	getUser, getErr := svc.repository.GetByID(ctx, id)
+	if getErr != nil {
+		if getErr == gorm.ErrRecordNotFound {
+			return fiber.NewError(fiber.StatusNotFound, "data not found")
 		}
-		if getUser == nil {
-			return false
-		}
-
-		return true
+		return getErr
 	}
-	if !isUserExist() {
+	if getUser == nil {
 		return fiber.NewError(fiber.StatusNotFound, "data not found")
 	}
 
@@ -186,6 +175,5 @@ func (svc UserDevServiceImpl) Delete(ctx context.Context, id int) (err error) {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }

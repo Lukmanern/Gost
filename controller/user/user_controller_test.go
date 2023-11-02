@@ -29,13 +29,13 @@ var (
 	userSvc  service.UserService
 	userCtr  UserController
 	userRepo repository.UserRepository
+	appUrl   string
 )
 
 func init() {
-	// controller\user_dev\user_dev_controller_test.go
-	// Check env and database
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
+	appUrl = config.AppUrl
 	dbURI := config.GetDatabaseURI()
 	privKey := config.GetPrivateKey()
 	pubKey := config.GetPublicKey()
@@ -192,14 +192,14 @@ func Test_Register(t *testing.T) {
 		},
 	}
 
-	endp := "/user/register"
+	endp := "user/register"
 	for _, tc := range testCases {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := "http://127.0.0.1:9009" + endp
+		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal("should not nil")
@@ -309,14 +309,14 @@ func Test_AccountActivation(t *testing.T) {
 		},
 	}
 
-	endp := "/user/verification"
+	endp := "user/verification"
 	for _, tc := range testCases {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := "http://127.0.0.1:9009" + endp
+		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal("should not nil")
@@ -416,14 +416,14 @@ func Test_DeleteAccountActivation(t *testing.T) {
 		},
 	}
 
-	endp := "/user/request-delete"
+	endp := "user/request-delete"
 	for _, tc := range testCases {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := "http://127.0.0.1:9009" + endp
+		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal("should not nil")
@@ -529,7 +529,7 @@ func Test_ForgetPassword(t *testing.T) {
 			caseName: "faield forget password: email not found",
 			respCode: http.StatusNotFound,
 			payload: &model.UserForgetPassword{
-				Email: "notfoundemail_9@gost.project",
+				Email: helper.RandomEmails(1)[0],
 			},
 		},
 		{
@@ -541,14 +541,14 @@ func Test_ForgetPassword(t *testing.T) {
 		},
 	}
 
-	endp := "/user/forget-password"
+	endp := "user/forget-password"
 	for _, tc := range testCases {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := "http://127.0.0.1:9009" + endp
+		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal("should not nil")
@@ -675,14 +675,14 @@ func Test_ResetPassword(t *testing.T) {
 		},
 	}
 
-	endp := "/user/reset-password"
+	endp := "user/reset-password"
 	for _, tc := range testCases {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := "http://127.0.0.1:9009" + endp
+		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal("should not nil")
@@ -871,14 +871,14 @@ func Test_Login(t *testing.T) {
 		},
 	}
 
-	endp := "/user/login"
+	endp := "user/login"
 	for _, tc := range testCases {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := "http://127.0.0.1:9009" + endp
+		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal("should not nil")
@@ -919,7 +919,7 @@ func Test_Login(t *testing.T) {
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		url := "http://127.0.0.1:9009" + endp
+		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil {
 			t.Fatal("should not nil")
@@ -1006,9 +1006,63 @@ func Test_Logout(t *testing.T) {
 			t.Fatal("panic ::", r)
 		}
 	}()
-}
 
-// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+	testCases := []struct {
+		caseName string
+		respCode int
+		token    string
+	}{
+		{
+			caseName: "success",
+			respCode: http.StatusOK,
+			token:    userToken,
+		},
+		{
+			caseName: "failed: fake claims",
+			respCode: http.StatusUnauthorized,
+			token:    "fake-token",
+		},
+		{
+			caseName: "failed: payload nil, token nil",
+			respCode: http.StatusUnauthorized,
+			token:    "",
+		},
+	}
+
+	jwtHandler := middleware.NewJWTHandler()
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		fakeClaims := jwtHandler.GenerateClaims(tc.token)
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
+		}
+		ctr.Logout(c)
+		resp := c.Response()
+		if resp.StatusCode() != tc.respCode {
+			t.Error("should equal, but got", resp.StatusCode())
+		}
+
+		if resp.StatusCode() == http.StatusOK {
+			respBody := c.Response().Body()
+			respString := string(respBody)
+			respStruct := struct {
+				Message string `json:"message"`
+				Success bool   `json:"success"`
+			}{}
+
+			err := json.Unmarshal([]byte(respString), &respStruct)
+			if err != nil {
+				t.Errorf("Failed to parse response JSON: %v", err)
+			}
+
+			if !respStruct.Success {
+				t.Error("Expected success")
+			}
+		}
+	}
+}
 
 func Test_UpdatePassword(t *testing.T) {
 	c := helper.NewFiberCtx()
@@ -1067,9 +1121,94 @@ func Test_UpdatePassword(t *testing.T) {
 			t.Fatal("panic ::", r)
 		}
 	}()
-}
 
-// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+	testCases := []struct {
+		caseName string
+		respCode int
+		token    string
+		payload  *model.UserPasswordUpdate
+	}{
+		{
+			caseName: "success",
+			respCode: http.StatusNoContent,
+			token:    userToken,
+			payload: &model.UserPasswordUpdate{
+				OldPassword:        createdUser.Password,
+				NewPassword:        "passwordNew123",
+				NewPasswordConfirm: "passwordNew123",
+			},
+		},
+		{
+			caseName: "success",
+			respCode: http.StatusNoContent,
+			token:    userToken,
+			payload: &model.UserPasswordUpdate{
+				OldPassword:        "passwordNew123",
+				NewPassword:        "passwordNew12345",
+				NewPasswordConfirm: "passwordNew12345",
+			},
+		},
+		{
+			caseName: "failed: no new password",
+			respCode: http.StatusBadRequest,
+			token:    userToken,
+			payload: &model.UserPasswordUpdate{
+				OldPassword:        "noNewPassword",
+				NewPassword:        "noNewPassword",
+				NewPasswordConfirm: "noNewPassword",
+			},
+		},
+		{
+			caseName: "failed: payload nil",
+			respCode: http.StatusBadRequest,
+			token:    userToken,
+		},
+		{
+			caseName: "failed: fake claims",
+			respCode: http.StatusUnauthorized,
+			token:    "fake-token",
+		},
+		{
+			caseName: "failed: payload nil, token nil",
+			respCode: http.StatusUnauthorized,
+			token:    "",
+		},
+	}
+
+	jwtHandler := middleware.NewJWTHandler()
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		if tc.payload != nil {
+			requestBody, err := json.Marshal(tc.payload)
+			if err != nil {
+				t.Fatal("Error while serializing payload to request body")
+			}
+			c.Request().SetBody(requestBody)
+		}
+		fakeClaims := jwtHandler.GenerateClaims(tc.token)
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
+		}
+		ctr.UpdatePassword(c)
+		resp := c.Response()
+		if resp.StatusCode() != tc.respCode {
+			t.Error("should equal, but got", resp.StatusCode(), "want", tc.respCode)
+		}
+
+		if resp.StatusCode() == http.StatusNoContent {
+			token, loginErr := userSvc.Login(ctx, model.UserLogin{
+				Email:    userByID.Email,
+				Password: tc.payload.NewPassword,
+				IP:       helper.RandomIPAddress(),
+			})
+			if loginErr != nil || token == "" {
+				t.Error("login should success with new password")
+			}
+		}
+	}
+}
 
 func Test_UpdateProfile(t *testing.T) {
 	c := helper.NewFiberCtx()
@@ -1128,6 +1267,79 @@ func Test_UpdateProfile(t *testing.T) {
 			t.Fatal("panic ::", r)
 		}
 	}()
+
+	testCases := []struct {
+		caseName string
+		respCode int
+		token    string
+		payload  *model.UserProfileUpdate
+	}{
+		{
+			caseName: "success",
+			respCode: http.StatusNoContent,
+			token:    userToken,
+			payload: &model.UserProfileUpdate{
+				Name: helper.RandomString(11),
+			},
+		},
+		{
+			caseName: "success",
+			respCode: http.StatusNoContent,
+			token:    userToken,
+			payload: &model.UserProfileUpdate{
+				Name: helper.RandomString(11),
+			},
+		},
+		{
+			caseName: "failed: payload nil",
+			respCode: http.StatusBadRequest,
+			token:    userToken,
+		},
+		{
+			caseName: "failed: fake claims",
+			respCode: http.StatusUnauthorized,
+			token:    "fake-token",
+		},
+		{
+			caseName: "failed: payload nil, token nil",
+			respCode: http.StatusUnauthorized,
+			token:    "",
+		},
+	}
+
+	jwtHandler := middleware.NewJWTHandler()
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		if tc.payload != nil {
+			requestBody, err := json.Marshal(tc.payload)
+			if err != nil {
+				t.Fatal("Error while serializing payload to request body")
+			}
+			c.Request().SetBody(requestBody)
+		}
+		fakeClaims := jwtHandler.GenerateClaims(tc.token)
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
+		}
+		ctr.UpdateProfile(c)
+		resp := c.Response()
+		if resp.StatusCode() != tc.respCode {
+			t.Error("should equal, but got", resp.StatusCode(), "want", tc.respCode)
+		}
+
+		if resp.StatusCode() == http.StatusNoContent {
+			userByID, err := userRepo.GetByID(ctx, userID)
+			if err != nil || userByID == nil {
+				t.Error("should not error")
+			}
+
+			if userByID.Name != cases.Title(language.Und).String(tc.payload.Name) {
+				t.Error("shoudl equal")
+			}
+		}
+	}
 }
 
 func Test_MyProfile(t *testing.T) {
@@ -1200,12 +1412,12 @@ func Test_MyProfile(t *testing.T) {
 		},
 		{
 			caseName: "failed: fake claims",
-			respCode: http.StatusBadRequest,
+			respCode: http.StatusUnauthorized,
 			token:    "fake-token",
 		},
 		{
 			caseName: "failed: payload nil, token nil",
-			respCode: http.StatusBadRequest,
+			respCode: http.StatusUnauthorized,
 			token:    "",
 		},
 	}

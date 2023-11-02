@@ -25,7 +25,7 @@ func TestAllTablesName(t *testing.T) {
 	}
 }
 
-func TestUserActivatedAccount(t *testing.T) {
+func TestUserSetActivateAccount(t *testing.T) {
 	timeNow := time.Now()
 	code := "example-code"
 	user := User{
@@ -37,7 +37,7 @@ func TestUserActivatedAccount(t *testing.T) {
 		},
 	}
 
-	user.ActivatedAccount()
+	user.SetActivateAccount()
 	if user.VerificationCode != nil {
 		t.Error("should nil")
 	}

@@ -1,3 +1,7 @@
+// Don't run test per file without -p 1
+// or simply run test per func or run
+// project test using make test command
+// check Makefile file
 package test
 
 import (
@@ -14,26 +18,25 @@ import (
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
-	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	controller "github.com/Lukmanern/gost/controller/user_dev"
-	service "github.com/Lukmanern/gost/service/user_dev"
+	controller "github.com/Lukmanern/gost/controller/user_management"
+	service "github.com/Lukmanern/gost/service/user_management"
 )
 
 var (
-	userDevService    service.UserDevService
-	userDevController controller.UserDevController
+	userDevService    service.UserManagementService
+	userDevController controller.UserManagementController
+	appUrl            string
 )
 
 func init() {
-	// controller\user_dev\user_dev_controller_test.go
-	// Check env and database
 	env.ReadConfig("./../.env")
 	config := env.Configuration()
+	appUrl = config.AppUrl
 	dbURI := config.GetDatabaseURI()
 	privKey := config.GetPrivateKey()
 	pubKey := config.GetPublicKey()
@@ -45,17 +48,13 @@ func init() {
 	r := connector.LoadRedisDatabase()
 	r.FlushAll() // clear all key:value in redis
 
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionsHashMap()
-
-	userDevService = service.NewUserDevService()
-	userDevController = controller.NewUserDevController(userDevService)
+	userDevService = service.NewUserManagementService()
+	userDevController = controller.NewUserManagementController(userDevService)
 }
 
 func Test_Create(t *testing.T) {
 	go application.RunApp()
-	time.Sleep(2 * time.Second)
+	time.Sleep(4 * time.Second)
 
 	ctr := userDevController
 	if ctr == nil {
@@ -127,7 +126,7 @@ func Test_Create(t *testing.T) {
 		if err != nil {
 			t.Error("should not error", err.Error())
 		}
-		req, httpReqErr := http.NewRequest(http.MethodPost, "http://127.0.0.1:9009/user-management/create", strings.NewReader(string(jsonObject)))
+		req, httpReqErr := http.NewRequest(http.MethodPost, appUrl+"user-management/create", strings.NewReader(string(jsonObject)))
 		if httpReqErr != nil {
 			t.Fatal("should not nil")
 		}

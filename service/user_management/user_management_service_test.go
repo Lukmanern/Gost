@@ -1,3 +1,7 @@
+// Don't run test per file without -p 1
+// or simply run test per func or run
+// project test using make test command
+// check Makefile file
 package service
 
 import (
@@ -9,7 +13,6 @@ import (
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
-	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -26,14 +29,10 @@ func init() {
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
-
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionsHashMap()
 }
 
-func TestNewUserDevService(t *testing.T) {
-	svc := NewUserDevService()
+func TestNewUserManagementService(t *testing.T) {
+	svc := NewUserManagementService()
 	if svc == nil {
 		t.Error("should not nil")
 	}
@@ -45,13 +44,13 @@ func TestNewUserDevService(t *testing.T) {
 // -> get all and check >= 1
 // -> update
 // -> delete
-// -> get by id
-// -> get by email
+// -> get by id (checking)
+// -> get by email (checking)
 
 func TestSuccessCRUD(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	svc := NewUserDevService()
+	svc := NewUserManagementService()
 	if svc == nil || ctx == nil {
 		t.Error("should not nil")
 	}

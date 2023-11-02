@@ -51,7 +51,7 @@ func (svc PermissionServiceImpl) Create(ctx context.Context, permission model.Pe
 		Name:        permission.Name,
 		Description: permission.Description,
 	}
-	entityPermission.SetTimes()
+	entityPermission.SetCreateTimes()
 	id, err = svc.repository.Create(ctx, entityPermission)
 	if err != nil {
 		return 0, err
@@ -76,7 +76,6 @@ func (svc PermissionServiceImpl) GetByID(ctx context.Context, id int) (permissio
 		Name:        permissionEntity.Name,
 		Description: permissionEntity.Description,
 	}
-
 	return permission, nil
 }
 
@@ -96,7 +95,6 @@ func (svc PermissionServiceImpl) GetAll(ctx context.Context, filter base.Request
 
 		permissions = append(permissions, newPermission)
 	}
-
 	return permissions, total, nil
 }
 

@@ -1,3 +1,7 @@
+// Don't run test per file without -p 1
+// or simply run test per func or run
+// project test using make test command
+// check Makefile file
 package service
 
 import (
@@ -13,7 +17,6 @@ import (
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
-	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
 	rbacService "github.com/Lukmanern/gost/service/rbac"
 )
@@ -31,10 +34,6 @@ func init() {
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
-
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionsHashMap()
 }
 
 func TestNewUserService(t *testing.T) {
@@ -393,17 +392,3 @@ func Test_Banned_IP_Address(t *testing.T) {
 		}
 	}
 }
-
-// Register(ctx context.Context, user model.UserRegister) (id int, err error) Done
-// Verification(ctx context.Context, verifyCode string) (err error) Done
-// DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) Done : half
-// FailedLoginCounter(userIP string, increment bool) (counter int, err error) Done
-// Login(ctx context.Context, user model.UserLogin) (token string, err error) Done
-// Logout(c *fiber.Ctx) (err error) Done
-// ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) Done
-// ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) Done
-// UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) Done
-// UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) Done
-// MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) Done
-
-// Todo : add login failed 5 times for banned testing of IP 4-5x times

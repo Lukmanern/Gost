@@ -50,10 +50,10 @@ var (
 func setup() {
 	// Check env and database
 	env.ReadConfig("./.env")
-	c := env.Configuration()
-	dbURI := c.GetDatabaseURI()
-	privKey := c.GetPrivateKey()
-	pubKey := c.GetPublicKey()
+	config := env.Configuration()
+	dbURI := config.GetDatabaseURI()
+	privKey := config.GetPrivateKey()
+	pubKey := config.GetPublicKey()
 	if dbURI == "" || privKey == nil || pubKey == nil {
 		log.Fatal("Database URI or keys aren't valid")
 	}
@@ -63,7 +63,7 @@ func setup() {
 
 	// dump all permissions into hashMap
 	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionsHashMap()
+	rbac.PermissionHashMap = rbac.PermissionIDsHashMap()
 }
 
 func RunApp() {
@@ -100,8 +100,8 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getDevRouter(router)              // don't use for production
-	getUserDevRoutes(router)          // don't use for production
+	getDevopmentRouter(router)        // don't use for production
+	getUserManagementRoutes(router)   // don't use for production
 	getMiddlewareTestingRoute(router) // don't use for production
 
 	getUserRoutes(router)

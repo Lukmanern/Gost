@@ -1,4 +1,4 @@
-package service
+package controller
 
 import (
 	"math"
@@ -79,7 +79,6 @@ func (ctr PermissionControllerImpl) Get(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+getErr.Error())
 	}
-
 	return response.SuccessLoaded(c, permission)
 }
 
@@ -104,7 +103,6 @@ func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 	for i := range permissions {
 		data[i] = permissions[i]
 	}
-
 	responseData := base.GetAllResponse{
 		Meta: base.PageMeta{
 			Total: total,
@@ -113,7 +111,6 @@ func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 		},
 		Data: data,
 	}
-
 	return response.SuccessLoaded(c, responseData)
 }
 
@@ -123,10 +120,10 @@ func (ctr PermissionControllerImpl) Update(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid id")
 	}
 	var permission model.PermissionUpdate
+	permission.ID = id
 	if err := c.BodyParser(&permission); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
-	permission.ID = id
 	validate := validator.New()
 	if err := validate.Struct(&permission); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -141,7 +138,6 @@ func (ctr PermissionControllerImpl) Update(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+updateErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }
 
@@ -160,6 +156,5 @@ func (ctr PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+deleteErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }

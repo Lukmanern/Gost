@@ -2,13 +2,36 @@
 
 ### Todo / OnDev
 
-1. Add middleware for payload-inspection
+1. Add file management (upload and download)
+2. Make code more clean
+   controller dev Done
 
-? github.com/Lukmanern/gost [no test files]
-? github.com/Lukmanern/gost/controller/dev [no test files]
-? github.com/Lukmanern/gost/controller/rbac [no test files]
-? github.com/Lukmanern/gost/controller/user [no test files]
-? github.com/Lukmanern/gost/controller/user_dev [no test files]
+```
+
+// uint8 is the lowest memory cost in Golang
+// maximum value length is 255
+type (
+	PermissionMap     = map[uint8]uint8
+	PermissionNameMap = map[string]uint8
+)
+
+var (
+	PermissionHashMap     PermissionMap
+	PermissionNameHashMap PermissionNameMap
+)
+
+// Run once at app.go setupfunc
+func PermissionsHashMap() PermissionMap {
+	PermissionHashMap := make(PermissionMap, 0)
+	permissions := AllPermissions()
+	for i := range permissions {
+		PermissionHashMap[uint8(i+1)] = 0b_0001
+	}
+
+	return PermissionHashMap
+}
+
+```
 
 ### Done / OnTest
 

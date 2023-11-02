@@ -14,10 +14,10 @@ import (
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/response"
-	service "github.com/Lukmanern/gost/service/user_dev"
+	service "github.com/Lukmanern/gost/service/user_management"
 )
 
-type UserDevController interface {
+type UserManagementController interface {
 	Create(c *fiber.Ctx) error
 	Get(c *fiber.Ctx) error
 	GetAll(c *fiber.Ctx) error
@@ -25,17 +25,17 @@ type UserDevController interface {
 	Delete(c *fiber.Ctx) error
 }
 
-type UserDevControllerImpl struct {
-	service service.UserDevService
+type UserManagementControllerImpl struct {
+	service service.UserManagementService
 }
 
-func NewUserDevController(userService service.UserDevService) UserDevController {
-	return &UserDevControllerImpl{
+func NewUserManagementController(userService service.UserManagementService) UserManagementController {
+	return &UserManagementControllerImpl{
 		service: userService,
 	}
 }
 
-func (ctr UserDevControllerImpl) Create(c *fiber.Ctx) error {
+func (ctr UserManagementControllerImpl) Create(c *fiber.Ctx) error {
 	var user model.UserCreate
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -61,7 +61,7 @@ func (ctr UserDevControllerImpl) Create(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, data)
 }
 
-func (ctr UserDevControllerImpl) Get(c *fiber.Ctx) error {
+func (ctr UserManagementControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
@@ -76,11 +76,10 @@ func (ctr UserDevControllerImpl) Get(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+getErr.Error())
 	}
-
 	return response.SuccessLoaded(c, userProfile)
 }
 
-func (ctr UserDevControllerImpl) GetAll(c *fiber.Ctx) error {
+func (ctr UserManagementControllerImpl) GetAll(c *fiber.Ctx) error {
 	request := base.RequestGetAll{
 		Page:    c.QueryInt("page", 1),
 		Limit:   c.QueryInt("limit", 20),
@@ -101,7 +100,6 @@ func (ctr UserDevControllerImpl) GetAll(c *fiber.Ctx) error {
 	for i := range users {
 		data[i] = users[i]
 	}
-
 	responseData := base.GetAllResponse{
 		Meta: base.PageMeta{
 			Total: total,
@@ -110,11 +108,10 @@ func (ctr UserDevControllerImpl) GetAll(c *fiber.Ctx) error {
 		},
 		Data: data,
 	}
-
 	return response.SuccessLoaded(c, responseData)
 }
 
-func (ctr UserDevControllerImpl) Update(c *fiber.Ctx) error {
+func (ctr UserManagementControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
@@ -138,11 +135,10 @@ func (ctr UserDevControllerImpl) Update(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+updateErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }
 
-func (ctr UserDevControllerImpl) Delete(c *fiber.Ctx) error {
+func (ctr UserManagementControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
@@ -157,6 +153,5 @@ func (ctr UserDevControllerImpl) Delete(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+deleteErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }
