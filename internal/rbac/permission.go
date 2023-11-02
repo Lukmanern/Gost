@@ -6,6 +6,8 @@ import (
 	"github.com/Lukmanern/gost/domain/entity"
 )
 
+// Todo : refactor
+
 // uint8 is the lowest memory cost in Golang
 // maximum value length is 255
 type (

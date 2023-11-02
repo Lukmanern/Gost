@@ -231,6 +231,7 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 		return "", fiber.NewError(fiber.StatusBadRequest, message)
 	}
 
+	// Todo : refactor
 	userRole := userEntity.Roles[0]
 	permissionMapID := make(rbac.PermissionMap, 0)
 	for _, permission := range userRole.Permissions {

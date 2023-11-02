@@ -78,18 +78,14 @@ func seeding() {
 		log.Panicf("Error starting transaction for seeding: %s", tx.Error)
 	}
 
-	// Seeding permission and role within the provided transaction
+	// Seeding permission and role
 	for _, data := range rbac.AllRoles() {
-		time.Sleep(100 * time.Millisecond)
 		if createErr := tx.Create(&data).Error; createErr != nil {
 			tx.Rollback()
 			log.Panicf("Error while creating Roles: %s", createErr)
 		}
 	}
-
-	time.Sleep(500 * time.Millisecond)
 	for _, data := range rbac.AllPermissions() {
-		time.Sleep(100 * time.Millisecond)
 		if createErr := tx.Create(&data).Error; createErr != nil {
 			tx.Rollback()
 			log.Panicf("Error while creating Permissions: %s", createErr)
