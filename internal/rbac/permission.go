@@ -41,6 +41,7 @@ func resetAllPermissions() {
 func PermissionIDsHashMap() PermissionMap {
 	PermissionHashMap := make(PermissionMap, 0)
 	resetAllPermissions()
+	// allPermissions := AllPermissions()
 	for i := range allPermissions {
 		PermissionHashMap[uint8(i+1)] = 0b_0001
 	}
@@ -51,6 +52,7 @@ func PermissionIDsHashMap() PermissionMap {
 // Run once at app.go setupfunc
 func PermissionNamesHashMap() PermissionNameMap {
 	resetAllPermissions()
+	// allPermissions := AllPermissions()
 	if len(allPermissions) > 255 {
 		// if you want make more than 255 permissions/ access
 		// you can modified type:PermissionMap and using

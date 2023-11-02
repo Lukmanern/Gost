@@ -157,6 +157,9 @@ func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) 
 	if getByCodeErr != nil || userEntity == nil {
 		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
 	}
+	if userEntity.ActivatedAt != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "your account already activated")
+	}
 	// set updated_at, activated_at and
 	// nulling verification code
 	userEntity.SetActivateAccount()
