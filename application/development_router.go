@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	controller "github.com/Lukmanern/gost/controller/dev"
+	"github.com/Lukmanern/gost/internal/middleware"
 )
 
 var (
@@ -15,6 +16,7 @@ var (
 )
 
 func getDevopmentRouter(router fiber.Router) {
+	jwtHandler := middleware.NewJWTHandler()
 	devController = controller.NewDevControllerImpl()
 	// Developement 'helper' Process
 	devRouter := router.Group("development")
@@ -23,4 +25,12 @@ func getDevopmentRouter(router fiber.Router) {
 	devRouter.Get("panic", devController.Panic)
 	devRouter.Get("storing-to-redis", devController.StoringToRedis)
 	devRouter.Get("get-from-redis", devController.GetFromRedis)
+
+	// you should create new role named new-role-001 and new permission
+	// named new-permission-001 from RBAC-endpoints to test these endpoints
+	devRouterAuth := devRouter.Group("auth").Use(jwtHandler.IsAuthenticated)
+	devRouterAuth.Get("test-new-role",
+		jwtHandler.CheckHasRole("new-role-001"), devController.CheckNewRole)
+	devRouterAuth.Get("test-new-permission",
+		jwtHandler.CheckHasPermission("new-permission-001"), devController.CheckNewPermission)
 }
