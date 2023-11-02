@@ -2,8 +2,12 @@ package rbac
 
 import (
 	"log"
+	"sync"
 
+	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/internal/env"
+	"gorm.io/gorm"
 )
 
 // Todo : refactor
@@ -18,13 +22,26 @@ type (
 var (
 	PermissionHashMap     PermissionMap
 	PermissionNameHashMap PermissionNameMap
+
+	db                 *gorm.DB
+	allPermissions     []entity.Permission
+	allPermissionsOnce sync.Once
 )
+
+func resetAllPermissions() {
+	allPermissionsOnce.Do(func() {
+		env.ReadConfig("./../../.env")
+		db = connector.LoadDatabase()
+	})
+	allPermissions = []entity.Permission{}
+	db.Find(&allPermissions)
+}
 
 // Run once at app.go setupfunc
 func PermissionIDsHashMap() PermissionMap {
 	PermissionHashMap := make(PermissionMap, 0)
-	permissions := AllPermissions()
-	for i := range permissions {
+	resetAllPermissions()
+	for i := range allPermissions {
 		PermissionHashMap[uint8(i+1)] = 0b_0001
 	}
 
@@ -33,7 +50,7 @@ func PermissionIDsHashMap() PermissionMap {
 
 // Run once at app.go setupfunc
 func PermissionNamesHashMap() PermissionNameMap {
-	allPermissions := AllPermissions()
+	resetAllPermissions()
 	if len(allPermissions) > 255 {
 		// if you want make more than 255 permissions/ access
 		// you can modified type:PermissionMap and using

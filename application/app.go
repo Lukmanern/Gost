@@ -50,10 +50,10 @@ var (
 func setup() {
 	// Check env and database
 	env.ReadConfig("./.env")
-	c := env.Configuration()
-	dbURI := c.GetDatabaseURI()
-	privKey := c.GetPrivateKey()
-	pubKey := c.GetPublicKey()
+	config := env.Configuration()
+	dbURI := config.GetDatabaseURI()
+	privKey := config.GetPrivateKey()
+	pubKey := config.GetPublicKey()
 	if dbURI == "" || privKey == nil || pubKey == nil {
 		log.Fatal("Database URI or keys aren't valid")
 	}
