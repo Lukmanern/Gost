@@ -2,13 +2,11 @@ package experiment
 
 func BuildBitGroups(permIDs ...int) map[int]int {
 	groups := make(map[int]int)
-
 	for _, id := range permIDs {
 		group := (id - 1) / 8
 		bitPosition := uint(id - 1 - (group * 8))
 		groups[group+1] |= 1 << bitPosition
 	}
-
 	return groups
 }
 
