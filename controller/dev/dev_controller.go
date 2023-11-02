@@ -19,6 +19,8 @@ type DevController interface {
 	Panic(c *fiber.Ctx) error
 	StoringToRedis(c *fiber.Ctx) error
 	GetFromRedis(c *fiber.Ctx) error
+	CheckNewRole(c *fiber.Ctx) error
+	CheckNewPermission(c *fiber.Ctx) error
 }
 
 type DevControllerImpl struct {
@@ -119,4 +121,12 @@ func (ctr DevControllerImpl) GetFromRedis(c *fiber.Ctx) error {
 	}
 
 	return response.SuccessLoaded(c, res)
+}
+
+func (ctr DevControllerImpl) CheckNewRole(c *fiber.Ctx) error {
+	return response.CreateResponse(c, fiber.StatusOK, true, "success check new role", nil)
+}
+
+func (ctr DevControllerImpl) CheckNewPermission(c *fiber.Ctx) error {
+	return response.CreateResponse(c, fiber.StatusOK, true, "success check new permission", nil)
 }
