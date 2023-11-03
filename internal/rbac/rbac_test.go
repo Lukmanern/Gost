@@ -29,36 +29,16 @@ func TestCountPermissions(t *testing.T) {
 	}
 }
 
-// func Test_AllPermissionsIDHashMap(t *testing.T) {
-// 	hashMap := PermissionIDsHashMap()
-// 	if len(hashMap) < 1 {
-// 		t.Error("len of $hashMap should more than one")
-// 	}
-// 	func() {
-// 		v, ok := hashMap[0]
-// 		if ok {
-// 			t.Error("should not ok")
-// 		}
-// 		if v == 1 {
-// 			t.Error("should not equal to one")
-// 		}
-// 	}()
-// 	func() {
-// 		v, ok := hashMap[1]
-// 		if !ok {
-// 			t.Error("should ok")
-// 		}
-// 		if v != 1 {
-// 			t.Error("should equal to one")
-// 		}
-// 	}()
-// }
+func Test_AllPermissions(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			t.Error("should not panic, but got:", r)
+		}
+	}()
 
-// func Test_PermissionNamesHashMap(t *testing.T) {
-// 	if len(PermissionNamesHashMap()) != len(AllPermissions()) {
-// 		t.Error("len should same")
-// 	}
-// }
+	AllPermissions()
+}
 
 func Test_AllRoles(t *testing.T) {
 	for _, role := range AllRoles() {

@@ -6,6 +6,8 @@ import (
 	"github.com/Lukmanern/gost/domain/entity"
 )
 
+// Don't forget to run Test_AllPermissions
+// to audit
 func AllPermissions() []entity.Permission {
 	permissions := []entity.Permission{
 		// user
@@ -22,11 +24,14 @@ func AllPermissions() []entity.Permission {
 		// add more permissions
 	}
 
-	// check id and name
+	// self tested check id and name
 	// id and name should unique
 	checkIDs := make(map[int]int)
 	checkNames := make(map[string]int)
 	for _, perm := range permissions {
+		if perm.ID < 1 || len(perm.Name) <= 1 {
+			log.Fatal("permission name too short or invalid id at:", perm)
+		}
 		checkIDs[perm.ID] += 1
 		checkNames[perm.Name] += 1
 		if checkIDs[perm.ID] > 1 || checkNames[perm.Name] > 1 {

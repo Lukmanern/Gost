@@ -99,3 +99,7 @@ func Test_CheckHasPermission(t *testing.T) {
 		fmt.Println(i, ":", CheckHasPermission(i, bitGroups))
 	}
 }
+
+func TestE(t *testing.T) {
+	fmt.Println(0b1011 & 0b0011)
+}

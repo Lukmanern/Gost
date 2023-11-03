@@ -233,15 +233,15 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 		return "", fiber.NewError(fiber.StatusBadRequest, message)
 	}
 
-	// Todo : refactor
 	userRole := userEntity.Roles[0]
-	permissionMapID := make(map[int]int, 0)
-	for _, permission := range userRole.Permissions {
-		permissionMapID[permission.ID] = 0b_0001
+	permIDs := make([]int, 0)
+	for _, perm := range userRole.Permissions {
+		permIDs = append(permIDs, perm.ID)
 	}
+	bitGroups := middleware.BuildBitGroups(permIDs...)
 	config := env.Configuration()
 	expired := time.Now().Add(config.AppAccessTokenTTL)
-	token, generetaErr := svc.jwtHandler.GenerateJWT(userEntity.ID, user.Email, userRole.Name, permissionMapID, expired)
+	token, generetaErr := svc.jwtHandler.GenerateJWT(userEntity.ID, user.Email, userRole.Name, bitGroups, expired)
 	if generetaErr != nil {
 		message := fmt.Sprintf("system error while generating token (%s)", generetaErr.Error())
 		return "", fiber.NewError(fiber.StatusInternalServerError, message)
