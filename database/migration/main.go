@@ -85,26 +85,27 @@ func seeding() {
 			log.Panicf("Error while creating Roles: %s", createErr)
 		}
 	}
-	for _, data := range rbac.AllPermissions() {
-		data.SetCreateTimes()
-		if createErr := tx.Create(&data).Error; createErr != nil {
+	for _, perm := range rbac.AllPermissions() {
+		perm.SetCreateTimes()
+		perm.ID = 0
+		if createErr := tx.Create(&perm).Error; createErr != nil {
 			tx.Rollback()
 			log.Panicf("Error while creating Permissions: %s", createErr)
 		}
 
-		if data.ID <= 20 {
+		if perm.ID <= 20 {
 			if createErr := tx.Create(&entity.RoleHasPermission{
 				RoleID:       1, // admin
-				PermissionID: data.ID,
+				PermissionID: perm.ID,
 			}).Error; createErr != nil {
 				tx.Rollback()
 				log.Panicf("Error while creating Roles: %s", createErr)
 			}
 		}
-		if data.ID > 10 {
+		if perm.ID > 10 {
 			if createErr := tx.Create(&entity.RoleHasPermission{
 				RoleID:       2, // user
-				PermissionID: data.ID,
+				PermissionID: perm.ID,
 			}).Error; createErr != nil {
 				tx.Rollback()
 				log.Panicf("Error while creating Roles: %s", createErr)

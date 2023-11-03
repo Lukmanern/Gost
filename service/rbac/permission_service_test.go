@@ -58,10 +58,10 @@ func TestSuccessCRUD_Permission(t *testing.T) {
 	}
 	permID, createErr := svc.Create(ctx, modelPerm)
 	if createErr != nil || permID < 1 {
-		t.Error("should not error and permID should more than one")
+		t.Error("should not error and permID should more than one, but got", createErr.Error())
 	}
 	defer func() {
-		svc.Delete(ctx, permID)
+		// svc.Delete(ctx, permID)
 	}()
 
 	permByID, getErr := svc.GetByID(ctx, permID)
