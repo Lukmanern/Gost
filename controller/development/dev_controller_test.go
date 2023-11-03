@@ -5,7 +5,6 @@
 package controller
 
 import (
-	"log"
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
@@ -16,13 +15,6 @@ import (
 func init() {
 	// Check env and database
 	env.ReadConfig("./../../.env")
-	c := env.Configuration()
-	dbURI := c.GetDatabaseURI()
-	privKey := c.GetPrivateKey()
-	pubKey := c.GetPublicKey()
-	if dbURI == "" || privKey == nil || pubKey == nil {
-		log.Fatal("Database URI or keys aren't valid")
-	}
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()

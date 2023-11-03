@@ -5,7 +5,6 @@
 package service
 
 import (
-	"log"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,13 +23,6 @@ import (
 func init() {
 	// Check env and database
 	env.ReadConfig("./../../.env")
-	c := env.Configuration()
-	dbURI := c.GetDatabaseURI()
-	privKey := c.GetPrivateKey()
-	pubKey := c.GetPublicKey()
-	if dbURI == "" || privKey == nil || pubKey == nil {
-		log.Fatal("Database URI or keys aren't valid")
-	}
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()

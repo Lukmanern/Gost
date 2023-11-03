@@ -36,12 +36,6 @@ func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
 	appUrl = config.AppUrl
-	dbURI := config.GetDatabaseURI()
-	privKey := config.GetPrivateKey()
-	pubKey := config.GetPublicKey()
-	if dbURI == "" || privKey == nil || pubKey == nil {
-		log.Fatal("Database URI or keys aren't valid")
-	}
 
 	connector.LoadDatabase()
 	r := connector.LoadRedisDatabase()
