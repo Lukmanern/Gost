@@ -34,7 +34,7 @@ func init() {
 	timeNow := time.Now()
 	params = GenTokenParams{
 		ID:    1,
-		Email: helper.RandomEmails(1)[0],
+		Email: helper.RandomEmail(),
 		Role:  "test-role",
 		Per: map[int]int{
 			1: 1,
@@ -121,7 +121,7 @@ func TestJWTHandler_InvalidateToken(t *testing.T) {
 func TestJWTHandler_IsBlacklisted(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	cookie, err := jwtHandler.GenerateJWT(1000,
-		helper.RandomEmails(1)[0], "example-role",
+		helper.RandomEmail(), "example-role",
 		params.Per, time.Now().Add(1*time.Hour))
 	if err != nil {
 		t.Error("generate cookie/token should not error")

@@ -78,7 +78,7 @@ func Test_Register(t *testing.T) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -111,7 +111,7 @@ func Test_Register(t *testing.T) {
 			},
 			payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(10),
 				RoleID:   1, // admin
 			},
@@ -126,7 +126,7 @@ func Test_Register(t *testing.T) {
 			},
 			payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(10),
 				RoleID:   1, // admin
 			},
@@ -141,7 +141,7 @@ func Test_Register(t *testing.T) {
 			},
 			payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(10),
 				RoleID:   1, // admin
 			},
@@ -171,7 +171,7 @@ func Test_Register(t *testing.T) {
 			},
 			payload: &model.UserRegister{
 				Name:     "",
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(10),
 				RoleID:   1, // admin
 			},
@@ -186,7 +186,7 @@ func Test_Register(t *testing.T) {
 			},
 			payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: "",
 				RoleID:   1, // admin
 			},
@@ -258,7 +258,7 @@ func Test_AccountActivation(t *testing.T) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -366,7 +366,7 @@ func Test_DeleteAccountActivation(t *testing.T) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -475,7 +475,7 @@ func Test_ForgetPassword(t *testing.T) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -533,7 +533,7 @@ func Test_ForgetPassword(t *testing.T) {
 			caseName: "faield forget password: email not found",
 			respCode: http.StatusNotFound,
 			payload: &model.UserForgetPassword{
-				Email: helper.RandomEmails(1)[0],
+				Email: helper.RandomEmail(),
 			},
 		},
 		{
@@ -586,7 +586,7 @@ func Test_ResetPassword(t *testing.T) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -734,7 +734,7 @@ func Test_Login(t *testing.T) {
 	// create inactive user
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -764,7 +764,7 @@ func Test_Login(t *testing.T) {
 	func() {
 		createdUser_2 := model.UserRegister{
 			Name:     helper.RandomString(10),
-			Email:    helper.RandomEmails(1)[0],
+			Email:    helper.RandomEmail(),
 			Password: helper.RandomString(10),
 			RoleID:   1, // admin
 		}
@@ -853,7 +853,7 @@ func Test_Login(t *testing.T) {
 			respCode: http.StatusNotFound,
 			payload: &model.UserLogin{
 				Password: "secret123",
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				IP:       helper.RandomIPAddress(),
 			},
 		},
@@ -967,7 +967,7 @@ func Test_Logout(t *testing.T) {
 	// create inactive user
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -1082,7 +1082,7 @@ func Test_UpdatePassword(t *testing.T) {
 	// create inactive user
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -1229,7 +1229,7 @@ func Test_UpdateProfile(t *testing.T) {
 	// create inactive user
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -1361,7 +1361,7 @@ func Test_MyProfile(t *testing.T) {
 	// create inactive user
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}

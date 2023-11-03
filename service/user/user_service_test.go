@@ -65,7 +65,7 @@ func Test_SuccessRegister(t *testing.T) {
 
 	modelUserRegis := model.UserRegister{
 		Name:     helper.RandomString(12),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(12),
 		RoleID:   1, // admin
 	}
@@ -303,7 +303,7 @@ func Test_FailedRegister(t *testing.T) {
 
 	modelUserRegis := model.UserRegister{
 		Name:     helper.RandomString(12),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(12),
 		RoleID:   -10, // failed
 	}

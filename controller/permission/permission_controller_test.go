@@ -511,7 +511,7 @@ func createUserAndToken() (userID int, token string) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}

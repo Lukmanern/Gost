@@ -8,16 +8,20 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	repository "github.com/Lukmanern/gost/repository/user"
+	rbacService "github.com/Lukmanern/gost/service/rbac"
+	service "github.com/Lukmanern/gost/service/user"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -51,7 +55,7 @@ func createUser(role_id int) *entity.User {
 	createdAt := timeNow.Add(-5 * time.Minute)
 	userEntt = entity.User{
 		Name:             "name",
-		Email:            helper.RandomEmails(2)[0],
+		Email:            helper.RandomEmail(),
 		Password:         "password",
 		VerificationCode: &code,
 		ActivatedAt:      &timeNow,
@@ -669,4 +673,24 @@ func TestRunApp_MIDDLEWARE_USER_TEST(t *testing.T) {
 			t.Error("should be : " + responseStr)
 		}
 	}
+}
+
+func createUserAndToken(roleID int) (int, string) {
+	permissionService := rbacService.NewPermissionService()
+	roleService := rbacService.NewRoleService(permissionService)
+	userService := service.NewUserService(roleService)
+
+	userID, regisErr := userService.Register(ctx, model.UserRegister{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmail(),
+		Password: helper.RandomString(10),
+		RoleID:   roleID,
+	})
+	if regisErr != nil {
+		log.Fatalf("\n\nfailed create user, error: %v\n", regisErr)
+	}
+	userService.MyProfile(ctx, userID)
+	userService.Verification(ctx, "")
+
+	return 0, ""
 }

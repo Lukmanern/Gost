@@ -32,6 +32,19 @@ func TestRandomEmails(t *testing.T) {
 	}
 }
 
+func TestRandomEmail(t *testing.T) {
+	for i := 0; i < 25; i++ {
+		email := RandomEmail()
+		validateErr := ValidateEmails(email)
+		if validateErr != nil {
+			t.Error("should not error")
+		}
+		if len(email) < 25 {
+			t.Error("should more than 25")
+		}
+	}
+}
+
 func TestNewFiberCtx(t *testing.T) {
 	c := NewFiberCtx()
 	if c == nil {

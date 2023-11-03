@@ -57,7 +57,7 @@ func TestSuccessCRUD(t *testing.T) {
 
 	userModel := model.UserCreate{
 		Name:     "John Doe",
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: "password",
 		IsAdmin:  true,
 	}
