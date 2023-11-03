@@ -100,7 +100,7 @@ func seeding() {
 				log.Panicf("Error while creating Roles: %s", createErr)
 			}
 		}
-		if data.ID > 20 {
+		if data.ID > 10 {
 			if createErr := tx.Create(&entity.RoleHasPermission{
 				RoleID:       2, // user
 				PermissionID: data.ID,

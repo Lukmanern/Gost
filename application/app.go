@@ -14,7 +14,6 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
-	"github.com/Lukmanern/gost/internal/rbac"
 )
 
 var (
@@ -60,10 +59,6 @@ func setup() {
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
-
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionIDsHashMap()
 }
 
 func RunApp() {

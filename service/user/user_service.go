@@ -21,7 +21,6 @@ import (
 	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
-	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
 	emailService "github.com/Lukmanern/gost/service/email"
 	roleService "github.com/Lukmanern/gost/service/rbac"
@@ -236,9 +235,9 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 
 	// Todo : refactor
 	userRole := userEntity.Roles[0]
-	permissionMapID := make(rbac.PermissionMap, 0)
+	permissionMapID := make(map[int]int, 0)
 	for _, permission := range userRole.Permissions {
-		permissionMapID[uint8(permission.ID)] = 0b_0001
+		permissionMapID[permission.ID] = 0b_0001
 	}
 	config := env.Configuration()
 	expired := time.Now().Add(config.AppAccessTokenTTL)

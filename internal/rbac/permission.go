@@ -2,186 +2,70 @@ package rbac
 
 import (
 	"log"
-	"sync"
 
-	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
-	"github.com/Lukmanern/gost/internal/env"
-	"gorm.io/gorm"
 )
 
-// Todo : refactor
-
-// uint8 is the lowest memory cost in Golang
-// maximum value length is 255
-type (
-	PermissionMap     = map[uint8]uint8
-	PermissionNameMap = map[string]uint8
-)
-
-var (
-	PermissionHashMap     PermissionMap
-	PermissionNameHashMap PermissionNameMap
-
-	db                 *gorm.DB
-	allPermissions     []entity.Permission
-	allPermissionsOnce sync.Once
-)
-
-func resetAllPermissions() {
-	allPermissionsOnce.Do(func() {
-		env.ReadConfig("./../../.env")
-		db = connector.LoadDatabase()
-	})
-	allPermissions = []entity.Permission{}
-	db.Find(&allPermissions)
-}
-
-// Run once at app.go setupfunc
-func PermissionIDsHashMap() PermissionMap {
-	PermissionHashMap := make(PermissionMap, 0)
-	resetAllPermissions()
-	// allPermissions := AllPermissions()
-	for i := range allPermissions {
-		PermissionHashMap[uint8(i+1)] = 0b_0001
-	}
-
-	return PermissionHashMap
-}
-
-// Run once at app.go setupfunc
-func PermissionNamesHashMap() PermissionNameMap {
-	resetAllPermissions()
-	// allPermissions := AllPermissions()
-	if len(allPermissions) > 255 {
-		// if you want make more than 255 permissions/ access
-		// you can modified type:PermissionMap and using
-		// uint16 instead of uint8
-		log.Fatal("permissions in uint8 should less than 255")
-	}
-	PermissionNameHashMap := make(PermissionNameMap)
-	for i, permission := range allPermissions {
-		PermissionNameHashMap[permission.Name] = uint8(i + 1)
-	}
-
-	return PermissionNameHashMap
-}
-
-// you should add all your
-// permissions to this func
-// for migration and seeder
 func AllPermissions() []entity.Permission {
-	permissionNames := []string{
+	permissions := []entity.Permission{
 		// user
-		PermissionCreateUser, PermissionViewUser,
-		PermissionUpdateUser, PermissionDeleteUser,
+		PermCreateUser, PermViewUser, PermUpdateUser, PermDeleteUser,
+		// user has role
+		PermCreateUserHasRole, PermViewUserHasRole, PermUpdateUserHasRole, PermDeleteUserHasRole,
 		// role
-		PermissionCreateRole, PermissionViewRole,
-		PermissionUpdateRole, PermissionDeleteRole,
-		// user has roles
-		PermissionCreateUserHasRole, PermissionViewUserHasRole,
-		PermissionUpdateUserHasRole, PermissionDeleteUserHasRole,
-		// permission
-		PermissionCreatePermission, PermissionViewPermission,
-		PermissionUpdatePermission, PermissionDeletePermission,
+		PermCreateRole, PermViewRole, PermUpdateRole, PermDeleteRole,
 		// role has permissions
-		PermissionCreateRoleHasPermissions, PermissionViewRoleHasPermissions,
-		PermissionUpdateRoleHasPermissions, PermissionDeleteRoleHasPermissions,
-
-		// Just for test
-		PermissionCreateOne, PermissionViewOne,
-		PermissionUpdateOne, PermissionDeleteOne,
-		// Just for test
-		PermissionCreateTwo, PermissionViewTwo,
-		PermissionUpdateTwo, PermissionDeleteTwo,
-		// Just for test
-		PermissionCreateThree, PermissionViewThree,
-		PermissionUpdateThree, PermissionDeleteThree,
-		// Just for test
-		PermissionCreateFour, PermissionViewFour,
-		PermissionUpdateFour, PermissionDeleteFour,
-		// Just for test
-		PermissionCreateFive, PermissionViewFive,
-		PermissionUpdateFive, PermissionDeleteFive,
-		// Just for test
-		PermissionCreateSix, PermissionViewSix,
-		PermissionUpdateSix, PermissionDeleteSix,
-		// Just for test
-		PermissionCreateSeven, PermissionViewSeven,
-		PermissionUpdateSeven, PermissionDeleteSeven,
+		PermCreateRoleHasPermissions, PermViewRoleHasPermissions, PermUpdateRoleHasPermissions, PermDeleteRoleHasPermissions,
+		// permission
+		PermCreatePermission, PermViewPermission, PermUpdatePermission, PermDeletePermission,
+		// ...
+		// add more permissions
 	}
 
-	permissions := []entity.Permission{}
-	for _, name := range permissionNames {
-		newPermissionEntity := entity.Permission{
-			Name: name,
+	// check id and name
+	// id and name should unique
+	checkIDs := make(map[int]int)
+	checkNames := make(map[string]int)
+	for _, perm := range permissions {
+		checkIDs[perm.ID] += 1
+		checkNames[perm.Name] += 1
+		if checkIDs[perm.ID] > 1 || checkNames[perm.Name] > 1 {
+			log.Fatal("permission name or id should unique, but got:", perm)
 		}
-		newPermissionEntity.SetCreateTimes()
-		permissions = append(permissions, newPermissionEntity)
 	}
 
 	return permissions
 }
 
-const (
-	PermissionCreateUser = "create-user"
-	PermissionViewUser   = "view-user"
-	PermissionUpdateUser = "update-user"
-	PermissionDeleteUser = "delete-user"
+var (
+	PermCreateUser = entity.Permission{ID: 1, Name: "create-user", Description: "CRUD for User Entity"}
+	PermViewUser   = entity.Permission{ID: 2, Name: "view-user", Description: "CRUD for User Entity"}
+	PermUpdateUser = entity.Permission{ID: 3, Name: "update-user", Description: "CRUD for User Entity"}
+	PermDeleteUser = entity.Permission{ID: 4, Name: "delete-user", Description: "CRUD for User Entity"}
 
-	PermissionCreateRole = "create-role"
-	PermissionViewRole   = "view-role"
-	PermissionUpdateRole = "update-role"
-	PermissionDeleteRole = "delete-role"
+	PermCreateUserHasRole = entity.Permission{ID: 5, Name: "create-user-has-role", Description: "CRUD for User-Has-Role entity"}
+	PermViewUserHasRole   = entity.Permission{ID: 6, Name: "view-user-has-role", Description: "CRUD for User-Has-Role entity"}
+	PermUpdateUserHasRole = entity.Permission{ID: 7, Name: "update-user-has-role", Description: "CRUD for User-Has-Role entity"}
+	PermDeleteUserHasRole = entity.Permission{ID: 8, Name: "delete-user-has-role", Description: "CRUD for User-Has-Role entity"}
 
-	PermissionCreateUserHasRole = "create-user-has-role"
-	PermissionViewUserHasRole   = "view-user-has-role"
-	PermissionUpdateUserHasRole = "update-user-has-role"
-	PermissionDeleteUserHasRole = "delete-user-has-role"
+	PermCreateRole = entity.Permission{ID: 9, Name: "create-role", Description: "CRUD for Role Entity"}
+	PermViewRole   = entity.Permission{ID: 10, Name: "view-role", Description: "CRUD for Role Entity"}
+	PermUpdateRole = entity.Permission{ID: 11, Name: "update-role", Description: "CRUD for Role Entity"}
+	PermDeleteRole = entity.Permission{ID: 12, Name: "delete-role", Description: "CRUD for Role Entity"}
 
-	PermissionCreatePermission = "create-permission"
-	PermissionViewPermission   = "read-permission"
-	PermissionUpdatePermission = "update-permission"
-	PermissionDeletePermission = "delete-permission"
+	PermCreateRoleHasPermissions = entity.Permission{ID: 13, Name: "create-role-has-permissions", Description: "CRUD for Role-Has-Permission Entity"}
+	PermViewRoleHasPermissions   = entity.Permission{ID: 14, Name: "view-role-has-permissions", Description: "CRUD for Role-Has-Permission Entity"}
+	PermUpdateRoleHasPermissions = entity.Permission{ID: 15, Name: "update-role-has-permissions", Description: "CRUD for Role-Has-Permission Entity"}
+	PermDeleteRoleHasPermissions = entity.Permission{ID: 16, Name: "delete-role-has-permissions", Description: "CRUD for Role-Has-Permission Entity"}
 
-	PermissionCreateRoleHasPermissions = "create-role-has-permissions"
-	PermissionViewRoleHasPermissions   = "view-role-has-permissions"
-	PermissionUpdateRoleHasPermissions = "update-role-has-permissions"
-	PermissionDeleteRoleHasPermissions = "delete-role-has-permissions"
+	PermCreatePermission = entity.Permission{ID: 17, Name: "create-permission", Description: "CRUD for Role Entity"}
+	PermViewPermission   = entity.Permission{ID: 18, Name: "read-permission", Description: "CRUD for Role Entity"}
+	PermUpdatePermission = entity.Permission{ID: 19, Name: "update-permission", Description: "CRUD for Role Entity"}
+	PermDeletePermission = entity.Permission{ID: 20, Name: "delete-permission", Description: "CRUD for Role Entity"}
 
-	// Just For Test Large JWT data
-	PermissionCreateOne = "create-one"
-	PermissionViewOne   = "view-one"
-	PermissionUpdateOne = "update-one"
-	PermissionDeleteOne = "delete-one"
-
-	PermissionCreateTwo = "create-two"
-	PermissionViewTwo   = "view-two"
-	PermissionUpdateTwo = "update-two"
-	PermissionDeleteTwo = "delete-two"
-
-	PermissionCreateThree = "create-three"
-	PermissionViewThree   = "view-three"
-	PermissionUpdateThree = "update-three"
-	PermissionDeleteThree = "delete-three"
-
-	PermissionCreateFour = "create-four"
-	PermissionViewFour   = "view-four"
-	PermissionUpdateFour = "update-four"
-	PermissionDeleteFour = "delete-four"
-
-	PermissionCreateFive = "create-five"
-	PermissionViewFive   = "view-five"
-	PermissionUpdateFive = "update-five"
-	PermissionDeleteFive = "delete-five"
-
-	PermissionCreateSix = "create-six"
-	PermissionViewSix   = "view-six"
-	PermissionUpdateSix = "update-six"
-	PermissionDeleteSix = "delete-six"
-
-	PermissionCreateSeven = "create-seven"
-	PermissionViewSeven   = "view-seven"
-	PermissionUpdateSeven = "update-seven"
-	PermissionDeleteSeven = "delete-seven"
+	// ...
+	// add more permissions
+	// Rule :
+	// Name should unique
+	// ID +1 from before
 )

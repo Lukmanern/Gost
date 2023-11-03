@@ -16,25 +16,25 @@ func getMiddlewareTestingRoute(router fiber.Router) {
 	// and role user hasn't, so they (user with role user)
 	// can't see the endpoint
 	middlewareTesting.Get("create-rhp",
-		jwtHandler.CheckHasPermission(rbac.PermissionCreateRoleHasPermissions), handler)
+		jwtHandler.CheckHasPermission(rbac.PermCreateRoleHasPermissions.ID), handler)
 	middlewareTesting.Get("view-rhp",
-		jwtHandler.CheckHasPermission(rbac.PermissionViewRoleHasPermissions), handler)
+		jwtHandler.CheckHasPermission(rbac.PermViewRoleHasPermissions.ID), handler)
 	middlewareTesting.Get("update-rhp",
-		jwtHandler.CheckHasPermission(rbac.PermissionUpdateRoleHasPermissions), handler)
+		jwtHandler.CheckHasPermission(rbac.PermUpdateRoleHasPermissions.ID), handler)
 	middlewareTesting.Get("delete-rhp",
-		jwtHandler.CheckHasPermission(rbac.PermissionDeleteRoleHasPermissions), handler)
+		jwtHandler.CheckHasPermission(rbac.PermDeleteRoleHasPermissions.ID), handler)
 
 	// role user has these permissions
 	// and role admin hasn't, so they (user with role admin)
 	// can't see the endpoint
-	middlewareTesting.Get("create-exmpl",
-		jwtHandler.CheckHasPermission(rbac.PermissionCreateOne), handler)
-	middlewareTesting.Get("view-exmpl",
-		jwtHandler.CheckHasPermission(rbac.PermissionViewOne), handler)
-	middlewareTesting.Get("update-exmpl",
-		jwtHandler.CheckHasPermission(rbac.PermissionUpdateOne), handler)
-	middlewareTesting.Get("delete-exmpl",
-		jwtHandler.CheckHasPermission(rbac.PermissionDeleteOne), handler)
+	// middlewareTesting.Get("create-exmpl",
+	// 	jwtHandler.CheckHasPermission(rbac.PermCreateOne.ID), handler)
+	// middlewareTesting.Get("view-exmpl",
+	// 	jwtHandler.CheckHasPermission(rbac.PermViewOne.ID), handler)
+	// middlewareTesting.Get("update-exmpl",
+	// 	jwtHandler.CheckHasPermission(rbac.PermUpdateOne.ID), handler)
+	// middlewareTesting.Get("delete-exmpl",
+	// 	jwtHandler.CheckHasPermission(rbac.PermDeleteOne.ID), handler)
 }
 
 func FakeHandler(c *fiber.Ctx) error {

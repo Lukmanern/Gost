@@ -14,7 +14,6 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
-	"github.com/Lukmanern/gost/internal/rbac"
 	"github.com/Lukmanern/gost/internal/response"
 )
 
@@ -25,10 +24,10 @@ type JWTHandler struct {
 }
 
 type Claims struct {
-	ID          int                `json:"id"`
-	Email       string             `json:"email"`
-	Role        string             `json:"role"`
-	Permissions rbac.PermissionMap `json:"permissions"`
+	ID          int         `json:"id"`
+	Email       string      `json:"email"`
+	Role        string      `json:"role"`
+	Permissions map[int]int `json:"permissions"`
 	jwt.RegisteredClaims
 }
 
@@ -62,7 +61,7 @@ func NewJWTHandler() *JWTHandler {
 }
 
 // This func used for login.
-func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions rbac.PermissionMap, expired time.Time) (t string, err error) {
+func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions map[int]int, expired time.Time) (t string, err error) {
 	if email == "" || role == "" || len(permissions) < 1 {
 		return "", errors.New("email/ role/ permission too short or void")
 	}
@@ -180,22 +179,44 @@ func (j JWTHandler) GenerateClaims(cookieToken string) *Claims {
 	return &claims
 }
 
+func BuildBitGroups(permIDs ...int) map[int]int {
+	groups := make(map[int]int)
+	for _, id := range permIDs {
+		group := (id - 1) / 8
+		bitPosition := uint(id - 1 - (group * 8))
+		groups[group+1] |= 1 << bitPosition
+	}
+	return groups
+}
+
+func CheckHasPermission(endpointPermID int, userPermissions map[int]int) bool {
+	endpointBits := BuildBitGroups(endpointPermID)
+	// it seems O(n), but it's actually O(1)
+	// because length of $endpointBits is 1
+	for key, requiredBits := range endpointBits {
+		userBits, ok := userPermissions[key]
+		if !ok || requiredBits&userBits == 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // type PermissionMap = map[uint8]uint8
-func (j JWTHandler) HasPermission(c *fiber.Ctx, permission string) error {
+func (j JWTHandler) HasPermission(c *fiber.Ctx, endpointPermID int) error {
 	claims, ok := c.Locals("claims").(*Claims)
 	if !ok {
 		return response.Unauthorized(c)
 	}
-
-	// O(1) checking
-	permissionMapID := claims.Permissions
-	id, ok1 := rbac.PermissionNameHashMap[permission]
-	if !ok1 || id < 1 {
-		return response.Unauthorized(c)
-	}
-	valueOne, ok2 := permissionMapID[id]
-	if !ok2 || valueOne != 1 {
-		return response.Unauthorized(c)
+	userPermissions := claims.Permissions
+	endpointBits := BuildBitGroups(endpointPermID)
+	// it seems O(n), but it's actually O(1)
+	// because length of $endpointBits is 1
+	for key, requiredBits := range endpointBits {
+		userBits, ok := userPermissions[key]
+		if !ok || requiredBits&userBits == 0 {
+			return response.Unauthorized(c)
+		}
 	}
 	return c.Next()
 }
@@ -209,9 +230,9 @@ func (j JWTHandler) HasRole(c *fiber.Ctx, role string) error {
 }
 
 // for handler or middleware
-func (j JWTHandler) CheckHasPermission(permissions string) func(c *fiber.Ctx) error {
+func (j JWTHandler) CheckHasPermission(endpointPermID int) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		return j.HasPermission(c, permissions)
+		return j.HasPermission(c, endpointPermID)
 	}
 }
 
