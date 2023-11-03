@@ -7,7 +7,7 @@ package application
 import (
 	"github.com/gofiber/fiber/v2"
 
-	controller "github.com/Lukmanern/gost/controller/dev"
+	controller "github.com/Lukmanern/gost/controller/development"
 	"github.com/Lukmanern/gost/internal/middleware"
 )
 

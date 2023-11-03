@@ -66,6 +66,7 @@ func TestNewUserController(t *testing.T) {
 }
 
 func Test_Register(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -245,6 +246,7 @@ func Test_Register(t *testing.T) {
 }
 
 func Test_AccountActivation(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -352,6 +354,7 @@ func Test_AccountActivation(t *testing.T) {
 }
 
 func Test_DeleteAccountActivation(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -460,6 +463,7 @@ func Test_DeleteAccountActivation(t *testing.T) {
 }
 
 func Test_ForgetPassword(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -570,6 +574,7 @@ func Test_ForgetPassword(t *testing.T) {
 }
 
 func Test_ResetPassword(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -716,6 +721,7 @@ func Test_ResetPassword(t *testing.T) {
 }
 
 func Test_Login(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -950,6 +956,7 @@ func Test_Login(t *testing.T) {
 }
 
 func Test_Logout(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -1211,6 +1218,7 @@ func Test_UpdatePassword(t *testing.T) {
 }
 
 func Test_UpdateProfile(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr

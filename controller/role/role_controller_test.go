@@ -20,13 +20,15 @@ import (
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
 
+	permissionController "github.com/Lukmanern/gost/controller/permission"
 	service "github.com/Lukmanern/gost/service/rbac"
 )
 
 var (
-	permService2   service.PermissionService
+	permService    service.PermissionService
 	roleService    service.RoleService
 	roleController RoleController
+	permController permissionController.PermissionController
 	appUrl         string
 )
 
@@ -44,8 +46,10 @@ func init() {
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
 
-	permService2 = service.NewPermissionService()
-	roleService = service.NewRoleService(permService2)
+	permService = service.NewPermissionService()
+	permController = permissionController.NewPermissionController(permService)
+
+	roleService = service.NewRoleService(permService)
 	roleController = NewRoleController(roleService)
 }
 
@@ -60,7 +64,7 @@ func Test_Role_Create(t *testing.T) {
 	permIDs := make([]int, 0)
 	for i := 0; i < 4; i++ {
 		// create 1 permission
-		permID, createErr := permService2.Create(ctx, model.PermissionCreate{
+		permID, createErr := permService.Create(ctx, model.PermissionCreate{
 			Name:        helper.RandomString(11),
 			Description: helper.RandomString(30),
 		})
@@ -68,7 +72,7 @@ func Test_Role_Create(t *testing.T) {
 			t.Fatal("should not error while creating permission")
 		}
 		defer func() {
-			permService2.Delete(ctx, permID)
+			permService.Delete(ctx, permID)
 		}()
 
 		permIDs = append(permIDs, permID)
@@ -203,7 +207,7 @@ func Test_Role_Connect(t *testing.T) {
 	permIDs := make([]int, 0)
 	for i := 0; i < 4; i++ {
 		// create 1 permission
-		permID, createErr := permService2.Create(ctx, model.PermissionCreate{
+		permID, createErr := permService.Create(ctx, model.PermissionCreate{
 			Name:        helper.RandomString(11),
 			Description: helper.RandomString(30),
 		})
@@ -211,7 +215,7 @@ func Test_Role_Connect(t *testing.T) {
 			t.Fatal("should not error while creating permission")
 		}
 		defer func() {
-			permService2.Delete(ctx, permID)
+			permService.Delete(ctx, permID)
 		}()
 
 		permIDs = append(permIDs, permID)
@@ -334,7 +338,7 @@ func Test_Role_Get(t *testing.T) {
 	permIDs := make([]int, 0)
 	for i := 0; i < 4; i++ {
 		// create 1 permission
-		permID, createErr := permService2.Create(ctx, model.PermissionCreate{
+		permID, createErr := permService.Create(ctx, model.PermissionCreate{
 			Name:        helper.RandomString(11),
 			Description: helper.RandomString(30),
 		})
@@ -342,7 +346,7 @@ func Test_Role_Get(t *testing.T) {
 			t.Fatal("should not error while creating permission")
 		}
 		defer func() {
-			permService2.Delete(ctx, permID)
+			permService.Delete(ctx, permID)
 		}()
 
 		permIDs = append(permIDs, permID)
@@ -430,7 +434,7 @@ func Test_Role_GetAll(t *testing.T) {
 	permIDs := make([]int, 0)
 	for i := 0; i < 4; i++ {
 		// create 1 permission
-		permID, createErr := permService2.Create(ctx, model.PermissionCreate{
+		permID, createErr := permService.Create(ctx, model.PermissionCreate{
 			Name:        helper.RandomString(11),
 			Description: helper.RandomString(30),
 		})
@@ -438,7 +442,7 @@ func Test_Role_GetAll(t *testing.T) {
 			t.Fatal("should not error while creating permission")
 		}
 		defer func() {
-			permService2.Delete(ctx, permID)
+			permService.Delete(ctx, permID)
 		}()
 
 		permIDs = append(permIDs, permID)
@@ -521,7 +525,7 @@ func Test_Role_Update(t *testing.T) {
 	permIDs := make([]int, 0)
 	for i := 0; i < 4; i++ {
 		// create 1 permission
-		permID, createErr := permService2.Create(ctx, model.PermissionCreate{
+		permID, createErr := permService.Create(ctx, model.PermissionCreate{
 			Name:        helper.RandomString(11),
 			Description: helper.RandomString(30),
 		})
@@ -529,7 +533,7 @@ func Test_Role_Update(t *testing.T) {
 			t.Fatal("should not error while creating permission")
 		}
 		defer func() {
-			permService2.Delete(ctx, permID)
+			permService.Delete(ctx, permID)
 		}()
 
 		permIDs = append(permIDs, permID)
@@ -660,7 +664,7 @@ func Test_Role_Delete(t *testing.T) {
 	permIDs := make([]int, 0)
 	for i := 0; i < 4; i++ {
 		// create 1 permission
-		permID, createErr := permService2.Create(ctx, model.PermissionCreate{
+		permID, createErr := permService.Create(ctx, model.PermissionCreate{
 			Name:        helper.RandomString(11),
 			Description: helper.RandomString(30),
 		})
@@ -668,7 +672,7 @@ func Test_Role_Delete(t *testing.T) {
 			t.Fatal("should not error while creating permission")
 		}
 		defer func() {
-			permService2.Delete(ctx, permID)
+			permService.Delete(ctx, permID)
 		}()
 
 		permIDs = append(permIDs, permID)

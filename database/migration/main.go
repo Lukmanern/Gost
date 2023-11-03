@@ -86,6 +86,7 @@ func seeding() {
 		}
 	}
 	for _, data := range rbac.AllPermissions() {
+		data.SetCreateTimes()
 		if createErr := tx.Create(&data).Error; createErr != nil {
 			tx.Rollback()
 			log.Panicf("Error while creating Permissions: %s", createErr)
