@@ -56,8 +56,8 @@ var (
 func NewUserService(roleService roleService.RoleService) UserService {
 	userAuthServiceOnce.Do(func() {
 		userAuthService = &UserServiceImpl{
-			repository:   repository.NewUserRepository(),
 			roleService:  roleService,
+			repository:   repository.NewUserRepository(),
 			emailService: emailService.NewEmailService(),
 			jwtHandler:   middleware.NewJWTHandler(),
 			redis:        connector.LoadRedisDatabase(),
