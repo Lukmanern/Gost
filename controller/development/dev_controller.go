@@ -24,6 +24,7 @@ type DevController interface {
 	CheckNewRole(c *fiber.Ctx) error
 	CheckNewPermission(c *fiber.Ctx) error
 	UploadFile(c *fiber.Ctx) error
+	DownloadFile(c *fiber.Ctx) error
 }
 
 type DevControllerImpl struct {
@@ -135,11 +136,41 @@ func (ctr DevControllerImpl) CheckNewPermission(c *fiber.Ctx) error {
 }
 
 func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return response.BadRequest(c, "failed to parse form file: "+err.Error())
+	}
+	if file == nil {
+		return response.BadRequest(c, "file is nil or not found")
+	}
+	mimeType := file.Header.Get("Content-Type")
+	if mimeType != "application/pdf" {
+		return response.BadRequest(c, "only PDF file are allowed for upload")
+	}
+	maxSize := int64(3 * 1024 * 1024) // 3MB in bytes
+	if file.Size > maxSize {
+		return response.BadRequest(c, "file size exceeds the maximum allowed (3MB)")
+	}
+
 	service := uploadService.NewClient("", "", "")
-	_, err := service.Upload(nil)
+	fileUrl, err := service.Upload(nil)
 	if err != nil {
 		return response.Error(c, "internal server error: "+err.Error())
 	}
 
-	return response.SuccessCreated(c, nil)
+	return response.SuccessCreated(c, map[string]any{
+		"file_url": fileUrl,
+	})
+}
+
+func (ctr DevControllerImpl) DownloadFile(c *fiber.Ctx) error {
+	service := uploadService.NewClient("", "", "")
+	fileUrl, err := service.Upload(nil)
+	if err != nil {
+		return response.Error(c, "internal server error: "+err.Error())
+	}
+
+	return response.SuccessCreated(c, map[string]any{
+		"file_url": fileUrl,
+	})
 }

@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/fatih/color v1.15.0
 	github.com/go-playground/validator/v10 v10.15.5
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/stretchr/testify v1.8.4
@@ -31,7 +32,6 @@ require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/fatih/color v1.15.0 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
@@ -49,7 +49,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
-	github.com/supabase-community/storage-go v0.7.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
