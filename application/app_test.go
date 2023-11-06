@@ -41,7 +41,7 @@ func init() {
 	ctx = context.Background()
 }
 
-// helper func
+// helper func (unused)
 func CreateUserAndToken(roleID int) (int, string) {
 	permissionService := rbacService.NewPermissionService()
 	roleService := rbacService.NewRoleService(permissionService)

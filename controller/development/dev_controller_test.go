@@ -5,12 +5,16 @@
 package controller
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
+	"github.com/gofiber/fiber/v2"
 )
+
+type handlerF = func(c *fiber.Ctx) error
 
 func init() {
 	// Check env and database
@@ -60,5 +64,37 @@ func TestNewDevControllerImpl(t *testing.T) {
 	checkPermErr := ctr.CheckNewPermission(c)
 	if checkPermErr != nil {
 		t.Error("err: ", checkPermErr)
+	}
+}
+
+func Test_Methods(t *testing.T) {
+	c := helper.NewFiberCtx()
+	ctr := NewDevControllerImpl()
+	if ctr == nil || c == nil {
+		t.Error("should not nil")
+	}
+
+	testCases := []struct {
+		caseName string
+		method   handlerF
+		respCode int
+	}{
+		{"PingDatabase", ctr.PingDatabase, http.StatusOK},
+		{"PingRedis", ctr.PingRedis, http.StatusOK},
+		{"Panic", ctr.Panic, http.StatusInternalServerError},
+		{"StoringToRedis", ctr.StoringToRedis, http.StatusCreated},
+		{"GetFromRedis", ctr.GetFromRedis, http.StatusOK},
+		{"CheckNewRole", ctr.CheckNewRole, http.StatusOK},
+		{"CheckNewPermission", ctr.CheckNewPermission, http.StatusOK},
+	}
+
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		tc.method(c)
+		resp := c.Response()
+		if resp.StatusCode() != tc.respCode {
+			t.Errorf("Expected response code %d, but got %d on: %s", tc.respCode, resp.StatusCode(), tc.caseName)
+		}
 	}
 }
