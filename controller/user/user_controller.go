@@ -85,7 +85,7 @@ func (ctr UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	ctx := c.Context()
-	err := ctr.service.Verification(ctx, user.Code)
+	err := ctr.service.Verification(ctx, user)
 	if err != nil {
 		fiberErr, ok := err.(*fiber.Error)
 		if ok {
@@ -94,21 +94,21 @@ func (ctr UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 		return response.Error(c, "internal server error: "+err.Error())
 	}
 
-	message := "Thank you for your confirmation. Your account is active now."
+	message := "Thank you for your confirmation. Your account is active now, you can login."
 	return response.CreateResponse(c, fiber.StatusOK, true, message, nil)
 }
 
 func (ctr UserControllerImpl) DeleteAccountActivation(c *fiber.Ctx) error {
-	var user model.UserVerificationCode
-	if err := c.BodyParser(&user); err != nil {
+	var verifyData model.UserVerificationCode
+	if err := c.BodyParser(&verifyData); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	validate := validator.New()
-	if err := validate.Struct(&user); err != nil {
+	if err := validate.Struct(&verifyData); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 	ctx := c.Context()
-	err := ctr.service.DeleteUserByVerification(ctx, user.Code)
+	err := ctr.service.DeleteUserByVerification(ctx, verifyData)
 	if err != nil {
 		fiberErr, ok := err.(*fiber.Error)
 		if ok {

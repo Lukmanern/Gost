@@ -286,21 +286,24 @@ func Test_AccountActivation(t *testing.T) {
 			caseName: "success verify",
 			respCode: http.StatusOK,
 			payload: &model.UserVerificationCode{
-				Code: *vCode,
+				Code:  *vCode,
+				Email: createdUser.Email,
 			},
 		},
 		{
 			caseName: "failed verify: code not found",
 			respCode: http.StatusNotFound,
 			payload: &model.UserVerificationCode{
-				Code: *vCode,
+				Code:  *vCode,
+				Email: createdUser.Email,
 			},
 		},
 		{
-			caseName: "failed verify: code too short",
+			caseName: "failed verify: code/email too short",
 			respCode: http.StatusBadRequest,
 			payload: &model.UserVerificationCode{
-				Code: "",
+				Code:  "",
+				Email: "",
 			},
 		},
 	}
@@ -394,21 +397,24 @@ func Test_DeleteAccountActivation(t *testing.T) {
 			caseName: "success delete account",
 			respCode: http.StatusOK,
 			payload: &model.UserVerificationCode{
-				Code: *vCode,
+				Code:  *vCode,
+				Email: createdUser.Email,
 			},
 		},
 		{
 			caseName: "failed delete account: code not found",
 			respCode: http.StatusNotFound,
 			payload: &model.UserVerificationCode{
-				Code: *vCode,
+				Code:  *vCode,
+				Email: createdUser.Email,
 			},
 		},
 		{
-			caseName: "failed delete account: code too short",
+			caseName: "failed delete account: code/email too short",
 			respCode: http.StatusBadRequest,
 			payload: &model.UserVerificationCode{
-				Code: "-",
+				Code:  "",
+				Email: "",
 			},
 		},
 	}
@@ -436,7 +442,7 @@ func Test_DeleteAccountActivation(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode)
+			t.Error("should equal, but got", resp.StatusCode, "on", tc.caseName)
 		}
 
 		// if success
@@ -486,7 +492,10 @@ func Test_ForgetPassword(t *testing.T) {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *vCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Fatal("verification should not error")
 	}
@@ -596,7 +605,10 @@ func Test_ResetPassword(t *testing.T) {
 	if vCode == nil || userByID.ActivatedAt != nil {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
-	verifyErr := userSvc.Verification(ctx, *vCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Error("should not error")
 	}
@@ -776,7 +788,10 @@ func Test_Login(t *testing.T) {
 			t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 		}
 
-		verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+		verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+			Code:  *vCode,
+			Email: userByID.Email,
+		})
 		if verifyErr != nil {
 			t.Error("should not error")
 		}
@@ -978,7 +993,10 @@ func Test_Logout(t *testing.T) {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Error("should not error")
 	}
@@ -1093,7 +1111,10 @@ func Test_UpdatePassword(t *testing.T) {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Error("should not error")
 	}
@@ -1240,7 +1261,10 @@ func Test_UpdateProfile(t *testing.T) {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Error("should not error")
 	}
@@ -1372,7 +1396,10 @@ func Test_MyProfile(t *testing.T) {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Error("should not error")
 	}

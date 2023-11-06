@@ -28,8 +28,8 @@ import (
 
 type UserService interface {
 	Register(ctx context.Context, user model.UserRegister) (id int, err error)
-	Verification(ctx context.Context, verifyCode string) (err error)
-	DeleteUserByVerification(ctx context.Context, verifyCode string) (err error)
+	Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error)
+	DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error)
 	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
@@ -148,10 +148,11 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	return id, nil
 }
 
-func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) (err error) {
+func (svc UserServiceImpl) Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
 	// search user by code, if not exist return error
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
-		"verification_code =": verifyCode,
+		"verification_code =": verifyData.Code,
+		"email =":             verifyData.Email,
 	})
 	if getByCodeErr != nil || userEntity == nil {
 		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
@@ -170,10 +171,11 @@ func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) 
 	return nil
 }
 
-func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) {
+func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
 	// search user by code, if not exist return error
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
-		"verification_code =": verifyCode,
+		"verification_code =": verifyData.Code,
+		"email =":             verifyData.Email,
 	})
 	if getByCodeErr != nil || userEntity == nil {
 		return fiber.NewError(fiber.StatusNotFound, "verification code not found")

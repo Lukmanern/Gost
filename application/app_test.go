@@ -6,20 +6,14 @@ package application
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
-	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	repository "github.com/Lukmanern/gost/repository/user"
-
-	rbacService "github.com/Lukmanern/gost/service/rbac"
-	service "github.com/Lukmanern/gost/service/user"
 )
 
 var (
@@ -39,27 +33,6 @@ func init() {
 	timeNow = time.Now()
 	userRepo = repository.NewUserRepository()
 	ctx = context.Background()
-}
-
-// helper func (unused)
-func CreateUserAndToken(roleID int) (int, string) {
-	permissionService := rbacService.NewPermissionService()
-	roleService := rbacService.NewRoleService(permissionService)
-	userService := service.NewUserService(roleService)
-
-	userID, regisErr := userService.Register(ctx, model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   roleID,
-	})
-	if regisErr != nil {
-		log.Fatalf("\n\nfailed create user, error: %v\n", regisErr)
-	}
-	userService.MyProfile(ctx, userID)
-	userService.Verification(ctx, "")
-
-	return 0, ""
 }
 
 func Test_RunApp(t *testing.T) {

@@ -522,7 +522,10 @@ func createUserAndToken() (userID int, token string) {
 		log.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *userByID.VerificationCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		log.Fatal("should not error")
 	}
