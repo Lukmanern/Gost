@@ -32,5 +32,5 @@ func getDevopmentRouter(router fiber.Router) {
 	devRouterAuth.Get("test-new-role",
 		jwtHandler.CheckHasRole("new-role-001"), devController.CheckNewRole)
 	devRouterAuth.Get("test-new-permission",
-		jwtHandler.CheckHasPermission(31), devController.CheckNewPermission)
+		jwtHandler.CheckHasPermission(21), devController.CheckNewPermission)
 }
