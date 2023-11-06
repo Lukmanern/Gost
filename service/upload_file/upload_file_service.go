@@ -1,36 +1,20 @@
-// Credit for Aditya Rizky Ramadhan
-// see original repo : https://github.com/adityarizkyramadhan/supabase-storage-uploader
-
 package service
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
-	"strings"
-	"time"
 
-	"github.com/fatih/color"
+	"github.com/Lukmanern/gost/internal/env"
 )
 
 type UploadFile interface {
-	Upload(fileHeader *multipart.FileHeader) (string, error)
-	linkFile(filename string) string
-	ListBucket(requestBody *RequestBodyListBucket) (*ResponseListBucket, error)
-	extractFilename(link string) string
-	Delete(link string) error
+	Upload(fileHeader *multipart.FileHeader) (file_url string, err error)
+	Delete(link string) (err error)
 }
-
-var (
-	ErrFileNotFound     = errors.New("file header is null")
-	ErrFileNotInStorage = errors.New("file not found, check your storage name/ file path/ file name")
-	ErrLinkNotFound     = errors.New("file not found, check your storage name/ file path/ file name/ policy")
-	ErrBadRequest       = errors.New("received bad request, check your request body")
-)
 
 type client struct {
 	token      string
@@ -40,71 +24,56 @@ type client struct {
 	bucketName string
 }
 
-func NewClient(projectUrl, token, bucketName string) UploadFile {
-	fileUrl := projectUrl + "/storage/v1/object/public/" + bucketName + "/"
+func NewClient() UploadFile {
+	config := env.Configuration()
+	fileUrl := config.StorageURL + "/storage/v1/object/public/" + config.BucketName //+ "/"
 	return &client{
-		token:      token,
 		httpClient: &http.Client{},
 		fileUrl:    fileUrl,
-		urlProject: projectUrl,
-		bucketName: bucketName,
+		urlProject: config.StorageURL,
+		bucketName: config.BucketName,
 	}
 }
 
-func (c *client) Upload(fileHeader *multipart.FileHeader) (string, error) {
-	if fileHeader == nil {
-		log.Printf("%v %v \n", color.RedString("Error reading file header:"), ErrFileNotFound)
-		return "", ErrFileNotFound
-	}
-	file, err := fileHeader.Open()
-	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error opening file:"), err)
-		return "", err
+func (c *client) Upload(fileHeader *multipart.FileHeader) (file_url string, err error) {
+	file, openHeaderErr := fileHeader.Open()
+	if openHeaderErr != nil {
+		return "", openHeaderErr
 	}
 	var requestBody bytes.Buffer
 	multipartWriter := multipart.NewWriter(&requestBody)
-	fileWriter, err := multipartWriter.CreateFormFile("file", fileHeader.Filename)
-	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error creating form file:"), err)
-		return "", err
+	fileWriter, createFormErr := multipartWriter.CreateFormFile("file", fileHeader.Filename)
+	if createFormErr != nil {
+		return "", createFormErr
 	}
 	_, err = io.Copy(fileWriter, file)
 	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error copying file:"), err)
 		return "", err
 	}
 	err = multipartWriter.Close()
 	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error closing multipart writer:"), err)
 		return "", err
 	}
-	url := c.urlProject + "/storage/v1/object/" + c.bucketName + "/" + fileHeader.Filename
+	url := "https://xx.supabase.co/storage/v1/object/" + c.bucketName + "/" + fileHeader.Filename
 	request, err := http.NewRequest(http.MethodPost, url, &requestBody)
 	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error creating request:"), err)
 		return "", err
 	}
 	request.Header.Set("Authorization", "Bearer "+c.token)
 	request.Header.Set("Content-Type", multipartWriter.FormDataContentType())
-	response, err := c.httpClient.Do(request)
+	client := &http.Client{}
+	response, err := client.Do(request)
 	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error sending request:"), err)
 		return "", err
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Printf("%v %v \n", color.RedString("Error closing response body:"), err)
-		}
-	}(response.Body)
+	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		log.Printf("%v %v \n", color.RedString("Received non-200 response:"), response.StatusCode)
-		return "", ErrBadRequest
+		log.Println("got -1: ", response.StatusCode)
+		return "", errors.New("failed upload file")
 	}
-	link := c.linkFile(fileHeader.Filename)
+	link := c.fileUrl + fileHeader.Filename
 	reqImage, err := http.NewRequest(http.MethodGet, link, nil)
 	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error creating request:"), err)
 		return "", err
 	}
 	resImage, err := c.httpClient.Do(reqImage)
@@ -112,114 +81,11 @@ func (c *client) Upload(fileHeader *multipart.FileHeader) (string, error) {
 		return "", err
 	}
 	if resImage.StatusCode != http.StatusOK {
-		log.Printf("%v %v \n", color.RedString("Received non-200 response:"), resImage.StatusCode)
-		return "", ErrBadRequest
+		return "", errors.New("success upload, failed to test-get file back, got " + string(rune(response.StatusCode)))
 	}
 	return link, nil
 }
 
-func (c *client) linkFile(filename string) string {
-	return c.fileUrl + filename
-}
-
-type RequestBodyListBucket struct {
-	Prefix string `json:"prefix"`
-	Limit  int    `json:"limit"`
-	Offset int    `json:"offset"`
-	SortBy struct {
-		Column string `json:"column"`
-		Order  string `json:"order"`
-	} `json:"sortBy"`
-	Search string `json:"search"`
-}
-
-type ResponseListBucket []struct {
-	Name           string    `json:"name"`
-	ID             string    `json:"id"`
-	UpdatedAt      time.Time `json:"updated_at"`
-	CreatedAt      time.Time `json:"created_at"`
-	LastAccessedAt time.Time `json:"last_accessed_at"`
-	Metadata       struct {
-		CacheControl   string    `json:"cacheControl"`
-		ContentLength  int       `json:"contentLength"`
-		ETag           string    `json:"eTag"`
-		HTTPStatusCode int       `json:"httpStatusCode"`
-		LastModified   time.Time `json:"lastModified"`
-		Mimetype       string    `json:"mimetype"`
-		Size           int       `json:"size"`
-	} `json:"metadata"`
-}
-
-func (c *client) ListBucket(requestBody *RequestBodyListBucket) (*ResponseListBucket, error) {
-	if requestBody == nil {
-		log.Printf("%v %v \n", color.RedString("Error reading request body:"), ErrFileNotFound)
-		return nil, ErrFileNotFound
-	}
-	jsonBody, err := json.Marshal(requestBody)
-	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error marshalling request body:"), err)
-		return nil, err
-	}
-	url := c.urlProject + "/storage/v1/object/list/" + c.bucketName
-	request, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error creating request:"), err)
-		return nil, err
-	}
-	request.Header.Set("Authorization", "Bearer "+c.token)
-	request.Header.Set("Content-Type", "application/json")
-
-	response, err := c.httpClient.Do(request)
-	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error sending request:"), err)
-		return nil, err
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Printf("%v %v \n", color.RedString("Error closing response body:"), err)
-		}
-	}(response.Body)
-
-	if response.StatusCode != http.StatusOK {
-		log.Printf("%v %v \n", color.RedString("Received non-200 response:"), response.StatusCode)
-		return nil, err
-	}
-	var responseBody ResponseListBucket
-	err = json.NewDecoder(response.Body).Decode(&responseBody)
-	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error decoding response body:"), err)
-		return nil, err
-	}
-	return &responseBody, nil
-}
-
-func (c *client) extractFilename(link string) string {
-	return strings.ReplaceAll(link, c.fileUrl, "")
-}
-
-func (c *client) Delete(link string) error {
-	fileName := c.extractFilename(link)
-	url := c.urlProject + "/storage/v1/object/" + c.bucketName + "/" + fileName
-	request, err := http.NewRequest(http.MethodDelete, url, nil)
-	if err != nil {
-		log.Printf("%v %v \n", color.RedString("Error creating request:"), err)
-		return err
-	}
-	request.Header.Set("Authorization", "Bearer "+c.token)
-	response, err := c.httpClient.Do(request)
-	if err != nil {
-		log.Fatalf("%v %v \n", color.RedString("Error sending request:"), err)
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Printf("%v %v \n", color.RedString("Error closing response body:"), err)
-		}
-	}(response.Body)
-	if response.StatusCode != http.StatusOK {
-		log.Printf("%v %v \n", color.RedString("Received non-200 response:"), response.StatusCode)
-		return ErrBadRequest
-	}
-	return nil
+func (c *client) Delete(link string) (err error) {
+	return
 }

@@ -10,7 +10,6 @@ require (
 )
 
 require (
-	github.com/fatih/color v1.15.0
 	github.com/go-playground/validator/v10 v10.15.5
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/stretchr/testify v1.8.4
