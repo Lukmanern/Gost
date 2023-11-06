@@ -87,6 +87,7 @@ func RunApp() {
 		<-sigint
 
 		// Received an interrupt signal, shutdown.
+		// ctrl+c
 		if err := router.Shutdown(); err != nil {
 			// Error from closing listeners, or context timeout:
 			log.Printf("Oops... Server is not shutting down! Reason: %v", err)

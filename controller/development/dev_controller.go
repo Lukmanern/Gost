@@ -11,6 +11,8 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/response"
+
+	uploadService "github.com/Lukmanern/gost/service/upload_file"
 )
 
 type DevController interface {
@@ -21,6 +23,7 @@ type DevController interface {
 	GetFromRedis(c *fiber.Ctx) error
 	CheckNewRole(c *fiber.Ctx) error
 	CheckNewPermission(c *fiber.Ctx) error
+	UploadFile(c *fiber.Ctx) error
 }
 
 type DevControllerImpl struct {
@@ -129,4 +132,14 @@ func (ctr DevControllerImpl) CheckNewRole(c *fiber.Ctx) error {
 
 func (ctr DevControllerImpl) CheckNewPermission(c *fiber.Ctx) error {
 	return response.CreateResponse(c, fiber.StatusOK, true, "success check new permission", nil)
+}
+
+func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
+	service := uploadService.NewClient("", "", "")
+	_, err := service.Upload(nil)
+	if err != nil {
+		return response.Error(c, "internal server error: "+err.Error())
+	}
+
+	return response.SuccessCreated(c, nil)
 }
