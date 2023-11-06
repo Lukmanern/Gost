@@ -51,4 +51,14 @@ func TestNewDevControllerImpl(t *testing.T) {
 	if getErr != nil {
 		t.Error("err: ", getErr)
 	}
+
+	checkRoleErr := ctr.CheckNewRole(c)
+	if checkRoleErr != nil {
+		t.Error("err: ", checkRoleErr)
+	}
+
+	checkPermErr := ctr.CheckNewPermission(c)
+	if checkPermErr != nil {
+		t.Error("err: ", checkPermErr)
+	}
 }

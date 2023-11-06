@@ -28,7 +28,7 @@ func getDevopmentRouter(router fiber.Router) {
 
 	// you should create new role named new-role-001 and new permission
 	// named new-permission-001 from RBAC-endpoints to test these endpoints
-	devRouterAuth := devRouter.Group("auth").Use(jwtHandler.IsAuthenticated)
+	devRouterAuth := devRouter.Use(jwtHandler.IsAuthenticated)
 	devRouterAuth.Get("test-new-role",
 		jwtHandler.CheckHasRole("new-role-001"), devController.CheckNewRole)
 	devRouterAuth.Get("test-new-permission",
