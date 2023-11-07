@@ -24,7 +24,7 @@ type DevController interface {
 	CheckNewRole(c *fiber.Ctx) error
 	CheckNewPermission(c *fiber.Ctx) error
 	UploadFile(c *fiber.Ctx) error
-	DownloadFile(c *fiber.Ctx) error
+	GetFilesList(c *fiber.Ctx) error
 }
 
 type DevControllerImpl struct {
@@ -167,14 +167,16 @@ func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 	})
 }
 
-func (ctr DevControllerImpl) DownloadFile(c *fiber.Ctx) error {
+func (ctr DevControllerImpl) GetFilesList(c *fiber.Ctx) error {
 	service := uploadService.NewClient()
-	fileUrl, err := service.Upload(nil)
-	if err != nil {
-		return response.Error(c, "internal server error: "+err.Error())
+	resp, getErr := service.GetFilesList()
+	if getErr != nil {
+		fiberErr, ok := getErr.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return response.Error(c, "internal server error: "+getErr.Error())
 	}
 
-	return response.SuccessCreated(c, map[string]any{
-		"file_url": fileUrl,
-	})
+	return response.SuccessLoaded(c, resp)
 }

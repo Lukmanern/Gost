@@ -22,16 +22,27 @@ type ListReqBody struct {
 	SortByOptions SortBy `json:"sortBy"`
 	Prefix        string `json:"prefix"`
 }
-type ListReponse []struct {
-	Name       string         `json:"name"`
-	UploadedAt string         `json:"created_at"`
-	Metadata   map[string]any `json:"metadata"`
+type ListReponse struct {
+	Name           string `json:"name"`
+	ID             string `json:"id"`
+	UpdatedAt      string `json:"updated_at"`
+	CreatedAt      string `json:"created_at"`
+	LastAccessedAt string `json:"last_accessed_at"`
+	Metadata       struct {
+		ETag           string `json:"eTag"`
+		Size           int64  `json:"size"`
+		MimeType       string `json:"mimetype"`
+		CacheControl   string `json:"cacheControl"`
+		LastModified   string `json:"lastModified"`
+		ContentLength  int64  `json:"contentLength"`
+		HttpStatusCode int64  `json:"httpStatusCode"`
+	} `json:"metadata"`
 }
 
 type UploadFile interface {
 	Upload(fileHeader *multipart.FileHeader) (file_url string, err error)
 	Delete(link string) (err error)
-	FilesList() (fileNames map[string]any, err error)
+	GetFilesList() (files []map[string]any, err error)
 }
 
 type client struct {
@@ -114,11 +125,15 @@ func (c *client) Delete(link string) (err error) {
 	return
 }
 
-func (c *client) FilesList() (fileNames map[string]any, err error) {
+func (c *client) GetFilesList() (files []map[string]any, err error) {
 	body := ListReqBody{
 		Limit:  999,
 		Offset: 1,
 		Prefix: "",
+		SortByOptions: SortBy{
+			Column: "name",
+			Order:  "asc",
+		},
 	}
 	reqBody, err := json.Marshal(body)
 	if err != nil {
@@ -138,52 +153,29 @@ func (c *client) FilesList() (fileNames map[string]any, err error) {
 		return nil, responseErrHandler(response)
 	}
 	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return nil, responseErrHandler(response)
+	}
 
-	return
+	respBody, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		return nil, readErr
+	}
+	var listResp []ListReponse
+
+	if unmarshalErr := json.Unmarshal(respBody, &listResp); unmarshalErr != nil {
+		return nil, unmarshalErr
+	}
+	for _, list := range listResp {
+		file := map[string]any{
+			"name":        list.Name,
+			"uploaded_at": list.CreatedAt,
+			"size":        list.Metadata.ContentLength,
+		}
+		files = append(files, file)
+	}
+	return files, nil
 }
-
-// ListFiles list files in an existing bucket.
-// bucketId string The bucket id.
-// queryPath string The file path, including the file name.
-// Should be of the format `folder/subfolder/filename.png`
-// options FileSearchOptions The file search options
-// func (c *Client) ListFiles(bucketId string, queryPath string, options FileSearchOptions) ([]FileObject, error) {
-// 	if options.Offset == 0 {
-// 		options.Offset = defaultOffset
-// 	}
-// 	if options.Limit == 0 {
-// 		options.Limit = defaultLimit
-// 	}
-// 	if options.SortByOptions.Order == "" {
-// 		options.SortByOptions.Order = defaultSortOrder
-// 	}
-// 	if options.SortByOptions.Column == "" {
-// 		options.SortByOptions.Column = defaultSortColumn
-// 	}
-// 	body := ListReqBody{
-// 		Limit:  options.Limit,
-// 		Offset: options.Offset,
-// 		SortByOptions: SortBy{
-// 			Column: options.SortByOptions.Column,
-// 			Order:  options.SortByOptions.Order,
-// 		},
-// 		Prefix: queryPath,
-// 	}
-
-// 	listFileURL := c.clientTransport.baseUrl.String() + "/object/list/" + bucketId
-// 	req, err := c.NewRequest(http.MethodPost, listFileURL, &body)
-// 	if err != nil {
-// 		return []FileObject{}, err
-// 	}
-
-// 	var response []FileObject
-// 	_, err = c.Do(req, &response)
-// 	if err != nil {
-// 		return []FileObject{}, err
-// 	}
-
-// 	return response, nil
-// }
 
 func responseErrHandler(resp *http.Response) (err error) {
 	respBody, readErr := io.ReadAll(resp.Body)
