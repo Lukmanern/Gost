@@ -3,13 +3,13 @@ package service
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/gofiber/fiber/v2"
 )
 
 type UploadFile interface {
@@ -18,37 +18,35 @@ type UploadFile interface {
 }
 
 type client struct {
-	httpClient *http.Client
-	token      string
-	urlProject string
-	fileUrl    string
-	bucketName string
+	PublicURL  string
+	UploadURL  string
+	Token      string
+	BucketURL  string
+	BucketName string
 }
 
 func NewClient() UploadFile {
 	config := env.Configuration()
-	fileUrl := config.BucketURL + "/storage/v1/object/public/" + config.BucketName + "/"
 	return &client{
-		httpClient: &http.Client{},
-		token:      config.BucketToken,
-		fileUrl:    fileUrl,
-		urlProject: config.BucketURL,
-		bucketName: config.BucketName,
+		PublicURL:  config.BucketURL + "/storage/v1/object/public/" + config.BucketName + "/",
+		UploadURL:  config.BucketURL + "/storage/v1/object/" + config.BucketName + "/",
+		Token:      config.BucketToken,
+		BucketURL:  config.BucketURL,
+		BucketName: config.BucketName,
 	}
 }
 
 func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err error) {
-	// Open the file associated with the file header
-	file, openHeaderErr := fileHeader.Open()
-	if openHeaderErr != nil {
-		return "", openHeaderErr
+	fileName := fileHeader.Filename
+	file, headerErr := fileHeader.Open()
+	if headerErr != nil {
+		return "", headerErr
 	}
 	defer file.Close()
 
-	// Create a new multipart writer
 	requestBody := &bytes.Buffer{}
 	writer := multipart.NewWriter(requestBody)
-	fileField, formErr := writer.CreateFormFile("file", fileHeader.Filename)
+	fileField, formErr := writer.CreateFormFile("file", fileName)
 	if formErr != nil {
 		return "", formErr
 	}
@@ -57,56 +55,61 @@ func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err e
 		return "", copyErr
 	}
 	writer.Close()
-	url := c.urlProject + "/storage/v1/object/" + c.bucketName + "/" + fileHeader.Filename
-	request, err := http.NewRequest(http.MethodPost, url, requestBody)
-	if err != nil {
-		return "", err
+	url := c.UploadURL + fileName
+	request, newReqErr := http.NewRequest(http.MethodPost, url, requestBody)
+	if newReqErr != nil {
+		return "", newReqErr
 	}
 
-	request.Header.Set("Authorization", "Bearer "+c.token)
+	request.Header.Set("Authorization", "Bearer "+c.Token)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return "", err
+	response, doErr := client.Do(request)
+	if doErr != nil {
+		return "", doErr
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		log.Println("Upload failed. Status code:", response.StatusCode)
-		errorMessage, readErr := io.ReadAll(response.Body)
-		if readErr != nil {
-			return "", readErr
-		}
-		var errorResponse struct {
-			Message    string `json:"message"`
-			Error      string `json:"error"`
-			StatusCode string `json:"statuscode"`
-		}
-		if unmarshalErr := json.Unmarshal(errorMessage, &errorResponse); unmarshalErr != nil {
-			return "", unmarshalErr
-		}
-		log.Println("Error message:", errorResponse.Message+", "+errorResponse.Error, errorResponse.StatusCode)
-		return "", errors.New(errorResponse.Message + ", " + errorResponse.Error)
+		return "", responseErrHandler(response)
 	}
 
-	link := c.fileUrl + fileHeader.Filename
-	reqImage, err := http.NewRequest(http.MethodGet, link, nil)
-	if err != nil {
-		return "", err
+	link := c.PublicURL + fileName
+	reqImage, reqErr := http.NewRequest(http.MethodGet, link, nil)
+	if reqErr != nil {
+		return "", reqErr
 	}
-	resImage, err := client.Do(reqImage)
-	if err != nil {
-		return "", err
+	resp, doErr := client.Do(reqImage)
+	if doErr != nil {
+		return "", doErr
 	}
-	if resImage.StatusCode != http.StatusOK {
-		message := "Successfully uploaded, but failed to test-get the file. Got status code: "
-		message += string(rune(response.StatusCode))
-		return "", errors.New(message)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", responseErrHandler(resp)
 	}
 	return link, nil
 }
 
 func (c *client) Delete(link string) (err error) {
 	return
+}
+
+func responseErrHandler(resp *http.Response) (err error) {
+	respBody, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return readErr
+	}
+	var errResp struct {
+		Message    string `json:"message"`
+		Error      string `json:"error"`
+		StatusCode string `json:"statusCode"`
+	}
+	if unmarshalErr := json.Unmarshal(respBody, &errResp); unmarshalErr != nil {
+		return unmarshalErr
+	}
+	statusCode, convErr := strconv.Atoi(errResp.StatusCode)
+	if convErr != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "failed conv:"+convErr.Error())
+	}
+	return fiber.NewError(statusCode, errResp.Message+", "+errResp.Error)
 }

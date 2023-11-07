@@ -151,11 +151,15 @@ func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 	if file.Size > maxSize {
 		return response.BadRequest(c, "file size exceeds the maximum allowed (3MB)")
 	}
-	// return response.CreateResponse(c, 200, true, "s", file)
+
 	service := uploadService.NewClient()
-	fileUrl, err := service.Upload(file)
-	if err != nil {
-		return response.Error(c, "internal server error: "+err.Error())
+	fileUrl, uploadErr := service.Upload(file)
+	if uploadErr != nil {
+		fiberErr, ok := uploadErr.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return response.Error(c, "internal server error: "+uploadErr.Error())
 	}
 
 	return response.SuccessCreated(c, map[string]any{
