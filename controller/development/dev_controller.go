@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -24,6 +25,7 @@ type DevController interface {
 	CheckNewRole(c *fiber.Ctx) error
 	CheckNewPermission(c *fiber.Ctx) error
 	UploadFile(c *fiber.Ctx) error
+	RemoveFile(c *fiber.Ctx) error
 	GetFilesList(c *fiber.Ctx) error
 }
 
@@ -153,7 +155,7 @@ func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 	}
 
 	service := uploadService.NewClient()
-	fileUrl, uploadErr := service.Upload(file)
+	fileUrl, uploadErr := service.UploadFile(file)
 	if uploadErr != nil {
 		fiberErr, ok := uploadErr.(*fiber.Error)
 		if ok {
@@ -165,6 +167,31 @@ func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, map[string]any{
 		"file_url": fileUrl,
 	})
+}
+
+func (ctr DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
+	var fileName struct {
+		FileName string `validate:"required,min=4,max=150" json:"file_name"`
+	}
+	if err := c.BodyParser(&fileName); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+	validate := validator.New()
+	if err := validate.Struct(&fileName); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+
+	service := uploadService.NewClient()
+	removeErr := service.RemoveFile(fileName.FileName)
+	if removeErr != nil {
+		fiberErr, ok := removeErr.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return response.Error(c, "internal server error: "+removeErr.Error())
+	}
+
+	return response.SuccessNoContent(c)
 }
 
 func (ctr DevControllerImpl) GetFilesList(c *fiber.Ctx) error {

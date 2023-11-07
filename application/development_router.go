@@ -27,6 +27,7 @@ func getDevopmentRouter(router fiber.Router) {
 	devRouter.Get("get-from-redis", devController.GetFromRedis)
 	devRouter.Post("upload-file", devController.UploadFile)
 	devRouter.Post("get-files-list", devController.GetFilesList)
+	devRouter.Delete("remove-file", devController.RemoveFile)
 
 	// you should create new role named new-role-001 and new permission
 	// named new-permission-001 from RBAC-endpoints to test these endpoints

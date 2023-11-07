@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -22,26 +23,17 @@ type ListReqBody struct {
 	SortByOptions SortBy `json:"sortBy"`
 	Prefix        string `json:"prefix"`
 }
-type ListReponse struct {
-	Name           string `json:"name"`
-	ID             string `json:"id"`
-	UpdatedAt      string `json:"updated_at"`
-	CreatedAt      string `json:"created_at"`
-	LastAccessedAt string `json:"last_accessed_at"`
-	Metadata       struct {
-		ETag           string `json:"eTag"`
-		Size           int64  `json:"size"`
-		MimeType       string `json:"mimetype"`
-		CacheControl   string `json:"cacheControl"`
-		LastModified   string `json:"lastModified"`
-		ContentLength  int64  `json:"contentLength"`
-		HttpStatusCode int64  `json:"httpStatusCode"`
+type FileReponse struct {
+	Name      string `json:"name"`
+	CreatedAt string `json:"created_at"`
+	Metadata  struct {
+		Size int64 `json:"size"`
 	} `json:"metadata"`
 }
 
 type UploadFile interface {
-	Upload(fileHeader *multipart.FileHeader) (file_url string, err error)
-	Delete(link string) (err error)
+	UploadFile(fileHeader *multipart.FileHeader) (fileURL string, err error)
+	RemoveFile(fileName string) (err error)
 	GetFilesList() (files []map[string]any, err error)
 }
 
@@ -49,6 +41,7 @@ type client struct {
 	PublicURL    string
 	ListFilesURL string
 	UploadURL    string
+	DeleteURL    string
 	Token        string
 	BucketURL    string
 	BucketName   string
@@ -61,13 +54,14 @@ func NewClient() UploadFile {
 		PublicURL:    baseURL + "public/" + config.BucketName + "/",
 		ListFilesURL: baseURL + "list/" + config.BucketName,
 		UploadURL:    baseURL + config.BucketName + "/",
+		DeleteURL:    baseURL + config.BucketName,
 		Token:        config.BucketToken,
 		BucketURL:    config.BucketURL,
 		BucketName:   config.BucketName,
 	}
 }
 
-func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err error) {
+func (c *client) UploadFile(fileHeader *multipart.FileHeader) (fileURL string, err error) {
 	fileName := fileHeader.Filename
 	file, headerErr := fileHeader.Open()
 	if headerErr != nil {
@@ -121,8 +115,43 @@ func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err e
 	return link, nil
 }
 
-func (c *client) Delete(link string) (err error) {
-	return
+func (c *client) RemoveFile(fileName string) (err error) {
+	body := map[string]interface{}{
+		"prefixes": fileName,
+	}
+	reqBody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	request, err := http.NewRequest(http.MethodDelete, c.DeleteURL, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+
+	request.Header.Set("Authorization", "Bearer "+c.Token)
+	request.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return responseErrHandler(response)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return responseErrHandler(response)
+	}
+
+	respBody, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		return readErr
+	}
+	var resp []FileReponse
+	if unmarshalErr := json.Unmarshal(respBody, &resp); unmarshalErr != nil {
+		return unmarshalErr
+	}
+	if len(resp) < 1 {
+		return fiber.NewError(fiber.StatusNotFound, "file/s not found")
+	}
+	return nil
 }
 
 func (c *client) GetFilesList() (files []map[string]any, err error) {
@@ -161,19 +190,23 @@ func (c *client) GetFilesList() (files []map[string]any, err error) {
 	if readErr != nil {
 		return nil, readErr
 	}
-	var listResp []ListReponse
+	var listResp []FileReponse
 
 	if unmarshalErr := json.Unmarshal(respBody, &listResp); unmarshalErr != nil {
 		return nil, unmarshalErr
 	}
 	for _, list := range listResp {
-		file := map[string]any{
+		// Calculate the size in megabytes
+		sizeInMB := float64(list.Metadata.Size) / 1024 / 1024
+		formattedSize := fmt.Sprintf("%.4f MB", sizeInMB)
+		file := map[string]interface{}{
 			"name":        list.Name,
 			"uploaded_at": list.CreatedAt,
-			"size":        list.Metadata.ContentLength,
+			"size_mb":     formattedSize,
 		}
 		files = append(files, file)
 	}
+
 	return files, nil
 }
 
