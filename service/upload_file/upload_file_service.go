@@ -48,9 +48,9 @@ func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err e
 	// Create a new multipart writer
 	requestBody := &bytes.Buffer{}
 	writer := multipart.NewWriter(requestBody)
-	fileField, err := writer.CreateFormFile("file", fileHeader.Filename)
-	if err != nil {
-		return "", err
+	fileField, formErr := writer.CreateFormFile("file", fileHeader.Filename)
+	if formErr != nil {
+		return "", formErr
 	}
 	_, copyErr := io.Copy(fileField, file)
 	if copyErr != nil {
@@ -63,10 +63,8 @@ func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err e
 		return "", err
 	}
 
-	// Set the Bearer token in the Authorization header
 	request.Header.Set("Authorization", "Bearer "+c.token)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
-
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
@@ -81,13 +79,14 @@ func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err e
 			return "", readErr
 		}
 		var errorResponse struct {
-			Message string `json:"message"`
-			Error   string `json:"error"`
+			Message    string `json:"message"`
+			Error      string `json:"error"`
+			StatusCode string `json:"statuscode"`
 		}
 		if unmarshalErr := json.Unmarshal(errorMessage, &errorResponse); unmarshalErr != nil {
 			return "", unmarshalErr
 		}
-		log.Println("Error message:", errorResponse.Message+", "+errorResponse.Error)
+		log.Println("Error message:", errorResponse.Message+", "+errorResponse.Error, errorResponse.StatusCode)
 		return "", errors.New(errorResponse.Message + ", " + errorResponse.Error)
 	}
 
@@ -96,7 +95,7 @@ func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err e
 	if err != nil {
 		return "", err
 	}
-	resImage, err := c.httpClient.Do(reqImage)
+	resImage, err := client.Do(reqImage)
 	if err != nil {
 		return "", err
 	}
