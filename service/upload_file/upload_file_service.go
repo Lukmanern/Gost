@@ -12,27 +12,47 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type SortBy struct {
+	Column string `json:"column"`
+	Order  string `json:"order"`
+}
+type ListReqBody struct {
+	Limit         int    `json:"limit"`
+	Offset        int    `json:"offset"`
+	SortByOptions SortBy `json:"sortBy"`
+	Prefix        string `json:"prefix"`
+}
+type ListReponse []struct {
+	Name       string         `json:"name"`
+	UploadedAt string         `json:"created_at"`
+	Metadata   map[string]any `json:"metadata"`
+}
+
 type UploadFile interface {
 	Upload(fileHeader *multipart.FileHeader) (file_url string, err error)
 	Delete(link string) (err error)
+	FilesList() (fileNames map[string]any, err error)
 }
 
 type client struct {
-	PublicURL  string
-	UploadURL  string
-	Token      string
-	BucketURL  string
-	BucketName string
+	PublicURL    string
+	ListFilesURL string
+	UploadURL    string
+	Token        string
+	BucketURL    string
+	BucketName   string
 }
 
 func NewClient() UploadFile {
 	config := env.Configuration()
+	baseURL := config.BucketURL + "/storage/v1/object/"
 	return &client{
-		PublicURL:  config.BucketURL + "/storage/v1/object/public/" + config.BucketName + "/",
-		UploadURL:  config.BucketURL + "/storage/v1/object/" + config.BucketName + "/",
-		Token:      config.BucketToken,
-		BucketURL:  config.BucketURL,
-		BucketName: config.BucketName,
+		PublicURL:    baseURL + "public/" + config.BucketName + "/",
+		ListFilesURL: baseURL + "list/" + config.BucketName,
+		UploadURL:    baseURL + config.BucketName + "/",
+		Token:        config.BucketToken,
+		BucketURL:    config.BucketURL,
+		BucketName:   config.BucketName,
 	}
 }
 
@@ -64,28 +84,28 @@ func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err e
 	request.Header.Set("Authorization", "Bearer "+c.Token)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	client := &http.Client{}
-	response, doErr := client.Do(request)
+	respUpload, doErr := client.Do(request)
 	if doErr != nil {
 		return "", doErr
 	}
-	defer response.Body.Close()
+	defer respUpload.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		return "", responseErrHandler(response)
+	if respUpload.StatusCode != http.StatusOK {
+		return "", responseErrHandler(respUpload)
 	}
 
 	link := c.PublicURL + fileName
-	reqImage, reqErr := http.NewRequest(http.MethodGet, link, nil)
+	reqTestGet, reqErr := http.NewRequest(http.MethodGet, link, nil)
 	if reqErr != nil {
 		return "", reqErr
 	}
-	resp, doErr := client.Do(reqImage)
+	respTestGet, doErr := client.Do(reqTestGet)
 	if doErr != nil {
 		return "", doErr
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", responseErrHandler(resp)
+	defer respTestGet.Body.Close()
+	if respTestGet.StatusCode != http.StatusOK {
+		return "", responseErrHandler(respTestGet)
 	}
 	return link, nil
 }
@@ -93,6 +113,77 @@ func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err e
 func (c *client) Delete(link string) (err error) {
 	return
 }
+
+func (c *client) FilesList() (fileNames map[string]any, err error) {
+	body := ListReqBody{
+		Limit:  999,
+		Offset: 1,
+		Prefix: "",
+	}
+	reqBody, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	listFileURL := c.ListFilesURL
+	request, err := http.NewRequest(http.MethodPost, listFileURL, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header.Set("Authorization", "Bearer "+c.Token)
+	request.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, responseErrHandler(response)
+	}
+	defer response.Body.Close()
+
+	return
+}
+
+// ListFiles list files in an existing bucket.
+// bucketId string The bucket id.
+// queryPath string The file path, including the file name.
+// Should be of the format `folder/subfolder/filename.png`
+// options FileSearchOptions The file search options
+// func (c *Client) ListFiles(bucketId string, queryPath string, options FileSearchOptions) ([]FileObject, error) {
+// 	if options.Offset == 0 {
+// 		options.Offset = defaultOffset
+// 	}
+// 	if options.Limit == 0 {
+// 		options.Limit = defaultLimit
+// 	}
+// 	if options.SortByOptions.Order == "" {
+// 		options.SortByOptions.Order = defaultSortOrder
+// 	}
+// 	if options.SortByOptions.Column == "" {
+// 		options.SortByOptions.Column = defaultSortColumn
+// 	}
+// 	body := ListReqBody{
+// 		Limit:  options.Limit,
+// 		Offset: options.Offset,
+// 		SortByOptions: SortBy{
+// 			Column: options.SortByOptions.Column,
+// 			Order:  options.SortByOptions.Order,
+// 		},
+// 		Prefix: queryPath,
+// 	}
+
+// 	listFileURL := c.clientTransport.baseUrl.String() + "/object/list/" + bucketId
+// 	req, err := c.NewRequest(http.MethodPost, listFileURL, &body)
+// 	if err != nil {
+// 		return []FileObject{}, err
+// 	}
+
+// 	var response []FileObject
+// 	_, err = c.Do(req, &response)
+// 	if err != nil {
+// 		return []FileObject{}, err
+// 	}
+
+// 	return response, nil
+// }
 
 func responseErrHandler(resp *http.Response) (err error) {
 	respBody, readErr := io.ReadAll(resp.Body)
@@ -109,7 +200,7 @@ func responseErrHandler(resp *http.Response) (err error) {
 	}
 	statusCode, convErr := strconv.Atoi(errResp.StatusCode)
 	if convErr != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "failed conv:"+convErr.Error())
+		return fiber.NewError(fiber.StatusInternalServerError, "failed conv: "+convErr.Error())
 	}
 	return fiber.NewError(statusCode, errResp.Message+", "+errResp.Error)
 }
