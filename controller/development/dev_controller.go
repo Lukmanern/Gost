@@ -151,7 +151,7 @@ func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 	if file.Size > maxSize {
 		return response.BadRequest(c, "file size exceeds the maximum allowed (3MB)")
 	}
-	return response.CreateResponse(c, 200, true, "s", file)
+	// return response.CreateResponse(c, 200, true, "s", file)
 	service := uploadService.NewClient()
 	fileUrl, err := service.Upload(file)
 	if err != nil {

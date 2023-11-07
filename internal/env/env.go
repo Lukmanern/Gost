@@ -38,8 +38,9 @@ type Config struct {
 	SMTPPassword string `env:"SMTP_PASSWORD"`
 	ClientURL    string `env:"CLIENT_URL"`
 
-	BucketName string `env:"SUPABASE_BUCKET_NAME"`
-	StorageURL string `env:"SUPABASE_URL"`
+	BucketName  string `env:"SUPABASE_BUCKET_NAME"`
+	BucketURL   string `env:"SUPABASE_URL"`
+	BucketToken string `env:"SUPABASE_TOKEN"`
 }
 
 var (

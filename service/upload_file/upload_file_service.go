@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"log"
@@ -17,8 +18,8 @@ type UploadFile interface {
 }
 
 type client struct {
-	token      string
 	httpClient *http.Client
+	token      string
 	urlProject string
 	fileUrl    string
 	bucketName string
@@ -26,51 +27,70 @@ type client struct {
 
 func NewClient() UploadFile {
 	config := env.Configuration()
-	fileUrl := config.StorageURL + "/storage/v1/object/public/" + config.BucketName //+ "/"
+	fileUrl := config.BucketURL + "/storage/v1/object/public/" + config.BucketName + "/"
 	return &client{
 		httpClient: &http.Client{},
+		token:      config.BucketToken,
 		fileUrl:    fileUrl,
-		urlProject: config.StorageURL,
+		urlProject: config.BucketURL,
 		bucketName: config.BucketName,
 	}
 }
 
-func (c *client) Upload(fileHeader *multipart.FileHeader) (file_url string, err error) {
+func (c *client) Upload(fileHeader *multipart.FileHeader) (fileURL string, err error) {
+	// Open the file associated with the file header
 	file, openHeaderErr := fileHeader.Open()
 	if openHeaderErr != nil {
 		return "", openHeaderErr
 	}
-	var requestBody bytes.Buffer
-	multipartWriter := multipart.NewWriter(&requestBody)
-	fileWriter, createFormErr := multipartWriter.CreateFormFile("file", fileHeader.Filename)
-	if createFormErr != nil {
-		return "", createFormErr
-	}
-	_, err = io.Copy(fileWriter, file)
+	defer file.Close()
+
+	// Create a new multipart writer
+	requestBody := &bytes.Buffer{}
+	writer := multipart.NewWriter(requestBody)
+	fileField, err := writer.CreateFormFile("file", fileHeader.Filename)
 	if err != nil {
 		return "", err
 	}
-	err = multipartWriter.Close()
+	_, copyErr := io.Copy(fileField, file)
+	if copyErr != nil {
+		return "", copyErr
+	}
+	writer.Close()
+	url := c.urlProject + "/storage/v1/object/" + c.bucketName + "/" + fileHeader.Filename
+	request, err := http.NewRequest(http.MethodPost, url, requestBody)
 	if err != nil {
 		return "", err
 	}
-	url := "https://xx.supabase.co/storage/v1/object/" + c.bucketName + "/" + fileHeader.Filename
-	request, err := http.NewRequest(http.MethodPost, url, &requestBody)
-	if err != nil {
-		return "", err
-	}
+
+	// Set the Bearer token in the Authorization header
 	request.Header.Set("Authorization", "Bearer "+c.token)
-	request.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
 		return "", err
 	}
 	defer response.Body.Close()
+
 	if response.StatusCode != http.StatusOK {
-		log.Println("got -1: ", response.StatusCode)
-		return "", errors.New("failed upload file")
+		log.Println("Upload failed. Status code:", response.StatusCode)
+		errorMessage, readErr := io.ReadAll(response.Body)
+		if readErr != nil {
+			return "", readErr
+		}
+		var errorResponse struct {
+			Message string `json:"message"`
+			Error   string `json:"error"`
+		}
+		if unmarshalErr := json.Unmarshal(errorMessage, &errorResponse); unmarshalErr != nil {
+			return "", unmarshalErr
+		}
+		log.Println("Error message:", errorResponse.Message+", "+errorResponse.Error)
+		return "", errors.New(errorResponse.Message + ", " + errorResponse.Error)
 	}
+
 	link := c.fileUrl + fileHeader.Filename
 	reqImage, err := http.NewRequest(http.MethodGet, link, nil)
 	if err != nil {
@@ -81,7 +101,9 @@ func (c *client) Upload(fileHeader *multipart.FileHeader) (file_url string, err 
 		return "", err
 	}
 	if resImage.StatusCode != http.StatusOK {
-		return "", errors.New("success upload, failed to test-get file back, got " + string(rune(response.StatusCode)))
+		message := "Successfully uploaded, but failed to test-get the file. Got status code: "
+		message += string(rune(response.StatusCode))
+		return "", errors.New(message)
 	}
 	return link, nil
 }
