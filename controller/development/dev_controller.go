@@ -13,7 +13,7 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/response"
 
-	uploadService "github.com/Lukmanern/gost/service/upload_file"
+	fileService "github.com/Lukmanern/gost/service/file"
 )
 
 type DevController interface {
@@ -154,7 +154,7 @@ func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 		return response.BadRequest(c, "file size exceeds the maximum allowed (3MB)")
 	}
 
-	service := uploadService.NewClient()
+	service := fileService.NewFileService()
 	fileUrl, uploadErr := service.UploadFile(file)
 	if uploadErr != nil {
 		fiberErr, ok := uploadErr.(*fiber.Error)
@@ -181,7 +181,7 @@ func (ctr DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 
-	service := uploadService.NewClient()
+	service := fileService.NewFileService()
 	removeErr := service.RemoveFile(fileName.FileName)
 	if removeErr != nil {
 		fiberErr, ok := removeErr.(*fiber.Error)
@@ -195,7 +195,7 @@ func (ctr DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
 }
 
 func (ctr DevControllerImpl) GetFilesList(c *fiber.Ctx) error {
-	service := uploadService.NewClient()
+	service := fileService.NewFileService()
 	resp, getErr := service.GetFilesList()
 	if getErr != nil {
 		fiberErr, ok := getErr.(*fiber.Error)

@@ -47,7 +47,7 @@ type client struct {
 	BucketName   string
 }
 
-func NewClient() UploadFile {
+func NewFileService() UploadFile {
 	config := env.Configuration()
 	baseURL := config.BucketURL + "/storage/v1/object/"
 	return &client{
