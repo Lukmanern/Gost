@@ -30,8 +30,9 @@ type DevController interface {
 }
 
 type DevControllerImpl struct {
-	redis *redis.Client
-	db    *gorm.DB
+	fileSvc fileService.UploadFile
+	redis   *redis.Client
+	db      *gorm.DB
 }
 
 var (
@@ -42,8 +43,9 @@ var (
 func NewDevControllerImpl() DevController {
 	devImplOnce.Do(func() {
 		devImpl = &DevControllerImpl{
-			redis: connector.LoadRedisDatabase(),
-			db:    connector.LoadDatabase(),
+			fileSvc: fileService.NewFileService(),
+			redis:   connector.LoadRedisDatabase(),
+			db:      connector.LoadDatabase(),
 		}
 	})
 
@@ -154,8 +156,7 @@ func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 		return response.BadRequest(c, "file size exceeds the maximum allowed (3MB)")
 	}
 
-	service := fileService.NewFileService()
-	fileUrl, uploadErr := service.UploadFile(file)
+	fileUrl, uploadErr := ctr.fileSvc.UploadFile(file)
 	if uploadErr != nil {
 		fiberErr, ok := uploadErr.(*fiber.Error)
 		if ok {
@@ -163,7 +164,6 @@ func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+uploadErr.Error())
 	}
-
 	return response.SuccessCreated(c, map[string]any{
 		"file_url": fileUrl,
 	})
@@ -181,8 +181,7 @@ func (ctr DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
 	}
 
-	service := fileService.NewFileService()
-	removeErr := service.RemoveFile(fileName.FileName)
+	removeErr := ctr.fileSvc.RemoveFile(fileName.FileName)
 	if removeErr != nil {
 		fiberErr, ok := removeErr.(*fiber.Error)
 		if ok {
@@ -190,13 +189,11 @@ func (ctr DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+removeErr.Error())
 	}
-
 	return response.SuccessNoContent(c)
 }
 
 func (ctr DevControllerImpl) GetFilesList(c *fiber.Ctx) error {
-	service := fileService.NewFileService()
-	resp, getErr := service.GetFilesList()
+	resp, getErr := ctr.fileSvc.GetFilesList()
 	if getErr != nil {
 		fiberErr, ok := getErr.(*fiber.Error)
 		if ok {
@@ -204,6 +201,5 @@ func (ctr DevControllerImpl) GetFilesList(c *fiber.Ctx) error {
 		}
 		return response.Error(c, "internal server error: "+getErr.Error())
 	}
-
 	return response.SuccessLoaded(c, resp)
 }

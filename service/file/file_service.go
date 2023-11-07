@@ -13,16 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type SortBy struct {
-	Column string `json:"column"`
-	Order  string `json:"order"`
-}
-type ListReqBody struct {
-	Limit         int    `json:"limit"`
-	Offset        int    `json:"offset"`
-	SortByOptions SortBy `json:"sortBy"`
-	Prefix        string `json:"prefix"`
-}
 type FileReponse struct {
 	Name      string `json:"name"`
 	CreatedAt string `json:"created_at"`
@@ -43,8 +33,6 @@ type client struct {
 	UploadURL    string
 	DeleteURL    string
 	Token        string
-	BucketURL    string
-	BucketName   string
 }
 
 func NewFileService() UploadFile {
@@ -56,8 +44,6 @@ func NewFileService() UploadFile {
 		UploadURL:    baseURL + config.BucketName + "/",
 		DeleteURL:    baseURL + config.BucketName,
 		Token:        config.BucketToken,
-		BucketURL:    config.BucketURL,
-		BucketName:   config.BucketName,
 	}
 }
 
@@ -155,11 +141,22 @@ func (c *client) RemoveFile(fileName string) (err error) {
 }
 
 func (c *client) GetFilesList() (files []map[string]any, err error) {
-	body := ListReqBody{
+	type sortBy struct {
+		Column string `json:"column"`
+		Order  string `json:"order"`
+	}
+	type listReqBody struct {
+		Limit         int    `json:"limit"`
+		Offset        int    `json:"offset"`
+		Prefix        string `json:"prefix"`
+		SortByOptions sortBy `json:"sortBy"`
+	}
+
+	body := listReqBody{
 		Limit:  999,
 		Offset: 1,
 		Prefix: "",
-		SortByOptions: SortBy{
+		SortByOptions: sortBy{
 			Column: "name",
 			Order:  "asc",
 		},

@@ -86,6 +86,9 @@ func Test_Methods(t *testing.T) {
 		{"GetFromRedis", ctr.GetFromRedis, http.StatusOK},
 		{"CheckNewRole", ctr.CheckNewRole, http.StatusOK},
 		{"CheckNewPermission", ctr.CheckNewPermission, http.StatusOK},
+		{"UploadFile", ctr.UploadFile, http.StatusBadRequest},
+		{"RemoveFile", ctr.RemoveFile, http.StatusBadRequest},
+		{"GetFilesList", ctr.GetFilesList, http.StatusOK},
 	}
 
 	for _, tc := range testCases {
