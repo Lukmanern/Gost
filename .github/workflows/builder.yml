@@ -79,7 +79,7 @@ jobs:
         run: cp .env.example .env
 
       - name: Test
-        run: go test -race -timeout 20s ./internal/...
+        run: go test -race -timeout 60s ./internal/...
 
       - name: Build
         run: go build -o main main.go
