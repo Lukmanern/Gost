@@ -24,10 +24,22 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     strategy:
       matrix:
-        go-version: ["1.18.x", "1.19.x", "1.20.x", "1.21.x"]
+        go-version: ["1.19.x", "1.20.x", "1.21.x"]
 
     steps:
       - uses: actions/checkout@v3
