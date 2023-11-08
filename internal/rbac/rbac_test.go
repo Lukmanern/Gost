@@ -5,6 +5,13 @@ import (
 )
 
 func TestAllPermissions(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			t.Error("should not panic, but got:", r)
+		}
+	}()
+
 	for _, permission := range AllPermissions() {
 		if permission.Name == "" {
 			t.Error("permission name should not string-nil")
@@ -29,18 +36,7 @@ func TestCountPermissions(t *testing.T) {
 	}
 }
 
-func Test_AllPermissions(t *testing.T) {
-	defer func() {
-		r := recover()
-		if r != nil {
-			t.Error("should not panic, but got:", r)
-		}
-	}()
-
-	AllPermissions()
-}
-
-func Test_AllRoles(t *testing.T) {
+func TestAllRoles(t *testing.T) {
 	for _, role := range AllRoles() {
 		if role.Name == "" {
 			t.Error("name should not string-nil")
@@ -48,7 +44,7 @@ func Test_AllRoles(t *testing.T) {
 	}
 }
 
-func Test_CountRoles(t *testing.T) {
+func TestCountRoles(t *testing.T) {
 	hashMapRoles := make(map[string]int, 0)
 
 	for _, role := range AllRoles() {

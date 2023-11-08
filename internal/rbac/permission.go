@@ -6,7 +6,7 @@ import (
 	"github.com/Lukmanern/gost/domain/entity"
 )
 
-// Don't forget to run Test_AllPermissions
+// Don't forget to run TestAllPermissions
 // to audit
 func AllPermissions() []entity.Permission {
 	permissions := []entity.Permission{

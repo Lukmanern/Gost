@@ -10,8 +10,6 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/database/connector"
@@ -117,7 +115,7 @@ func (svc *UserServiceImpl) Register(ctx context.Context, user model.UserRegiste
 	}
 
 	userEntity := entity.User{
-		Name:             cases.Title(language.Und).String(user.Name),
+		Name:             helper.ToTitle(user.Name),
 		Email:            user.Email,
 		Password:         passwordHashed,
 		VerificationCode: &verifCode,
@@ -455,7 +453,7 @@ func (svc *UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserPr
 
 	userEntity := entity.User{
 		ID:               user.ID,
-		Name:             cases.Title(language.Und).String(user.Name),
+		Name:             helper.ToTitle(user.Name),
 		VerificationCode: userByID.VerificationCode,
 		ActivatedAt:      userByID.ActivatedAt,
 	}

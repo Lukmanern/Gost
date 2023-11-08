@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
@@ -38,7 +36,7 @@ func TestNewUserService(t *testing.T) {
 	}
 }
 
-func Test_SuccessRegister(t *testing.T) {
+func TestSuccessRegister(t *testing.T) {
 	defer func() {
 		connector.LoadRedisDatabase().FlushAll()
 	}()
@@ -75,7 +73,7 @@ func Test_SuccessRegister(t *testing.T) {
 	if getErr != nil || userByID == nil {
 		t.Error("should not error and id should not nil")
 	}
-	if userByID.Name != cases.Title(language.Und).String(modelUserRegis.Name) ||
+	if userByID.Name != helper.ToTitle(modelUserRegis.Name) ||
 		userByID.Email != modelUserRegis.Email ||
 		userByID.Roles[0].ID != modelUserRegis.RoleID {
 		t.Error("should equal")
@@ -267,7 +265,7 @@ func Test_SuccessRegister(t *testing.T) {
 	if getErr != nil {
 		t.Error("should not error")
 	}
-	if profile.Name != cases.Title(language.Und).String(modelUserUpdate.Name) {
+	if profile.Name != helper.ToTitle(modelUserUpdate.Name) {
 		t.Error("should equal")
 	}
 
@@ -279,7 +277,7 @@ func Test_SuccessRegister(t *testing.T) {
 	}
 }
 
-func Test_FailedRegister(t *testing.T) {
+func TestFailedRegister(t *testing.T) {
 	defer func() {
 		connector.LoadRedisDatabase().FlushAll()
 	}()
@@ -369,7 +367,7 @@ func Test_FailedRegister(t *testing.T) {
 	}
 }
 
-func Test_Banned_IP_Address(t *testing.T) {
+func TestBannedIPAddress(t *testing.T) {
 	defer func() {
 		connector.LoadRedisDatabase().FlushAll()
 	}()

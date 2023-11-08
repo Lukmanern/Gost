@@ -11,14 +11,13 @@ import (
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/hash"
+	"github.com/Lukmanern/gost/internal/helper"
 	repository "github.com/Lukmanern/gost/repository/user"
 )
 
@@ -63,7 +62,7 @@ func (svc *UserManagementServiceImpl) Create(ctx context.Context, user model.Use
 	}
 
 	userEntity := entity.User{
-		Name:     cases.Title(language.Und).String(user.Name),
+		Name:     helper.ToTitle(user.Name),
 		Email:    user.Email,
 		Password: passwordHashed,
 	}
@@ -146,7 +145,7 @@ func (svc *UserManagementServiceImpl) Update(ctx context.Context, user model.Use
 
 	userEntity := entity.User{
 		ID:   user.ID,
-		Name: cases.Title(language.Und).String(user.Name),
+		Name: helper.ToTitle(user.Name),
 		// ...
 		// add more fields
 	}

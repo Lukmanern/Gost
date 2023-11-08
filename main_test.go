@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func Test_1(t *testing.T) {
+func TestMain(t *testing.T) {
 	defer func() {
 		r := recover()
 		if r != nil {

@@ -10,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
@@ -60,7 +58,7 @@ func TestNewUserController(t *testing.T) {
 	}
 }
 
-func Test_Register(t *testing.T) {
+func TestRegister(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -227,7 +225,7 @@ func Test_Register(t *testing.T) {
 			if getErr != nil || userByEmail == nil {
 				t.Fatal("should success whilte create and get user")
 			}
-			if userByEmail.Name != cases.Title(language.Und).String(tc.payload.Name) {
+			if userByEmail.Name != helper.ToTitle(tc.payload.Name) {
 				t.Error("name should equal")
 			}
 
@@ -240,7 +238,7 @@ func Test_Register(t *testing.T) {
 
 }
 
-func Test_AccountActivation(t *testing.T) {
+func TestAccountActivation(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -351,7 +349,7 @@ func Test_AccountActivation(t *testing.T) {
 	}
 }
 
-func Test_DeleteAccountActivation(t *testing.T) {
+func TestDeleteAccountActivation(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -463,7 +461,7 @@ func Test_DeleteAccountActivation(t *testing.T) {
 	}
 }
 
-func Test_ForgetPassword(t *testing.T) {
+func TestForgetPassword(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -577,7 +575,7 @@ func Test_ForgetPassword(t *testing.T) {
 	}
 }
 
-func Test_ResetPassword(t *testing.T) {
+func TestResetPassword(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -727,7 +725,7 @@ func Test_ResetPassword(t *testing.T) {
 	}
 }
 
-func Test_Login(t *testing.T) {
+func TestLogin(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -965,7 +963,7 @@ func Test_Login(t *testing.T) {
 	}
 }
 
-func Test_Logout(t *testing.T) {
+func TestLogout(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -1084,7 +1082,7 @@ func Test_Logout(t *testing.T) {
 	}
 }
 
-func Test_UpdatePassword(t *testing.T) {
+func TestUpdatePassword(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -1233,7 +1231,7 @@ func Test_UpdatePassword(t *testing.T) {
 	}
 }
 
-func Test_UpdateProfile(t *testing.T) {
+func TestUpdateProfile(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -1362,14 +1360,14 @@ func Test_UpdateProfile(t *testing.T) {
 				t.Error("should not error")
 			}
 
-			if userByID.Name != cases.Title(language.Und).String(tc.payload.Name) {
+			if userByID.Name != helper.ToTitle(tc.payload.Name) {
 				t.Error("shoudl equal")
 			}
 		}
 	}
 }
 
-func Test_MyProfile(t *testing.T) {
+func TestMyProfile(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr

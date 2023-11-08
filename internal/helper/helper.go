@@ -10,6 +10,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func RandomString(n uint) string {
@@ -42,12 +44,6 @@ func RandomEmail() string {
 	return randEmail
 }
 
-// This used for testing handler : controller/ middleware/ any
-func NewFiberCtx() *fiber.Ctx {
-	app := fiber.New()
-	return app.AcquireCtx(&fasthttp.RequestCtx{})
-}
-
 func RandomIPAddress() string {
 	source := rand.NewSource(time.Now().UnixNano())
 	rng := rand.New(source)
@@ -68,4 +64,14 @@ func ValidateEmails(emails ...string) error {
 		}
 	}
 	return nil
+}
+
+// This used for testing handler : controller/ middleware/ any
+func NewFiberCtx() *fiber.Ctx {
+	app := fiber.New()
+	return app.AcquireCtx(&fasthttp.RequestCtx{})
+}
+
+func ToTitle(s string) string {
+	return cases.Title(language.Und).String(s)
 }

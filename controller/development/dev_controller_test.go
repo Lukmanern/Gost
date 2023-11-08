@@ -67,7 +67,7 @@ func TestNewDevControllerImpl(t *testing.T) {
 	}
 }
 
-func Test_Methods(t *testing.T) {
+func TestMethods(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctr := NewDevControllerImpl()
 	if ctr == nil || c == nil {

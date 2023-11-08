@@ -45,13 +45,6 @@ func TestRandomEmail(t *testing.T) {
 	}
 }
 
-func TestNewFiberCtx(t *testing.T) {
-	c := NewFiberCtx()
-	if c == nil {
-		t.Error("should not nil")
-	}
-}
-
 func TestRandomIPAddress(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		ipRand := RandomIPAddress()
@@ -70,7 +63,7 @@ func TestValidateEmails(t *testing.T) {
 
 	err2 := ValidateEmails("validemail0987@gmail.com")
 	if err2 != nil {
-		t.Error("should err not nil")
+		t.Error("should not err")
 	}
 
 	err3 := ValidateEmails("validemail0987@gmail.com", "invalidemail0987@.gmail.com")
@@ -81,5 +74,41 @@ func TestValidateEmails(t *testing.T) {
 	err4 := ValidateEmails("validemail0987@gmail.com", "validemail0987@gmail.com", "invalidemail0987@gmail.com.")
 	if err4 == nil {
 		t.Error("should err not nil")
+	}
+}
+
+func TestNewFiberCtx(t *testing.T) {
+	c := NewFiberCtx()
+	if c == nil {
+		t.Error("should not nil")
+	}
+}
+
+func TestToTitle(t *testing.T) {
+	payloads := []struct {
+		str     string
+		isEqual bool
+	}{
+		{"", true},
+		{"Bca", true},
+		{"A B C", true},
+		{"Your Name", true},
+		{"ABC", false},
+		{"aa", false},
+		{" bb", false},
+		{"   ccc", false},
+		{"a ab cc", false},
+		{"your -Name", false},
+		{"-m'rning", false},
+	}
+
+	for _, payload := range payloads {
+		res := ToTitle(payload.str)
+
+		if res != payload.str && payload.isEqual {
+			t.Errorf("should equal, but not at: %s got %s", payload.str, res)
+		} else if res == payload.str && !payload.isEqual {
+			t.Errorf("should not equal, but equal at: %s got %s", payload.str, res)
+		}
 	}
 }

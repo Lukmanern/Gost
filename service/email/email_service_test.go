@@ -15,7 +15,7 @@ func init() {
 	connector.LoadRedisDatabase()
 }
 
-func Test_SendEmail(t *testing.T) {
+func TestSendEmail(t *testing.T) {
 	emailService := NewEmailService()
 	if emailService == nil {
 		t.Error("should not nil")

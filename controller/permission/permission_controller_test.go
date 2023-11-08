@@ -52,7 +52,7 @@ func init() {
 	permController = NewPermissionController(permService)
 }
 
-func Test_Perm_NewPermissionController(t *testing.T) {
+func TestPermNewPermissionController(t *testing.T) {
 	permSvc := service.NewPermissionService()
 	permCtr := NewPermissionController(permSvc)
 
@@ -61,7 +61,7 @@ func Test_Perm_NewPermissionController(t *testing.T) {
 	}
 }
 
-func Test_Perm_Create(t *testing.T) {
+func TestPermCreate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -167,7 +167,7 @@ func Test_Perm_Create(t *testing.T) {
 	}
 }
 
-func Test_Perm_Get(t *testing.T) {
+func TestPermGet(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -234,7 +234,7 @@ func Test_Perm_Get(t *testing.T) {
 	}
 }
 
-func Test_Perm_GetAll(t *testing.T) {
+func TestPermGetAll(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -308,7 +308,7 @@ func Test_Perm_GetAll(t *testing.T) {
 	}
 }
 
-func Test_Perm_Update(t *testing.T) {
+func TestPermUpdate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -423,7 +423,7 @@ func Test_Perm_Update(t *testing.T) {
 	}
 }
 
-func Test_Perm_Delete(t *testing.T) {
+func TestPermDelete(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController

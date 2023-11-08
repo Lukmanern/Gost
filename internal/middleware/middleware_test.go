@@ -282,7 +282,7 @@ func TestJWTHandler_CheckHasRole(t *testing.T) {
 	}
 }
 
-func Test_PermissionBitGroup(t *testing.T) {
+func TestPermissionBitGroup(t *testing.T) {
 	d := 8
 	testCases := []struct {
 		input  int
@@ -335,7 +335,7 @@ func Test_PermissionBitGroup(t *testing.T) {
 	}
 }
 
-func Test_CheckHasPermission(t *testing.T) {
+func TestCheckHasPermission(t *testing.T) {
 	// user perms
 	permIDs := make([]int, 0)
 	for i := 1; i <= 19; i++ {

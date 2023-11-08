@@ -35,7 +35,7 @@ func init() {
 	ctx = context.Background()
 }
 
-func Test_RunApp(t *testing.T) {
+func TestRunApp(t *testing.T) {
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -47,7 +47,7 @@ func Test_RunApp(t *testing.T) {
 	time.Sleep(3 * time.Second)
 }
 
-func Test_app_router(t *testing.T) {
+func TestAppRouter(t *testing.T) {
 	defer func() {
 		r := recover()
 		if r != nil {

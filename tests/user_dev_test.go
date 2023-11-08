@@ -20,8 +20,6 @@ import (
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	controller "github.com/Lukmanern/gost/controller/user_management"
 	service "github.com/Lukmanern/gost/service/user_management"
@@ -52,7 +50,7 @@ func init() {
 	userDevController = controller.NewUserManagementController(userDevService)
 }
 
-func Test_Create(t *testing.T) {
+func TestCreate(t *testing.T) {
 	go application.RunApp()
 	time.Sleep(4 * time.Second)
 
@@ -165,7 +163,7 @@ func Test_Create(t *testing.T) {
 		}
 		if respModel.Success {
 			userByEmail, getErr := userDevService.GetByEmail(ctx, tc.payload.Email)
-			if userByEmail.Name != cases.Title(language.Und).String(tc.payload.Name) {
+			if userByEmail.Name != helper.ToTitle(tc.payload.Name) {
 				t.Error("should equal")
 			}
 			if getErr != nil {

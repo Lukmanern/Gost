@@ -15,8 +15,6 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
@@ -47,7 +45,7 @@ func init() {
 	userDevController = controller.NewUserManagementController(userDevService)
 }
 
-func Test_Create(t *testing.T) {
+func TestCreate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctr := userDevController
 	if ctr == nil || c == nil {
@@ -175,14 +173,14 @@ func Test_Create(t *testing.T) {
 					t.Error("should not error")
 				}
 			}
-			if userByEMail.Name != cases.Title(language.Und).String(tc.payload.Name) {
+			if userByEMail.Name != helper.ToTitle(tc.payload.Name) {
 				t.Error("should equal")
 			}
 		}
 	}
 }
 
-func Test_Get(t *testing.T) {
+func TestGet(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
@@ -273,7 +271,7 @@ func Test_Get(t *testing.T) {
 	}
 }
 
-func Test_GetAll(t *testing.T) {
+func TestGetAll(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
@@ -357,7 +355,7 @@ func Test_GetAll(t *testing.T) {
 	}
 }
 
-func Test_Update(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctr := userDevController
 	ctx := c.Context()
@@ -474,7 +472,7 @@ func Test_Update(t *testing.T) {
 	}
 }
 
-func Test_Delete(t *testing.T) {
+func TestDelete(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctr := userDevController
 	ctx := c.Context()

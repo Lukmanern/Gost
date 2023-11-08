@@ -48,7 +48,7 @@ func init() {
 	roleController = NewRoleController(roleService)
 }
 
-func Test_Role_Create(t *testing.T) {
+func TestRoleCreate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -191,7 +191,7 @@ func Test_Role_Create(t *testing.T) {
 	}
 }
 
-func Test_Role_Connect(t *testing.T) {
+func TestRoleConnect(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -322,7 +322,7 @@ func Test_Role_Connect(t *testing.T) {
 	}
 }
 
-func Test_Role_Get(t *testing.T) {
+func TestRoleGet(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -418,7 +418,7 @@ func Test_Role_Get(t *testing.T) {
 	}
 }
 
-func Test_Role_GetAll(t *testing.T) {
+func TestRoleGetAll(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -509,7 +509,7 @@ func Test_Role_GetAll(t *testing.T) {
 	}
 }
 
-func Test_Role_Update(t *testing.T) {
+func TestRoleUpdate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -648,7 +648,7 @@ func Test_Role_Update(t *testing.T) {
 	}
 }
 
-func Test_Role_Delete(t *testing.T) {
+func TestRoleDelete(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
