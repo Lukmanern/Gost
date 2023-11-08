@@ -11,7 +11,7 @@ import (
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
-	repository "github.com/Lukmanern/gost/repository/rbac"
+	repository "github.com/Lukmanern/gost/repository/role"
 )
 
 type RoleService interface {

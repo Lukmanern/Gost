@@ -16,8 +16,8 @@ import (
 var (
 	roleRepoImpl  RoleRepositoryImpl
 	permissionsID []int
-	// timeNow and ctx is declared
-	// at permission_repository_test file
+	timeNow       time.Time
+	ctx           context.Context
 )
 
 func init() {
