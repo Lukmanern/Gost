@@ -10,7 +10,8 @@ type UserRegister struct {
 }
 
 type UserVerificationCode struct {
-	Code string `validate:"required,min=21,max=60" json:"code"`
+	Code  string `validate:"required,min=21,max=60" json:"code"`
+	Email string `validate:"required,email,min=5,max=60" json:"email"`
 }
 
 type UserLogin struct {

@@ -2,49 +2,7 @@
 
 ### Todo / OnDev
 
-1. Add file management (upload and download)
-2. Make code more clean
-   controller dev Done
-
-```
-
-// uint8 is the lowest memory cost in Golang
-// maximum value length is 255
-type (
-	PermissionMap     = map[uint8]uint8
-	PermissionNameMap = map[string]uint8
-)
-
-var (
-	PermissionHashMap     PermissionMap
-	PermissionNameHashMap PermissionNameMap
-)
-
-// Run once at app.go setupfunc
-func PermissionsHashMap() PermissionMap {
-	PermissionHashMap := make(PermissionMap, 0)
-	permissions := AllPermissions()
-	for i := range permissions {
-		PermissionHashMap[uint8(i+1)] = 0b_0001
-	}
-
-	return PermissionHashMap
-}
-
-```
-
-### Done / OnTest
-
-1. Reset Password
-2. Email Confirmation For Forget Password
-3. Email Confirmation For Registration
-4. User request to delete the account
-5. Migrate from MySQL to Supabase PostgreSQL
-6. Add more test for controller and service
-7. add Max Retry/Jail in Login
-8. Modify Middleware Test
-9. Add Test file
-10. Fixing RBAC
+1. Add new feature file management (upload and download)
 
 ### Read List
 

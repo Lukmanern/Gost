@@ -24,8 +24,8 @@ func AllRoles() []entity.Role {
 }
 
 const (
-	RoleUser  = "user"
 	RoleAdmin = "admin"
+	RoleUser  = "user"
 	// ...
 	// add more here
 )

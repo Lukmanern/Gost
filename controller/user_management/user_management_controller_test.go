@@ -38,12 +38,6 @@ func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
 	appUrl = config.AppUrl
-	dbURI := config.GetDatabaseURI()
-	privKey := config.GetPrivateKey()
-	pubKey := config.GetPublicKey()
-	if dbURI == "" || privKey == nil || pubKey == nil {
-		log.Fatal("Database URI or keys aren't valid")
-	}
 
 	connector.LoadDatabase()
 	r := connector.LoadRedisDatabase()
@@ -64,7 +58,7 @@ func Test_Create(t *testing.T) {
 
 	createdUser := model.UserCreate{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(11),
 	}
 	createdUserID, createErr := userDevService.Create(c.Context(), createdUser)
@@ -88,7 +82,7 @@ func Test_Create(t *testing.T) {
 			caseName: "success create user -1",
 			payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0] + "xyz",
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},
@@ -98,7 +92,7 @@ func Test_Create(t *testing.T) {
 			caseName: "success create user -2",
 			payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0] + "xyz",
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},
@@ -108,7 +102,7 @@ func Test_Create(t *testing.T) {
 			caseName: "success create user -3",
 			payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0] + "xyz",
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},
@@ -138,7 +132,7 @@ func Test_Create(t *testing.T) {
 			caseName: "failed create user: password too short",
 			payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: "short",
 				IsAdmin:  true,
 			},
@@ -197,7 +191,7 @@ func Test_Get(t *testing.T) {
 
 	createdUser := model.UserCreate{
 		Name:     helper.RandomString(11),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(11),
 		IsAdmin:  true,
 	}
@@ -290,7 +284,7 @@ func Test_GetAll(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		createdUser := model.UserCreate{
 			Name:     helper.RandomString(11),
-			Email:    helper.RandomEmails(1)[0],
+			Email:    helper.RandomEmail(),
 			Password: helper.RandomString(11),
 			IsAdmin:  true,
 		}
@@ -375,7 +369,7 @@ func Test_Update(t *testing.T) {
 
 	createdUser := model.UserCreate{
 		Name:     helper.RandomString(11),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(11),
 		IsAdmin:  true,
 	}
@@ -492,7 +486,7 @@ func Test_Delete(t *testing.T) {
 
 	createdUser := model.UserCreate{
 		Name:     helper.RandomString(11),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(11),
 		IsAdmin:  true,
 	}

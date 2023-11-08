@@ -5,7 +5,6 @@
 package service
 
 import (
-	"log"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,13 +23,6 @@ import (
 func init() {
 	// Check env and database
 	env.ReadConfig("./../../.env")
-	c := env.Configuration()
-	dbURI := c.GetDatabaseURI()
-	privKey := c.GetPrivateKey()
-	pubKey := c.GetPublicKey()
-	if dbURI == "" || privKey == nil || pubKey == nil {
-		log.Fatal("Database URI or keys aren't valid")
-	}
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
@@ -65,7 +57,7 @@ func Test_SuccessRegister(t *testing.T) {
 
 	modelUserRegis := model.UserRegister{
 		Name:     helper.RandomString(12),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(12),
 		RoleID:   1, // admin
 	}
@@ -134,7 +126,10 @@ func Test_SuccessRegister(t *testing.T) {
 
 	vCode := userByID.VerificationCode
 
-	verifErr := svc.Verification(ctx, *vCode)
+	verifErr := svc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifErr != nil {
 		t.Error("should not nil")
 	}
@@ -303,7 +298,7 @@ func Test_FailedRegister(t *testing.T) {
 
 	modelUserRegis := model.UserRegister{
 		Name:     helper.RandomString(12),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(12),
 		RoleID:   -10, // failed
 	}
@@ -316,7 +311,10 @@ func Test_FailedRegister(t *testing.T) {
 		userRepo.Delete(ctx, userID)
 	}()
 
-	verifErr := svc.Verification(ctx, "wrongCode")
+	verifErr := svc.Verification(ctx, model.UserVerificationCode{
+		Code:  "wrongCode",
+		Email: "wrongEmail",
+	})
 	if verifErr == nil {
 		t.Error("should error")
 	}
@@ -327,7 +325,10 @@ func Test_FailedRegister(t *testing.T) {
 		}
 	}
 
-	deleteUserErr := svc.DeleteUserByVerification(ctx, "wrongCode")
+	deleteUserErr := svc.DeleteUserByVerification(ctx, model.UserVerificationCode{
+		Code:  "wrongCode",
+		Email: "wrongEmail",
+	})
 	if deleteUserErr == nil {
 		t.Error("should error")
 	}

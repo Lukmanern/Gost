@@ -71,7 +71,7 @@ func Test_Create(t *testing.T) {
 	}
 	modelUserCreate := model.UserCreate{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(11),
 		IsAdmin:  true,
 	}
@@ -108,7 +108,7 @@ func Test_Create(t *testing.T) {
 			CaseName: "success create",
 			payload: model.UserCreate{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},

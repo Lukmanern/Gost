@@ -21,7 +21,6 @@ import (
 	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
-	"github.com/Lukmanern/gost/internal/rbac"
 	repository "github.com/Lukmanern/gost/repository/user"
 	emailService "github.com/Lukmanern/gost/service/email"
 	roleService "github.com/Lukmanern/gost/service/rbac"
@@ -29,8 +28,8 @@ import (
 
 type UserService interface {
 	Register(ctx context.Context, user model.UserRegister) (id int, err error)
-	Verification(ctx context.Context, verifyCode string) (err error)
-	DeleteUserByVerification(ctx context.Context, verifyCode string) (err error)
+	Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error)
+	DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error)
 	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
@@ -57,8 +56,8 @@ var (
 func NewUserService(roleService roleService.RoleService) UserService {
 	userAuthServiceOnce.Do(func() {
 		userAuthService = &UserServiceImpl{
-			repository:   repository.NewUserRepository(),
 			roleService:  roleService,
+			repository:   repository.NewUserRepository(),
 			emailService: emailService.NewEmailService(),
 			jwtHandler:   middleware.NewJWTHandler(),
 			redis:        connector.LoadRedisDatabase(),
@@ -149,10 +148,11 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	return id, nil
 }
 
-func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) (err error) {
+func (svc UserServiceImpl) Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
 	// search user by code, if not exist return error
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
-		"verification_code =": verifyCode,
+		"verification_code =": verifyData.Code,
+		"email =":             verifyData.Email,
 	})
 	if getByCodeErr != nil || userEntity == nil {
 		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
@@ -171,10 +171,11 @@ func (svc UserServiceImpl) Verification(ctx context.Context, verifyCode string) 
 	return nil
 }
 
-func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyCode string) (err error) {
+func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
 	// search user by code, if not exist return error
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
-		"verification_code =": verifyCode,
+		"verification_code =": verifyData.Code,
+		"email =":             verifyData.Email,
 	})
 	if getByCodeErr != nil || userEntity == nil {
 		return fiber.NewError(fiber.StatusNotFound, "verification code not found")
@@ -234,15 +235,15 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 		return "", fiber.NewError(fiber.StatusBadRequest, message)
 	}
 
-	// Todo : refactor
 	userRole := userEntity.Roles[0]
-	permissionMapID := make(rbac.PermissionMap, 0)
-	for _, permission := range userRole.Permissions {
-		permissionMapID[uint8(permission.ID)] = 0b_0001
+	permIDs := make([]int, 0)
+	for _, perm := range userRole.Permissions {
+		permIDs = append(permIDs, perm.ID)
 	}
+	bitGroups := middleware.BuildBitGroups(permIDs...)
 	config := env.Configuration()
 	expired := time.Now().Add(config.AppAccessTokenTTL)
-	token, generetaErr := svc.jwtHandler.GenerateJWT(userEntity.ID, user.Email, userRole.Name, permissionMapID, expired)
+	token, generetaErr := svc.jwtHandler.GenerateJWT(userEntity.ID, user.Email, userRole.Name, bitGroups, expired)
 	if generetaErr != nil {
 		message := fmt.Sprintf("system error while generating token (%s)", generetaErr.Error())
 		return "", fiber.NewError(fiber.StatusInternalServerError, message)

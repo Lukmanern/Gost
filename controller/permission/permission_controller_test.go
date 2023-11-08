@@ -35,17 +35,13 @@ var (
 	userRepo       userRepository.UserRepository
 	permService    service.PermissionService
 	permController PermissionController
+	appUrl         string
 )
 
 func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
-	dbURI := config.GetDatabaseURI()
-	privKey := config.GetPrivateKey()
-	pubKey := config.GetPublicKey()
-	if dbURI == "" || privKey == nil || pubKey == nil {
-		log.Fatal("Database URI or keys aren't valid")
-	}
+	appUrl = config.AppUrl
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
@@ -321,7 +317,7 @@ func Test_Perm_Update(t *testing.T) {
 
 	// create 1 permission
 	permID, createErr := permService.Create(ctx, model.PermissionCreate{
-		Name:        "example-permission-001",
+		Name:        strings.ToLower(helper.RandomString(12)),
 		Description: "description-of-example-permission-001",
 	})
 	if createErr != nil || permID < 1 {
@@ -436,7 +432,7 @@ func Test_Perm_Delete(t *testing.T) {
 
 	// create 1 permission
 	permID, createErr := permService.Create(ctx, model.PermissionCreate{
-		Name:        "example-permission-001",
+		Name:        strings.ToLower(helper.RandomString(12)),
 		Description: "description-of-example-permission-001",
 	})
 	if createErr != nil || permID < 1 {
@@ -509,7 +505,7 @@ func createUserAndToken() (userID int, token string) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -526,7 +522,10 @@ func createUserAndToken() (userID int, token string) {
 		log.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *userByID.VerificationCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		log.Fatal("should not error")
 	}

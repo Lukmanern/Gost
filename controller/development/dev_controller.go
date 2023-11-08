@@ -5,12 +5,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/response"
+
+	fileService "github.com/Lukmanern/gost/service/file"
 )
 
 type DevController interface {
@@ -21,11 +24,15 @@ type DevController interface {
 	GetFromRedis(c *fiber.Ctx) error
 	CheckNewRole(c *fiber.Ctx) error
 	CheckNewPermission(c *fiber.Ctx) error
+	UploadFile(c *fiber.Ctx) error
+	RemoveFile(c *fiber.Ctx) error
+	GetFilesList(c *fiber.Ctx) error
 }
 
 type DevControllerImpl struct {
-	redis *redis.Client
-	db    *gorm.DB
+	fileSvc fileService.UploadFile
+	redis   *redis.Client
+	db      *gorm.DB
 }
 
 var (
@@ -36,8 +43,9 @@ var (
 func NewDevControllerImpl() DevController {
 	devImplOnce.Do(func() {
 		devImpl = &DevControllerImpl{
-			redis: connector.LoadRedisDatabase(),
-			db:    connector.LoadDatabase(),
+			fileSvc: fileService.NewFileService(),
+			redis:   connector.LoadRedisDatabase(),
+			db:      connector.LoadDatabase(),
 		}
 	})
 
@@ -129,4 +137,69 @@ func (ctr DevControllerImpl) CheckNewRole(c *fiber.Ctx) error {
 
 func (ctr DevControllerImpl) CheckNewPermission(c *fiber.Ctx) error {
 	return response.CreateResponse(c, fiber.StatusOK, true, "success check new permission", nil)
+}
+
+func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return response.BadRequest(c, "failed to parse form file: "+err.Error())
+	}
+	if file == nil {
+		return response.BadRequest(c, "file is nil or not found")
+	}
+	mimeType := file.Header.Get("Content-Type")
+	if mimeType != "application/pdf" {
+		return response.BadRequest(c, "only PDF file are allowed for upload")
+	}
+	maxSize := int64(3 * 1024 * 1024) // 3MB in bytes
+	if file.Size > maxSize {
+		return response.BadRequest(c, "file size exceeds the maximum allowed (3MB)")
+	}
+
+	fileUrl, uploadErr := ctr.fileSvc.UploadFile(file)
+	if uploadErr != nil {
+		fiberErr, ok := uploadErr.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return response.Error(c, "internal server error: "+uploadErr.Error())
+	}
+	return response.SuccessCreated(c, map[string]any{
+		"file_url": fileUrl,
+	})
+}
+
+func (ctr DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
+	var fileName struct {
+		FileName string `validate:"required,min=4,max=150" json:"file_name"`
+	}
+	if err := c.BodyParser(&fileName); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+	validate := validator.New()
+	if err := validate.Struct(&fileName); err != nil {
+		return response.BadRequest(c, "invalid json body: "+err.Error())
+	}
+
+	removeErr := ctr.fileSvc.RemoveFile(fileName.FileName)
+	if removeErr != nil {
+		fiberErr, ok := removeErr.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return response.Error(c, "internal server error: "+removeErr.Error())
+	}
+	return response.SuccessNoContent(c)
+}
+
+func (ctr DevControllerImpl) GetFilesList(c *fiber.Ctx) error {
+	resp, getErr := ctr.fileSvc.GetFilesList()
+	if getErr != nil {
+		fiberErr, ok := getErr.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+		}
+		return response.Error(c, "internal server error: "+getErr.Error())
+	}
+	return response.SuccessLoaded(c, resp)
 }

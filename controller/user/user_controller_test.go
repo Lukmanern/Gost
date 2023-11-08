@@ -36,12 +36,6 @@ func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
 	appUrl = config.AppUrl
-	dbURI := config.GetDatabaseURI()
-	privKey := config.GetPrivateKey()
-	pubKey := config.GetPublicKey()
-	if dbURI == "" || privKey == nil || pubKey == nil {
-		log.Fatal("Database URI or keys aren't valid")
-	}
 
 	connector.LoadDatabase()
 	r := connector.LoadRedisDatabase()
@@ -66,6 +60,7 @@ func TestNewUserController(t *testing.T) {
 }
 
 func Test_Register(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -77,7 +72,7 @@ func Test_Register(t *testing.T) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -110,7 +105,7 @@ func Test_Register(t *testing.T) {
 			},
 			payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(10),
 				RoleID:   1, // admin
 			},
@@ -125,7 +120,7 @@ func Test_Register(t *testing.T) {
 			},
 			payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(10),
 				RoleID:   1, // admin
 			},
@@ -140,7 +135,7 @@ func Test_Register(t *testing.T) {
 			},
 			payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(10),
 				RoleID:   1, // admin
 			},
@@ -170,7 +165,7 @@ func Test_Register(t *testing.T) {
 			},
 			payload: &model.UserRegister{
 				Name:     "",
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(10),
 				RoleID:   1, // admin
 			},
@@ -185,7 +180,7 @@ func Test_Register(t *testing.T) {
 			},
 			payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				Password: "",
 				RoleID:   1, // admin
 			},
@@ -245,6 +240,7 @@ func Test_Register(t *testing.T) {
 }
 
 func Test_AccountActivation(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -256,7 +252,7 @@ func Test_AccountActivation(t *testing.T) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -290,21 +286,24 @@ func Test_AccountActivation(t *testing.T) {
 			caseName: "success verify",
 			respCode: http.StatusOK,
 			payload: &model.UserVerificationCode{
-				Code: *vCode,
+				Code:  *vCode,
+				Email: createdUser.Email,
 			},
 		},
 		{
 			caseName: "failed verify: code not found",
 			respCode: http.StatusNotFound,
 			payload: &model.UserVerificationCode{
-				Code: *vCode,
+				Code:  *vCode,
+				Email: createdUser.Email,
 			},
 		},
 		{
-			caseName: "failed verify: code too short",
+			caseName: "failed verify: code/email too short",
 			respCode: http.StatusBadRequest,
 			payload: &model.UserVerificationCode{
-				Code: "",
+				Code:  "",
+				Email: "",
 			},
 		},
 	}
@@ -352,6 +351,7 @@ func Test_AccountActivation(t *testing.T) {
 }
 
 func Test_DeleteAccountActivation(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -363,7 +363,7 @@ func Test_DeleteAccountActivation(t *testing.T) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -397,21 +397,24 @@ func Test_DeleteAccountActivation(t *testing.T) {
 			caseName: "success delete account",
 			respCode: http.StatusOK,
 			payload: &model.UserVerificationCode{
-				Code: *vCode,
+				Code:  *vCode,
+				Email: createdUser.Email,
 			},
 		},
 		{
 			caseName: "failed delete account: code not found",
 			respCode: http.StatusNotFound,
 			payload: &model.UserVerificationCode{
-				Code: *vCode,
+				Code:  *vCode,
+				Email: createdUser.Email,
 			},
 		},
 		{
-			caseName: "failed delete account: code too short",
+			caseName: "failed delete account: code/email too short",
 			respCode: http.StatusBadRequest,
 			payload: &model.UserVerificationCode{
-				Code: "-",
+				Code:  "",
+				Email: "",
 			},
 		},
 	}
@@ -439,7 +442,7 @@ func Test_DeleteAccountActivation(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode)
+			t.Error("should equal, but got", resp.StatusCode, "on", tc.caseName)
 		}
 
 		// if success
@@ -460,6 +463,7 @@ func Test_DeleteAccountActivation(t *testing.T) {
 }
 
 func Test_ForgetPassword(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -471,7 +475,7 @@ func Test_ForgetPassword(t *testing.T) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -488,7 +492,10 @@ func Test_ForgetPassword(t *testing.T) {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *vCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Fatal("verification should not error")
 	}
@@ -529,7 +536,7 @@ func Test_ForgetPassword(t *testing.T) {
 			caseName: "faield forget password: email not found",
 			respCode: http.StatusNotFound,
 			payload: &model.UserForgetPassword{
-				Email: helper.RandomEmails(1)[0],
+				Email: helper.RandomEmail(),
 			},
 		},
 		{
@@ -570,6 +577,7 @@ func Test_ForgetPassword(t *testing.T) {
 }
 
 func Test_ResetPassword(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -581,7 +589,7 @@ func Test_ResetPassword(t *testing.T) {
 
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -597,7 +605,10 @@ func Test_ResetPassword(t *testing.T) {
 	if vCode == nil || userByID.ActivatedAt != nil {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
-	verifyErr := userSvc.Verification(ctx, *vCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Error("should not error")
 	}
@@ -716,6 +727,7 @@ func Test_ResetPassword(t *testing.T) {
 }
 
 func Test_Login(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -728,7 +740,7 @@ func Test_Login(t *testing.T) {
 	// create inactive user
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -758,7 +770,7 @@ func Test_Login(t *testing.T) {
 	func() {
 		createdUser_2 := model.UserRegister{
 			Name:     helper.RandomString(10),
-			Email:    helper.RandomEmails(1)[0],
+			Email:    helper.RandomEmail(),
 			Password: helper.RandomString(10),
 			RoleID:   1, // admin
 		}
@@ -776,7 +788,10 @@ func Test_Login(t *testing.T) {
 			t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 		}
 
-		verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+		verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+			Code:  *vCode,
+			Email: userByID.Email,
+		})
 		if verifyErr != nil {
 			t.Error("should not error")
 		}
@@ -847,7 +862,7 @@ func Test_Login(t *testing.T) {
 			respCode: http.StatusNotFound,
 			payload: &model.UserLogin{
 				Password: "secret123",
-				Email:    helper.RandomEmails(1)[0],
+				Email:    helper.RandomEmail(),
 				IP:       helper.RandomIPAddress(),
 			},
 		},
@@ -950,6 +965,7 @@ func Test_Login(t *testing.T) {
 }
 
 func Test_Logout(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -960,7 +976,7 @@ func Test_Logout(t *testing.T) {
 	// create inactive user
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -977,7 +993,10 @@ func Test_Logout(t *testing.T) {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Error("should not error")
 	}
@@ -1075,7 +1094,7 @@ func Test_UpdatePassword(t *testing.T) {
 	// create inactive user
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -1092,7 +1111,10 @@ func Test_UpdatePassword(t *testing.T) {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Error("should not error")
 	}
@@ -1211,6 +1233,7 @@ func Test_UpdatePassword(t *testing.T) {
 }
 
 func Test_UpdateProfile(t *testing.T) {
+	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -1221,7 +1244,7 @@ func Test_UpdateProfile(t *testing.T) {
 	// create inactive user
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -1238,7 +1261,10 @@ func Test_UpdateProfile(t *testing.T) {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Error("should not error")
 	}
@@ -1353,7 +1379,7 @@ func Test_MyProfile(t *testing.T) {
 	// create inactive user
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmails(1)[0],
+		Email:    helper.RandomEmail(),
 		Password: helper.RandomString(10),
 		RoleID:   1, // admin
 	}
@@ -1370,7 +1396,10 @@ func Test_MyProfile(t *testing.T) {
 		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
 	}
 
-	verifyErr := userSvc.Verification(ctx, *userByID.VerificationCode)
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: userByID.Email,
+	})
 	if verifyErr != nil {
 		t.Error("should not error")
 	}

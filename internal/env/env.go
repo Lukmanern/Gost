@@ -37,6 +37,10 @@ type Config struct {
 	SMTPEmail    string `env:"SMTP_EMAIL"`
 	SMTPPassword string `env:"SMTP_PASSWORD"`
 	ClientURL    string `env:"CLIENT_URL"`
+
+	BucketName  string `env:"SUPABASE_BUCKET_NAME"`
+	BucketURL   string `env:"SUPABASE_URL"`
+	BucketToken string `env:"SUPABASE_TOKEN"`
 }
 
 var (
@@ -150,6 +154,8 @@ func (c *Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "AppKey", c.AppKey)
 	fmt.Printf("%-21s: %s\n", "AppAccessTokenTTL", c.AppAccessTokenTTL)
 	fmt.Printf("%-21s: %d\n", "AppPort", c.AppPort)
+	fmt.Printf("%-21s: %s\n", "AppTimeZone", c.AppTimeZone)
+	fmt.Printf("%-21s: %s\n", "AppUrl", c.AppUrl)
 
 	fmt.Printf("%-21s: %s\n", "DatabaseHost", c.DatabaseHost)
 	fmt.Printf("%-21s: %s\n", "DatabasePort", c.DatabasePort)
@@ -158,5 +164,14 @@ func (c *Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "DatabaseName", c.DatabaseName)
 	fmt.Printf("%-21s: %s\n", "DatabaseURI", c.DatabaseURI)
 
-	// add more as needed
+	fmt.Printf("%-21s: %s\n", "RedisURI", c.RedisURI)
+
+	fmt.Printf("%-21s: %s\n", "PublicKey", c.PublicKey)
+	fmt.Printf("%-21s: %s\n", "PrivateKey", c.PrivateKey)
+
+	fmt.Printf("%-21s: %s\n", "SMTPServer", c.SMTPServer)
+	fmt.Printf("%-21s: %d\n", "SMTPPort", c.SMTPPort)
+	fmt.Printf("%-21s: %s\n", "SMTPEmail", c.SMTPEmail)
+	fmt.Printf("%-21s: %s\n", "SMTPPassword", c.SMTPPassword)
+	fmt.Printf("%-21s: %s\n", "ClientURL", c.ClientURL)
 }

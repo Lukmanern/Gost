@@ -36,6 +36,12 @@ func RandomEmails(n uint) []string {
 	return emails
 }
 
+func RandomEmail() string {
+	body := strings.ToLower(RandomString(7) + RandomString(7) + RandomString(7))
+	randEmail := body + "@gost.project"
+	return randEmail
+}
+
 // This used for testing handler : controller/ middleware/ any
 func NewFiberCtx() *fiber.Ctx {
 	app := fiber.New()

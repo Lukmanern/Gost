@@ -14,7 +14,6 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/internal/env"
-	"github.com/Lukmanern/gost/internal/rbac"
 )
 
 var (
@@ -60,10 +59,6 @@ func setup() {
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
-
-	// dump all permissions into hashMap
-	rbac.PermissionNameHashMap = rbac.PermissionNamesHashMap()
-	rbac.PermissionHashMap = rbac.PermissionIDsHashMap()
 }
 
 func RunApp() {
@@ -92,6 +87,7 @@ func RunApp() {
 		<-sigint
 
 		// Received an interrupt signal, shutdown.
+		// ctrl+c
 		if err := router.Shutdown(); err != nil {
 			// Error from closing listeners, or context timeout:
 			log.Printf("Oops... Server is not shutting down! Reason: %v", err)
@@ -100,9 +96,8 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getDevopmentRouter(router)        // don't use for production
-	getUserManagementRoutes(router)   // don't use for production
-	getMiddlewareTestingRoute(router) // don't use for production
+	getDevopmentRouter(router)      // don't use for production
+	getUserManagementRoutes(router) // don't use for production
 
 	getUserRoutes(router)
 	getRbacRoutes(router)

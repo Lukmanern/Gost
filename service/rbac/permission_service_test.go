@@ -5,7 +5,6 @@
 package service
 
 import (
-	"log"
 	"strings"
 	"testing"
 
@@ -19,13 +18,6 @@ import (
 func init() {
 	// Check env and database
 	env.ReadConfig("./../../.env")
-	c := env.Configuration()
-	dbURI := c.GetDatabaseURI()
-	privKey := c.GetPrivateKey()
-	pubKey := c.GetPublicKey()
-	if dbURI == "" || privKey == nil || pubKey == nil {
-		log.Fatal("Database URI or keys aren't valid")
-	}
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
@@ -58,7 +50,7 @@ func TestSuccessCRUD_Permission(t *testing.T) {
 	}
 	permID, createErr := svc.Create(ctx, modelPerm)
 	if createErr != nil || permID < 1 {
-		t.Error("should not error and permID should more than one")
+		t.Error("should not error and permID should more than one, but got", createErr.Error())
 	}
 	defer func() {
 		svc.Delete(ctx, permID)
