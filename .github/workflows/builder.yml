@@ -36,6 +36,9 @@ jobs:
       - name: Verify dependencies
         run: go mod verify
 
+      - name: Copy env
+        run: cp .env.example .env
+
       - name: Test
         run: go test -race -timeout 20s ./internal/...
 
