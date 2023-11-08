@@ -40,7 +40,7 @@ func NewRoleController(service service.RoleService) RoleController {
 	return roleControllerImpl
 }
 
-func (ctr RoleControllerImpl) Create(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 	var role model.RoleCreate
 	if err := c.BodyParser(&role); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -76,7 +76,7 @@ func (ctr RoleControllerImpl) Create(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, data)
 }
 
-func (ctr RoleControllerImpl) Connect(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) Connect(c *fiber.Ctx) error {
 	var role model.RoleConnectToPermissions
 	if err := c.BodyParser(&role); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -109,7 +109,7 @@ func (ctr RoleControllerImpl) Connect(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, "role and permissions success connected")
 }
 
-func (ctr RoleControllerImpl) Get(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
@@ -127,7 +127,7 @@ func (ctr RoleControllerImpl) Get(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, role)
 }
 
-func (ctr RoleControllerImpl) GetAll(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 	request := base.RequestGetAll{
 		Page:    c.QueryInt("page", 1),
 		Limit:   c.QueryInt("limit", 20),
@@ -159,7 +159,7 @@ func (ctr RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, responseData)
 }
 
-func (ctr RoleControllerImpl) Update(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
@@ -186,7 +186,7 @@ func (ctr RoleControllerImpl) Update(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
-func (ctr RoleControllerImpl) Delete(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")

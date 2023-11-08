@@ -39,7 +39,7 @@ func NewPermissionController(service service.PermissionService) PermissionContro
 	return permissionControllerImpl
 }
 
-func (ctr PermissionControllerImpl) Create(c *fiber.Ctx) error {
+func (ctr *PermissionControllerImpl) Create(c *fiber.Ctx) error {
 	var permission model.PermissionCreate
 	if err := c.BodyParser(&permission); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -64,7 +64,7 @@ func (ctr PermissionControllerImpl) Create(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, data)
 }
 
-func (ctr PermissionControllerImpl) Get(c *fiber.Ctx) error {
+func (ctr *PermissionControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
@@ -82,7 +82,7 @@ func (ctr PermissionControllerImpl) Get(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, permission)
 }
 
-func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
+func (ctr *PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 	request := base.RequestGetAll{
 		Page:    c.QueryInt("page", 1),
 		Limit:   c.QueryInt("limit", 20),
@@ -114,7 +114,7 @@ func (ctr PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, responseData)
 }
 
-func (ctr PermissionControllerImpl) Update(c *fiber.Ctx) error {
+func (ctr *PermissionControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
@@ -141,7 +141,7 @@ func (ctr PermissionControllerImpl) Update(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
-func (ctr PermissionControllerImpl) Delete(c *fiber.Ctx) error {
+func (ctr *PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")

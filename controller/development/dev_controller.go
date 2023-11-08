@@ -30,7 +30,7 @@ type DevController interface {
 }
 
 type DevControllerImpl struct {
-	fileSvc fileService.UploadFile
+	fileSvc fileService.FileService
 	redis   *redis.Client
 	db      *gorm.DB
 }
@@ -52,7 +52,7 @@ func NewDevControllerImpl() DevController {
 	return devImpl
 }
 
-func (ctr DevControllerImpl) PingDatabase(c *fiber.Ctx) error {
+func (ctr *DevControllerImpl) PingDatabase(c *fiber.Ctx) error {
 	db := ctr.db
 	if db == nil {
 		return response.Error(c, "failed db is nil")
@@ -71,7 +71,7 @@ func (ctr DevControllerImpl) PingDatabase(c *fiber.Ctx) error {
 	return response.CreateResponse(c, fiber.StatusOK, true, "success ping-sql-db", nil)
 }
 
-func (ctr DevControllerImpl) PingRedis(c *fiber.Ctx) error {
+func (ctr *DevControllerImpl) PingRedis(c *fiber.Ctx) error {
 	redis := ctr.redis
 	if redis == nil {
 		return response.Error(c, "redis nil value")
@@ -86,7 +86,7 @@ func (ctr DevControllerImpl) PingRedis(c *fiber.Ctx) error {
 	return response.CreateResponse(c, fiber.StatusOK, true, "success ping-redis", nil)
 }
 
-func (ctr DevControllerImpl) Panic(c *fiber.Ctx) error {
+func (ctr *DevControllerImpl) Panic(c *fiber.Ctx) error {
 	defer func() error {
 		r := recover()
 		if r != nil {
@@ -98,7 +98,7 @@ func (ctr DevControllerImpl) Panic(c *fiber.Ctx) error {
 	panic("Panic message") // message should string
 }
 
-func (ctr DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
+func (ctr *DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
 	redis := ctr.redis
 	if redis == nil {
 		return response.Error(c, "redis nil value")
@@ -112,7 +112,7 @@ func (ctr DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, nil)
 }
 
-func (ctr DevControllerImpl) GetFromRedis(c *fiber.Ctx) error {
+func (ctr *DevControllerImpl) GetFromRedis(c *fiber.Ctx) error {
 	redis := ctr.redis
 	if redis == nil {
 		return response.Error(c, "redis nil value")
@@ -131,15 +131,15 @@ func (ctr DevControllerImpl) GetFromRedis(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, res)
 }
 
-func (ctr DevControllerImpl) CheckNewRole(c *fiber.Ctx) error {
+func (ctr *DevControllerImpl) CheckNewRole(c *fiber.Ctx) error {
 	return response.CreateResponse(c, fiber.StatusOK, true, "success check new role", nil)
 }
 
-func (ctr DevControllerImpl) CheckNewPermission(c *fiber.Ctx) error {
+func (ctr *DevControllerImpl) CheckNewPermission(c *fiber.Ctx) error {
 	return response.CreateResponse(c, fiber.StatusOK, true, "success check new permission", nil)
 }
 
-func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
+func (ctr *DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 	file, err := c.FormFile("file")
 	if err != nil {
 		return response.BadRequest(c, "failed to parse form file: "+err.Error())
@@ -169,7 +169,7 @@ func (ctr DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 	})
 }
 
-func (ctr DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
+func (ctr *DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
 	var fileName struct {
 		FileName string `validate:"required,min=4,max=150" json:"file_name"`
 	}
@@ -192,7 +192,7 @@ func (ctr DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
-func (ctr DevControllerImpl) GetFilesList(c *fiber.Ctx) error {
+func (ctr *DevControllerImpl) GetFilesList(c *fiber.Ctx) error {
 	resp, getErr := ctr.fileSvc.GetFilesList()
 	if getErr != nil {
 		fiberErr, ok := getErr.(*fiber.Error)

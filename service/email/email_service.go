@@ -48,7 +48,7 @@ func NewEmailService() EmailService {
 	return emailService
 }
 
-func (svc EmailServiceImpl) SendMail(emails []string, subject, message string) error {
+func (svc *EmailServiceImpl) SendMail(emails []string, subject, message string) error {
 	validateErr := helper.ValidateEmails(emails...)
 	if validateErr != nil {
 		return validateErr

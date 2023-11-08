@@ -28,7 +28,7 @@ func setup() {
 func main() {
 	setup()
 	log.Println("Start Migration")
-	defer log.Println("Finish Migration: success no error")
+	defer log.Println("Finish Migration: success with no error")
 
 	// delete all tables if not in production
 	if !config.GetAppInProduction() {

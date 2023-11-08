@@ -43,7 +43,7 @@ func NewRoleService(servicePermission PermissionService) RoleService {
 	return roleServiceImpl
 }
 
-func (svc RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (id int, err error) {
+func (svc *RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (id int, err error) {
 	data.Name = strings.ToLower(data.Name)
 	for _, id := range data.PermissionsID {
 		permission, getErr := svc.servicePermission.GetByID(ctx, id)
@@ -68,7 +68,7 @@ func (svc RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (i
 	return id, nil
 }
 
-func (svc RoleServiceImpl) ConnectPermissions(ctx context.Context, data model.RoleConnectToPermissions) (err error) {
+func (svc *RoleServiceImpl) ConnectPermissions(ctx context.Context, data model.RoleConnectToPermissions) (err error) {
 	role, getErr := svc.repository.GetByID(ctx, data.RoleID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
@@ -93,7 +93,7 @@ func (svc RoleServiceImpl) ConnectPermissions(ctx context.Context, data model.Ro
 	return nil
 }
 
-func (svc RoleServiceImpl) GetByID(ctx context.Context, id int) (role *entity.Role, err error) {
+func (svc *RoleServiceImpl) GetByID(ctx context.Context, id int) (role *entity.Role, err error) {
 	role, err = svc.repository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -107,7 +107,7 @@ func (svc RoleServiceImpl) GetByID(ctx context.Context, id int) (role *entity.Ro
 	return role, nil
 }
 
-func (svc RoleServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []model.RoleResponse, total int, err error) {
+func (svc *RoleServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []model.RoleResponse, total int, err error) {
 	roleEntities, total, err := svc.repository.GetAll(ctx, filter)
 	if err != nil {
 		return nil, 0, err
@@ -125,7 +125,7 @@ func (svc RoleServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll
 	return roles, total, nil
 }
 
-func (svc RoleServiceImpl) Update(ctx context.Context, data model.RoleUpdate) (err error) {
+func (svc *RoleServiceImpl) Update(ctx context.Context, data model.RoleUpdate) (err error) {
 	data.Name = strings.ToLower(data.Name)
 	roleByName, getErr := svc.repository.GetByName(ctx, data.Name)
 	if getErr != nil && getErr != gorm.ErrRecordNotFound {
@@ -159,7 +159,7 @@ func (svc RoleServiceImpl) Update(ctx context.Context, data model.RoleUpdate) (e
 	return nil
 }
 
-func (svc RoleServiceImpl) Delete(ctx context.Context, id int) (err error) {
+func (svc *RoleServiceImpl) Delete(ctx context.Context, id int) (err error) {
 	role, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {

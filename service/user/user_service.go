@@ -67,7 +67,7 @@ func NewUserService(roleService roleService.RoleService) UserService {
 	return userAuthService
 }
 
-func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {
+func (svc *UserServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {
 	// search user by email
 	// if exist, return error
 	userByEmail, getUserErr := svc.repository.GetByEmail(ctx, user.Email)
@@ -148,7 +148,7 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	return id, nil
 }
 
-func (svc UserServiceImpl) Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
+func (svc *UserServiceImpl) Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
 	// search user by code, if not exist return error
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
 		"verification_code =": verifyData.Code,
@@ -171,7 +171,7 @@ func (svc UserServiceImpl) Verification(ctx context.Context, verifyData model.Us
 	return nil
 }
 
-func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
+func (svc *UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
 	// search user by code, if not exist return error
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
 		"verification_code =": verifyData.Code,
@@ -191,7 +191,7 @@ func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyD
 	return nil
 }
 
-func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
+func (svc *UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
 	// set key for banned counter
 	key := "failed-login-" + userIP
 	getStatus := svc.redis.Get(key)
@@ -206,7 +206,7 @@ func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (co
 	return counter, nil
 }
 
-func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
+func (svc *UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
 	// search user by email
 	// if not exist/found, return error
 	userEntity, err := svc.repository.GetByEmail(ctx, user.Email)
@@ -255,7 +255,7 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 	return token, nil
 }
 
-func (svc UserServiceImpl) Logout(c *fiber.Ctx) (err error) {
+func (svc *UserServiceImpl) Logout(c *fiber.Ctx) (err error) {
 	err = svc.jwtHandler.InvalidateToken(c)
 	if err != nil {
 		return errors.New("problem invalidating token")
@@ -264,7 +264,7 @@ func (svc UserServiceImpl) Logout(c *fiber.Ctx) (err error) {
 	return nil
 }
 
-func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
+func (svc *UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
 	userEntity, err := svc.repository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -324,7 +324,7 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 	return nil
 }
 
-func (svc UserServiceImpl) ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) {
+func (svc *UserServiceImpl) ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) {
 	userByCode, err := svc.repository.GetByConditions(ctx, map[string]any{
 		"verification_code =": user.Code,
 	})
@@ -372,7 +372,7 @@ func (svc UserServiceImpl) ResetPassword(ctx context.Context, user model.UserRes
 	return nil
 }
 
-func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
+func (svc *UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
 	userByID, err := svc.repository.GetByID(ctx, user.ID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -415,7 +415,7 @@ func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPa
 	return nil
 }
 
-func (svc UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
+func (svc *UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
 	// search profile by ID
 	user, err := svc.repository.GetByID(ctx, id)
 	if err != nil {
@@ -440,7 +440,7 @@ func (svc UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model
 	return profile, nil
 }
 
-func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
+func (svc *UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
 	// search profile by ID
 	userByID, getErr := svc.repository.GetByID(ctx, user.ID)
 	if getErr != nil {

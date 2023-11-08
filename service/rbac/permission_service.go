@@ -40,7 +40,7 @@ func NewPermissionService() PermissionService {
 	return permissionServiceImpl
 }
 
-func (svc PermissionServiceImpl) Create(ctx context.Context, permission model.PermissionCreate) (id int, err error) {
+func (svc *PermissionServiceImpl) Create(ctx context.Context, permission model.PermissionCreate) (id int, err error) {
 	permission.Name = strings.ToLower(permission.Name)
 
 	checkPermission, getErr := svc.repository.GetByName(ctx, permission.Name)
@@ -59,7 +59,7 @@ func (svc PermissionServiceImpl) Create(ctx context.Context, permission model.Pe
 	return id, nil
 }
 
-func (svc PermissionServiceImpl) GetByID(ctx context.Context, id int) (permission *model.PermissionResponse, err error) {
+func (svc *PermissionServiceImpl) GetByID(ctx context.Context, id int) (permission *model.PermissionResponse, err error) {
 	permissionEntity, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
@@ -79,7 +79,7 @@ func (svc PermissionServiceImpl) GetByID(ctx context.Context, id int) (permissio
 	return permission, nil
 }
 
-func (svc PermissionServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []model.PermissionResponse, total int, err error) {
+func (svc *PermissionServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []model.PermissionResponse, total int, err error) {
 	permissionEntities, total, err := svc.repository.GetAll(ctx, filter)
 	if err != nil {
 		return nil, 0, err
@@ -98,7 +98,7 @@ func (svc PermissionServiceImpl) GetAll(ctx context.Context, filter base.Request
 	return permissions, total, nil
 }
 
-func (svc PermissionServiceImpl) Update(ctx context.Context, data model.PermissionUpdate) (err error) {
+func (svc *PermissionServiceImpl) Update(ctx context.Context, data model.PermissionUpdate) (err error) {
 	data.Name = strings.ToLower(data.Name)
 	permissionByName, getErr := svc.repository.GetByName(ctx, data.Name)
 	if getErr != nil && getErr != gorm.ErrRecordNotFound {
@@ -132,7 +132,7 @@ func (svc PermissionServiceImpl) Update(ctx context.Context, data model.Permissi
 	return nil
 }
 
-func (svc PermissionServiceImpl) Delete(ctx context.Context, id int) (err error) {
+func (svc *PermissionServiceImpl) Delete(ctx context.Context, id int) (err error) {
 	permission, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {

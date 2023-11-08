@@ -35,7 +35,7 @@ func NewUserManagementController(userService service.UserManagementService) User
 	}
 }
 
-func (ctr UserManagementControllerImpl) Create(c *fiber.Ctx) error {
+func (ctr *UserManagementControllerImpl) Create(c *fiber.Ctx) error {
 	var user model.UserCreate
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, "invalid json body: "+err.Error())
@@ -61,7 +61,7 @@ func (ctr UserManagementControllerImpl) Create(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, data)
 }
 
-func (ctr UserManagementControllerImpl) Get(c *fiber.Ctx) error {
+func (ctr *UserManagementControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
@@ -79,7 +79,7 @@ func (ctr UserManagementControllerImpl) Get(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, userProfile)
 }
 
-func (ctr UserManagementControllerImpl) GetAll(c *fiber.Ctx) error {
+func (ctr *UserManagementControllerImpl) GetAll(c *fiber.Ctx) error {
 	request := base.RequestGetAll{
 		Page:    c.QueryInt("page", 1),
 		Limit:   c.QueryInt("limit", 20),
@@ -111,7 +111,7 @@ func (ctr UserManagementControllerImpl) GetAll(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, responseData)
 }
 
-func (ctr UserManagementControllerImpl) Update(c *fiber.Ctx) error {
+func (ctr *UserManagementControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
@@ -138,7 +138,7 @@ func (ctr UserManagementControllerImpl) Update(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
-func (ctr UserManagementControllerImpl) Delete(c *fiber.Ctx) error {
+func (ctr *UserManagementControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, "invalid id")
