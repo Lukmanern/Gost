@@ -14,3 +14,4 @@
 6. https://www.cockroachlabs.com/docs/cockroachcloud/production-checklist/
 7. https://www.alexedwards.net/blog/ci-with-go-and-github-actions
 8. https://roadmap.sh/best-practices/api-security/
+9. Go Module and Package https://stackoverflow.com/questions/61940117/go-modules-vs-package

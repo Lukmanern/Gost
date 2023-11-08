@@ -15,9 +15,16 @@ import (
 )
 
 type PermissionController interface {
+	// Creating new permission with name and description
 	Create(c *fiber.Ctx) error
+
+	// Getting permission with ID
 	Get(c *fiber.Ctx) error
+
+	// Getting permissions with url parameters
 	GetAll(c *fiber.Ctx) error
+
+	// Updating permission
 	Update(c *fiber.Ctx) error
 	Delete(c *fiber.Ctx) error
 }

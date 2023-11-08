@@ -1,3 +1,10 @@
+// 📌 Origin Github Repository: https://github.com/Lukmanern<slash>gost
+
+// 🔍 README
+// Application package configures middleware, error management, and
+// handles OS signals for gracefully stopping the server when receiving
+// an interrupt signal. This package provides routes related to user
+// management and role-based access control (RBAC). And so on.
 package application
 
 import (
@@ -17,6 +24,8 @@ import (
 )
 
 var (
+	port int
+
 	// Create a new fiber instance with custom config
 	router = fiber.New(fiber.Config{
 		// Override default error handler
@@ -24,7 +33,8 @@ var (
 			// Status code defaults to 500
 			code := fiber.StatusInternalServerError
 
-			// Retrieve the custom status code if it's a *fiber.Error
+			// Retrieve the custom status code
+			// if it's a *fiber.Error
 			var e *fiber.Error
 			if errors.As(err, &e) {
 				code = e.Code
@@ -35,14 +45,14 @@ var (
 				"message": e.Message,
 			})
 			if err != nil {
-				// In case the SendFile fails
-				return ctx.Status(fiber.StatusInternalServerError).SendString("Internal Server Error")
+				return ctx.Status(fiber.StatusInternalServerError).
+					SendString("Internal Server Error")
 			}
-
-			// Return from handler
 			return nil
 		},
-		ReadBufferSize: 12000,
+		// memory management
+		// ReduceMemoryUsage: true,
+		// ReadBufferSize: 5120,
 	})
 )
 
@@ -50,12 +60,12 @@ func setup() {
 	// Check env and database
 	env.ReadConfig("./.env")
 	config := env.Configuration()
-	dbURI := config.GetDatabaseURI()
 	privKey := config.GetPrivateKey()
 	pubKey := config.GetPublicKey()
-	if dbURI == "" || privKey == nil || pubKey == nil {
-		log.Fatal("Database URI or keys aren't valid")
+	if privKey == nil || pubKey == nil {
+		log.Fatal("private and public keys are not valid or not found")
 	}
+	port = config.AppPort
 
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
@@ -69,7 +79,8 @@ func RunApp() {
 	router.Use(logger.New())
 	// Custom File Writer
 	_ = os.MkdirAll("./log", os.ModePerm)
-	file, err := os.OpenFile(fmt.Sprintf("./log/%s.log", time.Now().Format("20060102")), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	fileName := fmt.Sprintf("./log/%s.log", time.Now().Format("20060102"))
+	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
@@ -98,11 +109,10 @@ func RunApp() {
 
 	getDevopmentRouter(router)      // do not use for production/deployment, you can comment
 	getUserManagementRoutes(router) // do not use for production/deployment, you can comment
-
 	getUserRoutes(router)
 	getRbacRoutes(router)
 
-	if err := router.Listen(fmt.Sprintf(":%d", 9009)); err != nil {
+	if err := router.Listen(fmt.Sprintf(":%d", port)); err != nil {
 		log.Printf("Oops... Server is not running! Reason: %v", err)
 	}
 

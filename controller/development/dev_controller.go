@@ -18,15 +18,37 @@ import (
 )
 
 type DevController interface {
+	// Ping-ing database 5 times
 	PingDatabase(c *fiber.Ctx) error
+
+	// Ping-ing redis 5 times
 	PingRedis(c *fiber.Ctx) error
+
+	// Developing Panic handler with defer func()
 	Panic(c *fiber.Ctx) error
+
+	// Storing data{key:value} to redis
 	StoringToRedis(c *fiber.Ctx) error
+
+	// Getting data from redis
 	GetFromRedis(c *fiber.Ctx) error
+
+	// Checking middleware for new role
 	CheckNewRole(c *fiber.Ctx) error
+
+	// Checking middleware for new role
 	CheckNewPermission(c *fiber.Ctx) error
+
+	// Uploading file into Supabase Bucket
+	// See : https://supabase.com/docs/guides/storage
 	UploadFile(c *fiber.Ctx) error
+
+	// Removing file from Supabase Bucket
+	// See : https://supabase.com/docs/guides/storage
 	RemoveFile(c *fiber.Ctx) error
+
+	// Get list file/s from Supabase Bucket
+	// See : https://supabase.com/docs/guides/storage
 	GetFilesList(c *fiber.Ctx) error
 }
 
