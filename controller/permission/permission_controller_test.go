@@ -115,7 +115,7 @@ func TestPermCreate(t *testing.T) {
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", tc.token))
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", tc.token))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		requestBody, err := json.Marshal(tc.payload)
 		if err != nil {

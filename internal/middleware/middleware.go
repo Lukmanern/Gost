@@ -150,7 +150,7 @@ func (j JWTHandler) IsTokenValid(cookie string) bool {
 }
 
 func extractToken(c *fiber.Ctx) string {
-	bearerToken := c.Get("Authorization")
+	bearerToken := c.Get(fiber.HeaderAuthorization)
 	// Normally Authorization HTTP header.
 	onlyToken := strings.Split(bearerToken, " ")
 	if len(onlyToken) == 2 {

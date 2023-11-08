@@ -112,7 +112,7 @@ func TestJWTHandlerInvalidateToken(t *testing.T) {
 		t.Error("Should error: Expected error for no token")
 	}
 
-	c.Request().Header.Add("Authorization", "Bearer "+token)
+	c.Request().Header.Add(fiber.HeaderAuthorization, "Bearer "+token)
 	invalidErr2 := jwtHandler.InvalidateToken(c)
 	if invalidErr2 != nil {
 		t.Error("Expected no error for a valid token, but got an error.")
@@ -184,7 +184,7 @@ func TestJWTHandlerIsAuthenticated(t *testing.T) {
 		jwtHandler3 := NewJWTHandler()
 		app := fiber.New()
 		c := app.AcquireCtx(&fasthttp.RequestCtx{})
-		c.Request().Header.Add("Authorization", " "+token)
+		c.Request().Header.Add(fiber.HeaderAuthorization, " "+token)
 		c.Status(fiber.StatusUnauthorized)
 		jwtHandler3.IsAuthenticated(c)
 		if c.Context().Response.StatusCode() != fiber.StatusUnauthorized {
@@ -225,7 +225,7 @@ func TestJWTHandlerHasPermission(t *testing.T) {
 
 	app := fiber.New()
 	c := app.AcquireCtx(&fasthttp.RequestCtx{})
-	c.Request().Header.Add("Authorization", "Bearer "+token)
+	c.Request().Header.Add(fiber.HeaderAuthorization, "Bearer "+token)
 	jwtHandler.HasPermission(c, 25)
 	if c.Response().Header.StatusCode() != fiber.StatusUnauthorized {
 		t.Error("Should authorized")
@@ -244,7 +244,7 @@ func TestJWTHandlerHasRole(t *testing.T) {
 
 	app := fiber.New()
 	c := app.AcquireCtx(&fasthttp.RequestCtx{})
-	c.Request().Header.Add("Authorization", "Bearer "+token)
+	c.Request().Header.Add(fiber.HeaderAuthorization, "Bearer "+token)
 	jwtHandler.HasRole(c, "test-role")
 	if c.Response().Header.StatusCode() != fiber.StatusUnauthorized {
 		t.Error(constants.Unauthorized)

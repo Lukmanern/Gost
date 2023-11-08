@@ -1051,7 +1051,7 @@ func TestLogout(t *testing.T) {
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		fakeClaims := jwtHandler.GenerateClaims(tc.token)
 		if fakeClaims != nil {
@@ -1200,7 +1200,7 @@ func TestUpdatePassword(t *testing.T) {
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		if tc.payload != nil {
 			requestBody, err := json.Marshal(tc.payload)
@@ -1336,7 +1336,7 @@ func TestUpdateProfile(t *testing.T) {
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		if tc.payload != nil {
 			requestBody, err := json.Marshal(tc.payload)
@@ -1454,7 +1454,7 @@ func TestMyProfile(t *testing.T) {
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		fakeClaims := jwtHandler.GenerateClaims(tc.token)
 		if fakeClaims != nil {
