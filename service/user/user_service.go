@@ -23,7 +23,7 @@ import (
 	"github.com/Lukmanern/gost/internal/middleware"
 	repository "github.com/Lukmanern/gost/repository/user"
 	emailService "github.com/Lukmanern/gost/service/email"
-	roleService "github.com/Lukmanern/gost/service/rbac"
+	roleService "github.com/Lukmanern/gost/service/role"
 )
 
 type UserService interface {

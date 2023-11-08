@@ -21,11 +21,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	permissionController "github.com/Lukmanern/gost/controller/permission"
-	service "github.com/Lukmanern/gost/service/rbac"
+	permSvc "github.com/Lukmanern/gost/service/permission"
+	service "github.com/Lukmanern/gost/service/role"
 )
 
 var (
-	permService    service.PermissionService
+	permService    permSvc.PermissionService
 	roleService    service.RoleService
 	roleController RoleController
 	permController permissionController.PermissionController
@@ -40,7 +41,7 @@ func init() {
 	connector.LoadDatabase()
 	connector.LoadRedisDatabase()
 
-	permService = service.NewPermissionService()
+	permService = permSvc.NewPermissionService()
 	permController = permissionController.NewPermissionController(permService)
 
 	roleService = service.NewRoleService(permService)

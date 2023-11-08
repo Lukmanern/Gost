@@ -17,7 +17,8 @@ import (
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	repository "github.com/Lukmanern/gost/repository/user"
-	rbacService "github.com/Lukmanern/gost/service/rbac"
+	permService "github.com/Lukmanern/gost/service/permission"
+	roleService "github.com/Lukmanern/gost/service/role"
 )
 
 func init() {
@@ -29,8 +30,8 @@ func init() {
 }
 
 func TestNewUserService(t *testing.T) {
-	permSvc := rbacService.NewPermissionService()
-	roleSvc := rbacService.NewRoleService(permSvc)
+	permSvc := permService.NewPermissionService()
+	roleSvc := roleService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
 	if svc == nil {
 		t.Error("should not nil")
@@ -41,8 +42,8 @@ func Test_SuccessRegister(t *testing.T) {
 	defer func() {
 		connector.LoadRedisDatabase().FlushAll()
 	}()
-	permSvc := rbacService.NewPermissionService()
-	roleSvc := rbacService.NewRoleService(permSvc)
+	permSvc := permService.NewPermissionService()
+	roleSvc := roleService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -282,8 +283,8 @@ func Test_FailedRegister(t *testing.T) {
 	defer func() {
 		connector.LoadRedisDatabase().FlushAll()
 	}()
-	permSvc := rbacService.NewPermissionService()
-	roleSvc := rbacService.NewRoleService(permSvc)
+	permSvc := permService.NewPermissionService()
+	roleSvc := roleService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -372,8 +373,8 @@ func Test_Banned_IP_Address(t *testing.T) {
 	defer func() {
 		connector.LoadRedisDatabase().FlushAll()
 	}()
-	permSvc := rbacService.NewPermissionService()
-	roleSvc := rbacService.NewRoleService(permSvc)
+	permSvc := permService.NewPermissionService()
+	roleSvc := roleService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
 	c := helper.NewFiberCtx()
 	ctx := c.Context()

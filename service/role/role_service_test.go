@@ -13,6 +13,7 @@ import (
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
+	permService "github.com/Lukmanern/gost/service/permission"
 )
 
 func init() {
@@ -24,7 +25,7 @@ func init() {
 }
 
 func TestNewRoleService(t *testing.T) {
-	permSvc := NewPermissionService()
+	permSvc := permService.NewPermissionService()
 	svc := NewRoleService(permSvc)
 	if svc == nil {
 		t.Error("should not nil")
@@ -37,7 +38,7 @@ func TestNewRoleService(t *testing.T) {
 func TestSuccessCRUD_Role(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	permSvc := NewPermissionService()
+	permSvc := permService.NewPermissionService()
 	if permSvc == nil || ctx == nil {
 		t.Error("should not nil")
 	}
@@ -138,7 +139,7 @@ func TestSuccessCRUD_Role(t *testing.T) {
 func TestFailedCRUD_Roles(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	permSvc := NewPermissionService()
+	permSvc := permService.NewPermissionService()
 	if permSvc == nil || ctx == nil {
 		t.Error("should not nil")
 	}

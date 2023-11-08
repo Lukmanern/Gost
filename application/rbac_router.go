@@ -8,21 +8,22 @@ import (
 
 	permCtr "github.com/Lukmanern/gost/controller/permission"
 	roleCtr "github.com/Lukmanern/gost/controller/role"
-	service "github.com/Lukmanern/gost/service/rbac"
+	permSvc "github.com/Lukmanern/gost/service/permission"
+	roleSvc "github.com/Lukmanern/gost/service/role"
 )
 
 var (
-	roleService    service.RoleService
+	roleService    roleSvc.RoleService
 	roleController roleCtr.RoleController
 
-	permissionService    service.PermissionService
+	permissionService    permSvc.PermissionService
 	permissionController permCtr.PermissionController
 )
 
 func getRbacRoutes(router fiber.Router) {
 	jwtHandler := middleware.NewJWTHandler()
 
-	permissionService = service.NewPermissionService()
+	permissionService = permSvc.NewPermissionService()
 	permissionController = permCtr.NewPermissionController(permissionService)
 	permissionRouter := router.Group("permission").Use(jwtHandler.IsAuthenticated)
 
@@ -33,7 +34,7 @@ func getRbacRoutes(router fiber.Router) {
 	permissionRouter.Put(":id", jwtHandler.CheckHasPermission(rbac.PermUpdatePermission.ID), permissionController.Update)
 	permissionRouter.Delete(":id", jwtHandler.CheckHasPermission(rbac.PermDeletePermission.ID), permissionController.Delete)
 
-	roleService = service.NewRoleService(permissionService)
+	roleService = roleSvc.NewRoleService(permissionService)
 	roleController = roleCtr.NewRoleController(roleService)
 	roleRouter := router.Group("role").Use(jwtHandler.IsAuthenticated)
 

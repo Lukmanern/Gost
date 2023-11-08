@@ -10,7 +10,7 @@ import (
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/response"
-	service "github.com/Lukmanern/gost/service/rbac"
+	service "github.com/Lukmanern/gost/service/role"
 )
 
 type RoleController interface {

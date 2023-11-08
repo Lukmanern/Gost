@@ -12,6 +12,7 @@ import (
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	repository "github.com/Lukmanern/gost/repository/role"
+	permService "github.com/Lukmanern/gost/service/permission"
 )
 
 type RoleService interface {
@@ -25,7 +26,7 @@ type RoleService interface {
 
 type RoleServiceImpl struct {
 	repository        repository.RoleRepository
-	servicePermission PermissionService
+	servicePermission permService.PermissionService
 }
 
 var (
@@ -33,7 +34,7 @@ var (
 	roleServiceImplOnce sync.Once
 )
 
-func NewRoleService(servicePermission PermissionService) RoleService {
+func NewRoleService(servicePermission permService.PermissionService) RoleService {
 	roleServiceImplOnce.Do(func() {
 		roleServiceImpl = &RoleServiceImpl{
 			repository:        repository.NewRoleRepository(),

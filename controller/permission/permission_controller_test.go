@@ -27,7 +27,8 @@ import (
 
 	userController "github.com/Lukmanern/gost/controller/user"
 	userRepository "github.com/Lukmanern/gost/repository/user"
-	service "github.com/Lukmanern/gost/service/rbac"
+	service "github.com/Lukmanern/gost/service/permission"
+	roleService "github.com/Lukmanern/gost/service/role"
 	userService "github.com/Lukmanern/gost/service/user"
 )
 
@@ -492,7 +493,7 @@ func Test_Perm_Delete(t *testing.T) {
 
 func createUserAndToken() (userID int, token string) {
 	permService := service.NewPermissionService()
-	roleService := service.NewRoleService(permService)
+	roleService := roleService.NewRoleService(permService)
 	userSvc := userService.NewUserService(roleService)
 	userCtr := userController.NewUserController(userSvc)
 

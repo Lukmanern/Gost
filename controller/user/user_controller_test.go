@@ -21,7 +21,8 @@ import (
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/response"
 	repository "github.com/Lukmanern/gost/repository/user"
-	rbacService "github.com/Lukmanern/gost/service/rbac"
+	permService "github.com/Lukmanern/gost/service/permission"
+	roleService "github.com/Lukmanern/gost/service/role"
 	service "github.com/Lukmanern/gost/service/user"
 )
 
@@ -41,16 +42,16 @@ func init() {
 	r := connector.LoadRedisDatabase()
 	r.FlushAll() // clear all key:value in redis
 
-	permService := rbacService.NewPermissionService()
-	roleService := rbacService.NewRoleService(permService)
+	permService := permService.NewPermissionService()
+	roleService := roleService.NewRoleService(permService)
 	userSvc = service.NewUserService(roleService)
 	userCtr = NewUserController(userSvc)
 	userRepo = repository.NewUserRepository()
 }
 
 func TestNewUserController(t *testing.T) {
-	permService := rbacService.NewPermissionService()
-	roleService := rbacService.NewRoleService(permService)
+	permService := permService.NewPermissionService()
+	roleService := roleService.NewRoleService(permService)
 	userService := service.NewUserService(roleService)
 	userController := NewUserController(userService)
 
