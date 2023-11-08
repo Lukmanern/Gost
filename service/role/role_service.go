@@ -34,6 +34,8 @@ var (
 	roleServiceImplOnce sync.Once
 )
 
+const roleNotFound = "role/s not found"
+
 func NewRoleService(servicePermission permService.PermissionService) RoleService {
 	roleServiceImplOnce.Do(func() {
 		roleServiceImpl = &RoleServiceImpl{
@@ -73,12 +75,12 @@ func (svc *RoleServiceImpl) ConnectPermissions(ctx context.Context, data model.R
 	role, getErr := svc.repository.GetByID(ctx, data.RoleID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "role not found")
+			return fiber.NewError(fiber.StatusNotFound, roleNotFound)
 		}
 		return getErr
 	}
 	if role == nil {
-		return fiber.NewError(fiber.StatusNotFound, "role not found")
+		return fiber.NewError(fiber.StatusNotFound, roleNotFound)
 	}
 	for _, id := range data.PermissionsID {
 		permission, getErr := svc.servicePermission.GetByID(ctx, id)
@@ -98,12 +100,12 @@ func (svc *RoleServiceImpl) GetByID(ctx context.Context, id int) (role *entity.R
 	role, err = svc.repository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fiber.NewError(fiber.StatusNotFound, "role not found")
+			return nil, fiber.NewError(fiber.StatusNotFound, roleNotFound)
 		}
 		return nil, err
 	}
 	if role == nil {
-		return nil, fiber.NewError(fiber.StatusNotFound, "role not found")
+		return nil, fiber.NewError(fiber.StatusNotFound, roleNotFound)
 	}
 	return role, nil
 }
@@ -139,12 +141,12 @@ func (svc *RoleServiceImpl) Update(ctx context.Context, data model.RoleUpdate) (
 	roleByID, getErr := svc.repository.GetByID(ctx, data.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "role not found")
+			return fiber.NewError(fiber.StatusNotFound, roleNotFound)
 		}
 		return getErr
 	}
 	if roleByID == nil {
-		return fiber.NewError(fiber.StatusNotFound, "role not found")
+		return fiber.NewError(fiber.StatusNotFound, roleNotFound)
 	}
 
 	entityRole := entity.Role{
@@ -164,12 +166,12 @@ func (svc *RoleServiceImpl) Delete(ctx context.Context, id int) (err error) {
 	role, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "role not found")
+			return fiber.NewError(fiber.StatusNotFound, roleNotFound)
 		}
 		return getErr
 	}
 	if role == nil {
-		return fiber.NewError(fiber.StatusNotFound, "role not found")
+		return fiber.NewError(fiber.StatusNotFound, roleNotFound)
 	}
 	err = svc.repository.Delete(ctx, id)
 	if err != nil {

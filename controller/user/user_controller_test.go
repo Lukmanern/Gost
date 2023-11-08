@@ -14,6 +14,7 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
@@ -54,7 +55,7 @@ func TestNewUserController(t *testing.T) {
 	userController := NewUserController(userService)
 
 	if userController == nil || userService == nil || roleService == nil || permService == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
@@ -64,7 +65,7 @@ func TestRegister(t *testing.T) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -191,12 +192,12 @@ func TestRegister(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -205,7 +206,7 @@ func TestRegister(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -216,7 +217,7 @@ func TestRegister(t *testing.T) {
 			respModel := response.Response{}
 			decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
 			if decodeErr != nil {
-				t.Error("should not error", decodeErr)
+				t.Error(constants.ShouldNotErr, decodeErr)
 			}
 		}
 
@@ -244,7 +245,7 @@ func TestAccountActivation(t *testing.T) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -312,12 +313,12 @@ func TestAccountActivation(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -326,7 +327,7 @@ func TestAccountActivation(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -355,7 +356,7 @@ func TestDeleteAccountActivation(t *testing.T) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -423,12 +424,12 @@ func TestDeleteAccountActivation(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -437,7 +438,7 @@ func TestDeleteAccountActivation(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -467,7 +468,7 @@ func TestForgetPassword(t *testing.T) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -552,12 +553,12 @@ func TestForgetPassword(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -566,7 +567,7 @@ func TestForgetPassword(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -581,7 +582,7 @@ func TestResetPassword(t *testing.T) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -609,7 +610,7 @@ func TestResetPassword(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// value reset
@@ -628,7 +629,7 @@ func TestResetPassword(t *testing.T) {
 	}
 	forgetPassErr := userSvc.ForgetPassword(ctx, userForgetPasswd)
 	if forgetPassErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// value reset
@@ -690,12 +691,12 @@ func TestResetPassword(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -704,7 +705,7 @@ func TestResetPassword(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -731,7 +732,7 @@ func TestLogin(t *testing.T) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -767,13 +768,13 @@ func TestLogin(t *testing.T) {
 	// create active user
 	createdActiveUser := entity.User{}
 	func() {
-		createdUser_2 := model.UserRegister{
+		createdUser2 := model.UserRegister{
 			Name:     helper.RandomString(10),
 			Email:    helper.RandomEmail(),
 			Password: helper.RandomString(10),
 			RoleID:   1, // admin
 		}
-		userID, createErr := userSvc.Register(ctx, createdUser_2)
+		userID, createErr := userSvc.Register(ctx, createdUser2)
 		if createErr != nil || userID <= 0 {
 			t.Fatal("should success create user, user failed to create")
 		}
@@ -792,7 +793,7 @@ func TestLogin(t *testing.T) {
 			Email: userByID.Email,
 		})
 		if verifyErr != nil {
-			t.Error("should not error")
+			t.Error(constants.ShouldNotErr)
 		}
 		userByID = nil
 		userByID, getErr = userRepo.GetByID(ctx, userID)
@@ -801,7 +802,7 @@ func TestLogin(t *testing.T) {
 		}
 
 		createdActiveUser = *userByID
-		createdActiveUser.Password = createdUser_2.Password
+		createdActiveUser.Password = createdUser2.Password
 	}()
 
 	defer userRepo.Delete(ctx, createdActiveUser.ID)
@@ -890,12 +891,12 @@ func TestLogin(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -904,7 +905,7 @@ func TestLogin(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -931,12 +932,12 @@ func TestLogin(t *testing.T) {
 		log.Println(":::::::" + testCase.caseName)
 		jsonObject, err := json.Marshal(&testCase.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := appUrl + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -945,7 +946,7 @@ func TestLogin(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != testCase.respCode {
@@ -955,7 +956,7 @@ func TestLogin(t *testing.T) {
 
 	redis := connector.LoadRedisDatabase()
 	if redis == nil {
-		t.Fatal("should not nil")
+		t.Fatal(constants.ShouldNotNil)
 	}
 	value := redis.Get("failed-login-" + clientIP).Val()
 	if value != "5" {
@@ -969,7 +970,7 @@ func TestLogout(t *testing.T) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create inactive user
@@ -997,7 +998,7 @@ func TestLogout(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)
@@ -1087,7 +1088,7 @@ func TestUpdatePassword(t *testing.T) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create inactive user
@@ -1115,7 +1116,7 @@ func TestUpdatePassword(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)
@@ -1237,7 +1238,7 @@ func TestUpdateProfile(t *testing.T) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create inactive user
@@ -1265,7 +1266,7 @@ func TestUpdateProfile(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)
@@ -1357,7 +1358,7 @@ func TestUpdateProfile(t *testing.T) {
 		if resp.StatusCode() == http.StatusNoContent {
 			userByID, err := userRepo.GetByID(ctx, userID)
 			if err != nil || userByID == nil {
-				t.Error("should not error")
+				t.Error(constants.ShouldNotErr)
 			}
 
 			if userByID.Name != helper.ToTitle(tc.payload.Name) {
@@ -1372,7 +1373,7 @@ func TestMyProfile(t *testing.T) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create inactive user
@@ -1400,7 +1401,7 @@ func TestMyProfile(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)

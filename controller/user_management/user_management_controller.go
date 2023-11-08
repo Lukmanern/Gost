@@ -13,6 +13,7 @@ import (
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/response"
 	service "github.com/Lukmanern/gost/service/user_management"
 )
@@ -38,12 +39,12 @@ func NewUserManagementController(userService service.UserManagementService) User
 func (ctr *UserManagementControllerImpl) Create(c *fiber.Ctx) error {
 	var user model.UserCreate
 	if err := c.BodyParser(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	user.Email = strings.ToLower(user.Email)
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -53,7 +54,7 @@ func (ctr *UserManagementControllerImpl) Create(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+createErr.Error())
+		return response.Error(c, constants.ServerErr+createErr.Error())
 	}
 	data := map[string]any{
 		"id": id,
@@ -64,7 +65,7 @@ func (ctr *UserManagementControllerImpl) Create(c *fiber.Ctx) error {
 func (ctr *UserManagementControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, "invalid id")
+		return response.BadRequest(c, constants.InvalidID)
 	}
 
 	ctx := c.Context()
@@ -74,7 +75,7 @@ func (ctr *UserManagementControllerImpl) Get(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+getErr.Error())
+		return response.Error(c, constants.ServerErr+getErr.Error())
 	}
 	return response.SuccessLoaded(c, userProfile)
 }
@@ -93,7 +94,7 @@ func (ctr *UserManagementControllerImpl) GetAll(c *fiber.Ctx) error {
 	ctx := c.Context()
 	users, total, getErr := ctr.service.GetAll(ctx, request)
 	if getErr != nil {
-		return response.Error(c, "internal server error: "+getErr.Error())
+		return response.Error(c, constants.ServerErr+getErr.Error())
 	}
 
 	data := make([]interface{}, len(users))
@@ -114,16 +115,16 @@ func (ctr *UserManagementControllerImpl) GetAll(c *fiber.Ctx) error {
 func (ctr *UserManagementControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, "invalid id")
+		return response.BadRequest(c, constants.InvalidID)
 	}
 	var user model.UserProfileUpdate
 	user.ID = id
 	if err := c.BodyParser(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -133,7 +134,7 @@ func (ctr *UserManagementControllerImpl) Update(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+updateErr.Error())
+		return response.Error(c, constants.ServerErr+updateErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -141,7 +142,7 @@ func (ctr *UserManagementControllerImpl) Update(c *fiber.Ctx) error {
 func (ctr *UserManagementControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, "invalid id")
+		return response.BadRequest(c, constants.InvalidID)
 	}
 
 	ctx := c.Context()
@@ -151,7 +152,7 @@ func (ctr *UserManagementControllerImpl) Delete(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+deleteErr.Error())
+		return response.Error(c, constants.ServerErr+deleteErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }

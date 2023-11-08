@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/gofiber/fiber/v2"
@@ -94,7 +95,7 @@ func TestGenerateClaims(t *testing.T) {
 	}
 }
 
-func TestJWTHandler_InvalidateToken(t *testing.T) {
+func TestJWTHandlerInvalidateToken(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -118,7 +119,7 @@ func TestJWTHandler_InvalidateToken(t *testing.T) {
 	}
 }
 
-func TestJWTHandler_IsBlacklisted(t *testing.T) {
+func TestJWTHandlerIsBlacklisted(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	cookie, err := jwtHandler.GenerateJWT(1000,
 		helper.RandomEmail(), "example-role",
@@ -152,7 +153,7 @@ func TestJWTHandler_IsBlacklisted(t *testing.T) {
 	}
 }
 
-func TestJWTHandler_IsAuthenticated(t *testing.T) {
+func TestJWTHandlerIsAuthenticated(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -192,7 +193,7 @@ func TestJWTHandler_IsAuthenticated(t *testing.T) {
 	}()
 }
 
-func TestJWTHandler_IsTokenValid(t *testing.T) {
+func TestJWTHandlerIsTokenValid(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -212,7 +213,7 @@ func TestJWTHandler_IsTokenValid(t *testing.T) {
 	assert.False(t, isValid, "Invalid token should be considered invalid")
 }
 
-func TestJWTHandler_HasPermission(t *testing.T) {
+func TestJWTHandlerHasPermission(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -231,7 +232,7 @@ func TestJWTHandler_HasPermission(t *testing.T) {
 	}
 }
 
-func TestJWTHandler_HasRole(t *testing.T) {
+func TestJWTHandlerHasRole(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -246,11 +247,11 @@ func TestJWTHandler_HasRole(t *testing.T) {
 	c.Request().Header.Add("Authorization", "Bearer "+token)
 	jwtHandler.HasRole(c, "test-role")
 	if c.Response().Header.StatusCode() != fiber.StatusUnauthorized {
-		t.Error("Should unauthorized")
+		t.Error(constants.Unauthorized)
 	}
 }
 
-func TestJWTHandler_CheckHasPermission(t *testing.T) {
+func TestJWTHandlerCheckHasPermission(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -262,11 +263,11 @@ func TestJWTHandler_CheckHasPermission(t *testing.T) {
 
 	err2 := jwtHandler.CheckHasPermission(9999)
 	if err2 == nil {
-		t.Error("Should unauthorized")
+		t.Error(constants.Unauthorized)
 	}
 }
 
-func TestJWTHandler_CheckHasRole(t *testing.T) {
+func TestJWTHandlerCheckHasRole(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -278,7 +279,7 @@ func TestJWTHandler_CheckHasRole(t *testing.T) {
 
 	err2 := jwtHandler.CheckHasRole("permission-1")
 	if err2 == nil {
-		t.Error("Should unauthorized")
+		t.Error(constants.Unauthorized)
 	}
 }
 

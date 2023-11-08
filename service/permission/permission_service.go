@@ -31,6 +31,8 @@ var (
 	permissionServiceImplOnce sync.Once
 )
 
+const permNotFound = "permission/s not found"
+
 func NewPermissionService() PermissionService {
 	permissionServiceImplOnce.Do(func() {
 		permissionServiceImpl = &PermissionServiceImpl{
@@ -63,12 +65,12 @@ func (svc *PermissionServiceImpl) GetByID(ctx context.Context, id int) (permissi
 	permissionEntity, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return nil, fiber.NewError(fiber.StatusNotFound, "permission not found")
+			return nil, fiber.NewError(fiber.StatusNotFound, permNotFound)
 		}
 		return nil, getErr
 	}
 	if permissionEntity == nil {
-		return nil, fiber.NewError(fiber.StatusNotFound, "permission not found")
+		return nil, fiber.NewError(fiber.StatusNotFound, permNotFound)
 	}
 
 	permission = &model.PermissionResponse{
@@ -111,12 +113,12 @@ func (svc *PermissionServiceImpl) Update(ctx context.Context, data model.Permiss
 	permissionByID, getErr := svc.repository.GetByID(ctx, data.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "permission not found")
+			return fiber.NewError(fiber.StatusNotFound, permNotFound)
 		}
 		return getErr
 	}
 	if permissionByID == nil {
-		return fiber.NewError(fiber.StatusNotFound, "permission not found")
+		return fiber.NewError(fiber.StatusNotFound, permNotFound)
 	}
 
 	entityRole := entity.Permission{
@@ -136,12 +138,12 @@ func (svc *PermissionServiceImpl) Delete(ctx context.Context, id int) (err error
 	permission, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "permission not found")
+			return fiber.NewError(fiber.StatusNotFound, permNotFound)
 		}
 		return getErr
 	}
 	if permission == nil {
-		return fiber.NewError(fiber.StatusNotFound, "permission not found")
+		return fiber.NewError(fiber.StatusNotFound, permNotFound)
 	}
 	err = svc.repository.Delete(ctx, id)
 	if err != nil {

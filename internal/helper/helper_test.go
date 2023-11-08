@@ -4,6 +4,8 @@ import (
 	"net"
 	"strings"
 	"testing"
+
+	"github.com/Lukmanern/gost/internal/constants"
 )
 
 func TestRandomString(t *testing.T) {
@@ -58,22 +60,22 @@ func TestRandomIPAddress(t *testing.T) {
 func TestValidateEmails(t *testing.T) {
 	err1 := ValidateEmails("f", "a")
 	if err1 == nil {
-		t.Error("should err not nil")
+		t.Error(constants.ShouldErr)
 	}
 
-	err2 := ValidateEmails("validemail0987@gmail.com")
+	err2 := ValidateEmails("validemail098@gmail.com")
 	if err2 != nil {
 		t.Error("should not err")
 	}
 
-	err3 := ValidateEmails("validemail0987@gmail.com", "invalidemail0987@.gmail.com")
+	err3 := ValidateEmails("validemail0911@gmail.com", "invalidemail0987@.gmail.com")
 	if err3 == nil {
-		t.Error("should err not nil")
+		t.Error(constants.ShouldErr)
 	}
 
-	err4 := ValidateEmails("validemail0987@gmail.com", "validemail0987@gmail.com", "invalidemail0987@gmail.com.")
+	err4 := ValidateEmails("validemail0987@gmail.com", "valid_email0987@gmail.com", "invalidemail0987@gmail.com.")
 	if err4 == nil {
-		t.Error("should err not nil")
+		t.Error(constants.ShouldErr)
 	}
 }
 

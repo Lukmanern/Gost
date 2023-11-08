@@ -1,10 +1,12 @@
 package constants
 
 const (
-	NotFound    = "data not found"
-	ServerErr   = "internal server error: "
-	InvalidID   = "invalid id"
-	InvalidBody = "invalid json body: "
+	Unauthorized = "should unauthorized"
+	RedisNil     = "redis nil value"
+	NotFound     = "data not found"
+	ServerErr    = "internal server error: "
+	InvalidID    = "invalid id"
+	InvalidBody  = "invalid json body: "
 
 	ShouldErr      = "should error"
 	ShouldNotErr   = "should not error"

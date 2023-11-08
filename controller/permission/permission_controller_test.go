@@ -20,6 +20,7 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
@@ -57,7 +58,7 @@ func TestPermNewPermissionController(t *testing.T) {
 	permCtr := NewPermissionController(permSvc)
 
 	if permSvc == nil || permCtr == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
@@ -66,7 +67,7 @@ func TestPermCreate(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	userID, userToken := createUserAndToken()
@@ -172,7 +173,7 @@ func TestPermGet(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	testCases := []struct {
@@ -208,7 +209,7 @@ func TestPermGet(t *testing.T) {
 		app.Get("/permission/:id", permController.Get)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -239,7 +240,7 @@ func TestPermGetAll(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	testCases := []struct {
@@ -279,7 +280,7 @@ func TestPermGetAll(t *testing.T) {
 		app.Get("/permission", permController.GetAll)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -313,7 +314,7 @@ func TestPermUpdate(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create 1 permission
@@ -386,19 +387,19 @@ func TestPermUpdate(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := fmt.Sprintf(appUrl+"permission/%d", tc.permID)
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Put("/permission/:id", permController.Update)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -428,7 +429,7 @@ func TestPermDelete(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create 1 permission
@@ -475,14 +476,14 @@ func TestPermDelete(t *testing.T) {
 		url := appUrl + "permission/" + strconv.Itoa(tc.permID)
 		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Delete("/permission/:id", permController.Delete)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -501,7 +502,7 @@ func createUserAndToken() (userID int, token string) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		log.Fatal("should not nil")
+		log.Fatal(constants.ShouldNotNil)
 	}
 
 	createdUser := model.UserRegister{
@@ -528,7 +529,7 @@ func createUserAndToken() (userID int, token string) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		log.Fatal("should not error")
+		log.Fatal(constants.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)

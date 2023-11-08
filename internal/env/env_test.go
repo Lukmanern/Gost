@@ -47,7 +47,7 @@ func TestReadConfigAndConfiguration(t *testing.T) {
 	}
 }
 
-func TestConfig_GetPublicKeyAndGetPrivateKey(t *testing.T) {
+func TestConfigGetPublicKeyAndGetPrivateKey(t *testing.T) {
 	defer func() {
 		r := recover()
 		if r != nil {

@@ -142,7 +142,7 @@ func TestSuccessCrudRole(t *testing.T) {
 	}
 }
 
-func TestFailedCRUDRoles(t *testing.T) {
+func TestFailedCrudRoles(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	permSvc := permService.NewPermissionService()

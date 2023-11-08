@@ -15,7 +15,9 @@ import (
 )
 
 func RandomString(n uint) string {
-	letterBytes := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+	letterBytes := "abcdefghijklmnopqrstuvwxyz"
+	letterBytes += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	letterBytes += "1234567890"
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]

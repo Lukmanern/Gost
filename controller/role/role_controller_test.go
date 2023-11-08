@@ -15,6 +15,7 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/response"
@@ -53,7 +54,7 @@ func TestRoleCreate(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	permIDs := make([]int, 0)
@@ -147,19 +148,19 @@ func TestRoleCreate(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := appUrl + "role"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Post("/role", roleController.Create)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -185,7 +186,7 @@ func TestRoleCreate(t *testing.T) {
 			}
 			deleteErr := roleService.Delete(ctx, int(intId))
 			if deleteErr != nil {
-				t.Error("should not error")
+				t.Error(constants.ShouldNotErr)
 			}
 		}
 	}
@@ -196,7 +197,7 @@ func TestRoleConnect(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	permIDs := make([]int, 0)
@@ -287,19 +288,19 @@ func TestRoleConnect(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := appUrl + "role/connect"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Post("/role/connect", roleController.Connect)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -327,7 +328,7 @@ func TestRoleGet(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	permIDs := make([]int, 0)
@@ -398,14 +399,14 @@ func TestRoleGet(t *testing.T) {
 		url := fmt.Sprintf(appUrl+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Get("/role/:id", roleController.Get)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -423,7 +424,7 @@ func TestRoleGetAll(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	permIDs := make([]int, 0)
@@ -489,14 +490,14 @@ func TestRoleGetAll(t *testing.T) {
 		url := appUrl + "role?" + tc.params
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Get("/role", roleController.GetAll)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -514,7 +515,7 @@ func TestRoleUpdate(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	permIDs := make([]int, 0)
@@ -611,19 +612,19 @@ func TestRoleUpdate(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		url := fmt.Sprintf(appUrl+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Put("/role/:id", roleController.Update)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -653,7 +654,7 @@ func TestRoleDelete(t *testing.T) {
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	permIDs := make([]int, 0)
@@ -724,14 +725,14 @@ func TestRoleDelete(t *testing.T) {
 		url := fmt.Sprintf(appUrl+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Delete("/role/:id", roleController.Delete)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
@@ -32,7 +33,7 @@ func TestNewUserService(t *testing.T) {
 	roleSvc := roleService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
 	if svc == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
@@ -46,12 +47,12 @@ func TestSuccessRegister(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if svc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	userRepo := repository.NewUserRepository()
 	if userRepo == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	modelUserRegis := model.UserRegister{
@@ -79,10 +80,10 @@ func TestSuccessRegister(t *testing.T) {
 		t.Error("should equal")
 	}
 	if userByID.VerificationCode == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	if userByID.ActivatedAt != nil {
-		t.Error("should nil")
+		t.Error(constants.ShouldNil)
 	}
 
 	// failed login : account is created,
@@ -130,7 +131,7 @@ func TestSuccessRegister(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifErr != nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// value reset
@@ -141,10 +142,10 @@ func TestSuccessRegister(t *testing.T) {
 		t.Error("should not error and id should not nil")
 	}
 	if userByID.VerificationCode != nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	if userByID.ActivatedAt == nil {
-		t.Error("should nil")
+		t.Error(constants.ShouldNil)
 	}
 
 	// reset value
@@ -184,10 +185,10 @@ func TestSuccessRegister(t *testing.T) {
 		t.Error("should not error and id should not nil")
 	}
 	if userByID.VerificationCode == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	if userByID.ActivatedAt == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	passwd := helper.RandomString(12)
@@ -287,12 +288,12 @@ func TestFailedRegister(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if svc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	userRepo := repository.NewUserRepository()
 	if userRepo == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	modelUserRegis := model.UserRegister{
@@ -377,7 +378,7 @@ func TestBannedIPAddress(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if svc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	for i := 1; i <= 15; i++ {

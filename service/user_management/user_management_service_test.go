@@ -39,7 +39,7 @@ func TestNewUserManagementService(t *testing.T) {
 // -> get by id (checking)
 // -> get by email (checking)
 
-func TestSuccessCRUD(t *testing.T) {
+func TestSuccessCrud(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	svc := NewUserManagementService()

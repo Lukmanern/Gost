@@ -9,6 +9,7 @@ import (
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/response"
 	service "github.com/Lukmanern/gost/service/permission"
 )
@@ -42,11 +43,11 @@ func NewPermissionController(service service.PermissionService) PermissionContro
 func (ctr *PermissionControllerImpl) Create(c *fiber.Ctx) error {
 	var permission model.PermissionCreate
 	if err := c.BodyParser(&permission); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&permission); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -56,7 +57,7 @@ func (ctr *PermissionControllerImpl) Create(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+createErr.Error())
+		return response.Error(c, constants.ServerErr+createErr.Error())
 	}
 	data := map[string]any{
 		"id": id,
@@ -67,7 +68,7 @@ func (ctr *PermissionControllerImpl) Create(c *fiber.Ctx) error {
 func (ctr *PermissionControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, "invalid id")
+		return response.BadRequest(c, constants.InvalidID)
 	}
 
 	ctx := c.Context()
@@ -77,7 +78,7 @@ func (ctr *PermissionControllerImpl) Get(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+getErr.Error())
+		return response.Error(c, constants.ServerErr+getErr.Error())
 	}
 	return response.SuccessLoaded(c, permission)
 }
@@ -96,7 +97,7 @@ func (ctr *PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 	ctx := c.Context()
 	permissions, total, getErr := ctr.service.GetAll(ctx, request)
 	if getErr != nil {
-		return response.Error(c, "internal server error: "+getErr.Error())
+		return response.Error(c, constants.ServerErr+getErr.Error())
 	}
 
 	data := make([]interface{}, len(permissions))
@@ -117,16 +118,16 @@ func (ctr *PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 func (ctr *PermissionControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, "invalid id")
+		return response.BadRequest(c, constants.InvalidID)
 	}
 	var permission model.PermissionUpdate
 	permission.ID = id
 	if err := c.BodyParser(&permission); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&permission); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -136,7 +137,7 @@ func (ctr *PermissionControllerImpl) Update(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+updateErr.Error())
+		return response.Error(c, constants.ServerErr+updateErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -144,7 +145,7 @@ func (ctr *PermissionControllerImpl) Update(c *fiber.Ctx) error {
 func (ctr *PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, "invalid id")
+		return response.BadRequest(c, constants.InvalidID)
 	}
 
 	ctx := c.Context()
@@ -154,7 +155,7 @@ func (ctr *PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+deleteErr.Error())
+		return response.Error(c, constants.ServerErr+deleteErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }

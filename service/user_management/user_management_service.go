@@ -16,6 +16,7 @@ import (
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/helper"
 	repository "github.com/Lukmanern/gost/repository/user"
@@ -84,7 +85,7 @@ func (svc *UserManagementServiceImpl) GetByID(ctx context.Context, id int) (user
 	userEntity, err := svc.repository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fiber.NewError(fiber.StatusNotFound, "data not found")
+			return nil, fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func (svc *UserManagementServiceImpl) GetByEmail(ctx context.Context, email stri
 	userEntity, getErr := svc.repository.GetByEmail(ctx, email)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return nil, fiber.NewError(fiber.StatusNotFound, "data not found")
+			return nil, fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return nil, getErr
 	}
@@ -135,12 +136,12 @@ func (svc *UserManagementServiceImpl) Update(ctx context.Context, user model.Use
 	getUser, getErr := svc.repository.GetByID(ctx, user.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return getErr
 	}
 	if getUser == nil {
-		return fiber.NewError(fiber.StatusNotFound, "data not found")
+		return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 	}
 
 	userEntity := entity.User{
@@ -162,12 +163,12 @@ func (svc *UserManagementServiceImpl) Delete(ctx context.Context, id int) (err e
 	getUser, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return getErr
 	}
 	if getUser == nil {
-		return fiber.NewError(fiber.StatusNotFound, "data not found")
+		return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 	}
 
 	err = svc.repository.Delete(ctx, id)

@@ -82,7 +82,7 @@ func (c FileServiceImpl) UploadFile(fileHeader *multipart.FileHeader) (fileURL s
 	}
 
 	request.Header.Set("Authorization", "Bearer "+c.Token)
-	request.Header.Set("Content-Type", writer.FormDataContentType())
+	request.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())
 	FileServiceImpl := &http.Client{}
 	respUpload, doErr := FileServiceImpl.Do(request)
 	if doErr != nil {
@@ -124,7 +124,7 @@ func (c FileServiceImpl) RemoveFile(fileName string) (err error) {
 	}
 
 	request.Header.Set("Authorization", "Bearer "+c.Token)
-	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set(fiber.HeaderContentType, "application/json")
 	FileServiceImpl := &http.Client{}
 	response, err := FileServiceImpl.Do(request)
 	if err != nil {
@@ -181,7 +181,7 @@ func (c FileServiceImpl) GetFilesList() (files []map[string]any, err error) {
 	}
 
 	request.Header.Set("Authorization", "Bearer "+c.Token)
-	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set(fiber.HeaderContentType, "application/json")
 	FileServiceImpl := &http.Client{}
 	response, err := FileServiceImpl.Do(request)
 	if err != nil {

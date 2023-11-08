@@ -11,6 +11,7 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 )
@@ -26,7 +27,7 @@ func init() {
 func TestNewPermissionService(t *testing.T) {
 	svc := NewPermissionService()
 	if svc == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
@@ -37,12 +38,12 @@ func TestNewPermissionService(t *testing.T) {
 // -> delete
 // -> get by id
 
-func TestSuccessCRUD_Permission(t *testing.T) {
+func TestSuccessCrudPermission(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	svc := NewPermissionService()
 	if svc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	modelPerm := model.PermissionCreate{
 		Name:        strings.ToLower(helper.RandomString(10)),
@@ -104,12 +105,12 @@ func TestSuccessCRUD_Permission(t *testing.T) {
 	}
 }
 
-func TestFailedCRUD_Permission(t *testing.T) {
+func TestFailedCrudPermission(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	svc := NewPermissionService()
 	if svc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	modelPerm := model.PermissionCreate{
 		Name:        strings.ToLower(helper.RandomString(10)),

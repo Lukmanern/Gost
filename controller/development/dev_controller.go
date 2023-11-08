@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/response"
 
 	fileService "github.com/Lukmanern/gost/service/file"
@@ -74,7 +75,7 @@ func (ctr *DevControllerImpl) PingDatabase(c *fiber.Ctx) error {
 func (ctr *DevControllerImpl) PingRedis(c *fiber.Ctx) error {
 	redis := ctr.redis
 	if redis == nil {
-		return response.Error(c, "redis nil value")
+		return response.Error(c, constants.RedisNil)
 	}
 	for i := 0; i < 5; i++ {
 		status := redis.Ping()
@@ -101,7 +102,7 @@ func (ctr *DevControllerImpl) Panic(c *fiber.Ctx) error {
 func (ctr *DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
 	redis := ctr.redis
 	if redis == nil {
-		return response.Error(c, "redis nil value")
+		return response.Error(c, constants.RedisNil)
 	}
 	redisStatus := redis.Set("example-key", "example-value", 50*time.Minute)
 	if redisStatus.Err() != nil {
@@ -115,7 +116,7 @@ func (ctr *DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
 func (ctr *DevControllerImpl) GetFromRedis(c *fiber.Ctx) error {
 	redis := ctr.redis
 	if redis == nil {
-		return response.Error(c, "redis nil value")
+		return response.Error(c, constants.RedisNil)
 	}
 	redisStatus := redis.Get("example-key")
 	if redisStatus.Err() != nil {
@@ -147,7 +148,7 @@ func (ctr *DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 	if file == nil {
 		return response.BadRequest(c, "file is nil or not found")
 	}
-	mimeType := file.Header.Get("Content-Type")
+	mimeType := file.Header.Get(fiber.HeaderContentType)
 	if mimeType != "application/pdf" {
 		return response.BadRequest(c, "only PDF file are allowed for upload")
 	}
@@ -162,7 +163,7 @@ func (ctr *DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+uploadErr.Error())
+		return response.Error(c, constants.ServerErr+uploadErr.Error())
 	}
 	return response.SuccessCreated(c, map[string]any{
 		"file_url": fileUrl,
@@ -187,7 +188,7 @@ func (ctr *DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+removeErr.Error())
+		return response.Error(c, constants.ServerErr+removeErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -199,7 +200,7 @@ func (ctr *DevControllerImpl) GetFilesList(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+getErr.Error())
+		return response.Error(c, constants.ServerErr+getErr.Error())
 	}
 	return response.SuccessLoaded(c, resp)
 }

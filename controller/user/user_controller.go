@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/response"
 	service "github.com/Lukmanern/gost/service/user"
@@ -49,12 +50,12 @@ func NewUserController(service service.UserService) UserController {
 func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 	var user model.UserRegister
 	if err := c.BodyParser(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	user.Email = strings.ToLower(user.Email)
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -64,7 +65,7 @@ func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+regisErr.Error())
+		return response.Error(c, constants.ServerErr+regisErr.Error())
 	}
 
 	message := "Account success created. please check " + user.Email + " "
@@ -78,11 +79,11 @@ func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 	var user model.UserVerificationCode
 	if err := c.BodyParser(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	ctx := c.Context()
 	err := ctr.service.Verification(ctx, user)
@@ -91,7 +92,7 @@ func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+err.Error())
+		return response.Error(c, constants.ServerErr+err.Error())
 	}
 
 	message := "Thank you for your confirmation. Your account is active now, you can login."
@@ -101,11 +102,11 @@ func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 func (ctr *UserControllerImpl) DeleteAccountActivation(c *fiber.Ctx) error {
 	var verifyData model.UserVerificationCode
 	if err := c.BodyParser(&verifyData); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&verifyData); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	ctx := c.Context()
 	err := ctr.service.DeleteUserByVerification(ctx, verifyData)
@@ -114,7 +115,7 @@ func (ctr *UserControllerImpl) DeleteAccountActivation(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+err.Error())
+		return response.Error(c, constants.ServerErr+err.Error())
 	}
 
 	message := "Your data is already deleted, thank you for your confirmation."
@@ -123,14 +124,14 @@ func (ctr *UserControllerImpl) DeleteAccountActivation(c *fiber.Ctx) error {
 
 func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 	var user model.UserLogin
-	// user.IP = c.IP() // Todo : uncomment this line in production
+	// user.IP = c.IP() // Note : uncomment this line in production
 	if err := c.BodyParser(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	userIP := net.ParseIP(user.IP)
 	if userIP == nil {
-		return response.BadRequest(c, "invalid json body: invalid user ip address")
+		return response.BadRequest(c, constants.InvalidBody+"invalid user ip address")
 	}
 	counter, _ := ctr.service.FailedLoginCounter(userIP.String(), false)
 	ipBlockMsg := "Your IP has been blocked by system. Please try again in 1 or 2 Hour"
@@ -140,7 +141,7 @@ func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -154,7 +155,7 @@ func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+loginErr.Error())
+		return response.Error(c, constants.ServerErr+loginErr.Error())
 	}
 
 	data := map[string]any{
@@ -171,7 +172,7 @@ func (ctr *UserControllerImpl) Logout(c *fiber.Ctx) error {
 	}
 	logoutErr := ctr.service.Logout(c)
 	if logoutErr != nil {
-		return response.Error(c, "internal server error: "+logoutErr.Error())
+		return response.Error(c, constants.ServerErr+logoutErr.Error())
 	}
 	return response.CreateResponse(c, fiber.StatusOK, true, "success logout", nil)
 }
@@ -179,11 +180,11 @@ func (ctr *UserControllerImpl) Logout(c *fiber.Ctx) error {
 func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	var user model.UserForgetPassword
 	if err := c.BodyParser(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -193,7 +194,7 @@ func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+forgetErr.Error())
+		return response.Error(c, constants.ServerErr+forgetErr.Error())
 	}
 
 	message := "success sending link for reset password to email, check your email inbox"
@@ -203,11 +204,11 @@ func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 	var user model.UserResetPassword
 	if err := c.BodyParser(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	if user.NewPassword != user.NewPasswordConfirm {
 		return response.BadRequest(c, "password confirmation not match")
@@ -220,7 +221,7 @@ func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+resetErr.Error())
+		return response.Error(c, constants.ServerErr+resetErr.Error())
 	}
 
 	message := "your password already updated, you can login with your new password, thank you"
@@ -235,13 +236,13 @@ func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 
 	var user model.UserPasswordUpdate
 	if err := c.BodyParser(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	user.ID = userClaims.ID
 
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	if user.NewPassword != user.NewPasswordConfirm {
 		return response.BadRequest(c, "new password confirmation is wrong")
@@ -257,7 +258,7 @@ func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+updateErr.Error())
+		return response.Error(c, constants.ServerErr+updateErr.Error())
 	}
 
 	return response.SuccessNoContent(c)
@@ -271,12 +272,12 @@ func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 
 	var user model.UserProfileUpdate
 	if err := c.BodyParser(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	user.ID = userClaims.ID
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -286,7 +287,7 @@ func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+updateErr.Error())
+		return response.Error(c, constants.ServerErr+updateErr.Error())
 	}
 
 	return response.SuccessNoContent(c)
@@ -305,7 +306,7 @@ func (ctr *UserControllerImpl) MyProfile(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+getErr.Error())
+		return response.Error(c, constants.ServerErr+getErr.Error())
 	}
 	return response.SuccessLoaded(c, userProfile)
 }

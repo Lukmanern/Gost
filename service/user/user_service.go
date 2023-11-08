@@ -15,6 +15,7 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/helper"
@@ -210,12 +211,12 @@ func (svc *UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (to
 	userEntity, err := svc.repository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return "", fiber.NewError(fiber.StatusNotFound, "data not found")
+			return "", fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return "", err
 	}
 	if userEntity == nil {
-		return "", fiber.NewError(fiber.StatusNotFound, "data not found")
+		return "", fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 	}
 
 	res, verfiryErr := hash.Verify(userEntity.Password, user.Password)
@@ -266,12 +267,12 @@ func (svc *UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserF
 	userEntity, err := svc.repository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return err
 	}
 	if userEntity == nil {
-		return fiber.NewError(fiber.StatusNotFound, "data not found")
+		return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 	}
 	if userEntity.ActivatedAt == nil {
 		message := "your account has not been activated since register, please check your inbox/ spam mail."
@@ -328,7 +329,7 @@ func (svc *UserServiceImpl) ResetPassword(ctx context.Context, user model.UserRe
 	})
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return err
 	}
@@ -374,7 +375,7 @@ func (svc *UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserP
 	userByID, err := svc.repository.GetByID(ctx, user.ID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return err
 	}
@@ -443,12 +444,12 @@ func (svc *UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserPr
 	userByID, getErr := svc.repository.GetByID(ctx, user.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return err
 	}
 	if userByID == nil {
-		return fiber.NewError(fiber.StatusNotFound, "data not found")
+		return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 	}
 
 	userEntity := entity.User{
