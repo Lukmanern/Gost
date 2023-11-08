@@ -36,9 +36,6 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      # - name: Connect to Redis
-      #   run: redis-cli -h redis -p 6379 ping
-
       - name: Display Go version
         run: go version
 
