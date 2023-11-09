@@ -77,7 +77,7 @@ func TestSuccessCrudPermission(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updatePermModel)
 	if updateErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// value reset
@@ -93,7 +93,7 @@ func TestSuccessCrudPermission(t *testing.T) {
 
 	deleteErr := svc.Delete(ctx, permID)
 	if deleteErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// value reset
@@ -136,11 +136,11 @@ func TestFailedCrudPermission(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updatePermModel)
 	if updateErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	deleteErr := svc.Delete(ctx, -10)
 	if deleteErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/gofiber/fiber/v2"
@@ -26,7 +27,7 @@ func init() {
 func TestNewUserManagementService(t *testing.T) {
 	svc := NewUserManagementService()
 	if svc == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
@@ -44,7 +45,7 @@ func TestSuccessCrud(t *testing.T) {
 	ctx := c.Context()
 	svc := NewUserManagementService()
 	if svc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	userModel := model.UserCreate{
@@ -88,7 +89,7 @@ func TestSuccessCrud(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updateUserData)
 	if updateErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// reset value
@@ -104,7 +105,7 @@ func TestSuccessCrud(t *testing.T) {
 
 	deleteErr := svc.Delete(ctx, userID)
 	if deleteErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// reset value

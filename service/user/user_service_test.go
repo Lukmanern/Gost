@@ -174,7 +174,7 @@ func TestSuccessRegister(t *testing.T) {
 	}
 	forgetPwErr := svc.ForgetPassword(ctx, modelUserForgetPasswd)
 	if forgetPwErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// value reset
@@ -199,7 +199,7 @@ func TestSuccessRegister(t *testing.T) {
 	}
 	resetErr := svc.ResetPassword(ctx, modelUserResetPasswd)
 	if resetErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// reset value, login failed
@@ -237,7 +237,7 @@ func TestSuccessRegister(t *testing.T) {
 	}
 	updatePasswdErr := svc.UpdatePassword(ctx, modelUserUpdatePasswd)
 	if updatePasswdErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// reset value, login success
@@ -259,12 +259,12 @@ func TestSuccessRegister(t *testing.T) {
 	}
 	updateProfileErr := svc.UpdateProfile(ctx, modelUserUpdate)
 	if updateProfileErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	profile, getErr := svc.MyProfile(ctx, userID)
 	if getErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 	if profile.Name != helper.ToTitle(modelUserUpdate.Name) {
 		t.Error("should equal")
@@ -316,7 +316,7 @@ func TestFailedRegister(t *testing.T) {
 		Email: "wrongEmail",
 	})
 	if verifErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 	fiberErr, ok := verifErr.(*fiber.Error)
 	if ok {
@@ -330,7 +330,7 @@ func TestFailedRegister(t *testing.T) {
 		Email: "wrongEmail",
 	})
 	if deleteUserErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 	fiberErr, ok = deleteUserErr.(*fiber.Error)
 	if ok {
@@ -344,27 +344,27 @@ func TestFailedRegister(t *testing.T) {
 		IP: helper.RandomIPAddress(),
 	})
 	if loginErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	forgetErr := svc.ForgetPassword(ctx, model.UserForgetPassword{Email: "wrong_email@gost.project"})
 	if forgetErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	verifyErr := svc.ResetPassword(ctx, model.UserResetPassword{Code: "wrong-code"})
 	if verifyErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	updatePasswdErr := svc.UpdatePassword(ctx, model.UserPasswordUpdate{ID: -1})
 	if updatePasswdErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	_, getErr := svc.MyProfile(ctx, -10)
 	if getErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 }
 
@@ -384,7 +384,7 @@ func TestBannedIPAddress(t *testing.T) {
 	for i := 1; i <= 15; i++ {
 		counter, err := svc.FailedLoginCounter(helper.RandomIPAddress(), true)
 		if err != nil {
-			t.Error("should not error")
+			t.Error(constants.ShouldNotErr)
 		}
 		if i >= 4 {
 			if counter == i {

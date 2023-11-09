@@ -52,7 +52,7 @@ func TestRandomIPAddress(t *testing.T) {
 		ipRand := RandomIPAddress()
 		ip := net.ParseIP(ipRand)
 		if ip == nil {
-			t.Error("should not nil")
+			t.Error(constants.ShouldNotNil)
 		}
 	}
 }
@@ -82,7 +82,7 @@ func TestValidateEmails(t *testing.T) {
 func TestNewFiberCtx(t *testing.T) {
 	c := NewFiberCtx()
 	if c == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 

@@ -57,7 +57,7 @@ func TestCreate(t *testing.T) {
 
 	ctr := userDevController
 	if ctr == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c := helper.NewFiberCtx()
 	if ctr == nil || c == nil {
@@ -66,7 +66,7 @@ func TestCreate(t *testing.T) {
 
 	ctx := c.Context()
 	if ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	modelUserCreate := model.UserCreate{
 		Name:     helper.RandomString(10),
@@ -127,7 +127,7 @@ func TestCreate(t *testing.T) {
 		}
 		req, httpReqErr := http.NewRequest(http.MethodPost, appUrl+"user-management/create", strings.NewReader(string(jsonObject)))
 		if httpReqErr != nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Close = true
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)

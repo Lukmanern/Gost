@@ -11,16 +11,10 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	permService "github.com/Lukmanern/gost/service/permission"
-)
-
-const (
-	shouldErr    = "should error"
-	shouldNotErr = "should not error"
-	shouldNil    = "should nil"
-	shouldNotNil = "should not nil"
 )
 
 func init() {
@@ -35,7 +29,7 @@ func TestNewRoleService(t *testing.T) {
 	permSvc := permService.NewPermissionService()
 	svc := NewRoleService(permSvc)
 	if svc == nil {
-		t.Error(shouldNotNil)
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
@@ -46,11 +40,11 @@ func TestSuccessCrudRole(t *testing.T) {
 	ctx := c.Context()
 	permSvc := permService.NewPermissionService()
 	if permSvc == nil || ctx == nil {
-		t.Error(shouldNotNil)
+		t.Error(constants.ShouldNotNil)
 	}
 	svc := NewRoleService(permSvc)
 	if svc == nil {
-		t.Error(shouldNotNil)
+		t.Error(constants.ShouldNotNil)
 	}
 
 	modelRole := model.RoleCreate{
@@ -91,7 +85,7 @@ func TestSuccessCrudRole(t *testing.T) {
 	}
 	connectErr := svc.ConnectPermissions(ctx, modelConnect)
 	if connectErr != nil {
-		t.Error(shouldNotErr)
+		t.Error(constants.ShouldNotErr)
 	}
 
 	roleByID, getErr := svc.GetByID(ctx, roleID)
@@ -114,7 +108,7 @@ func TestSuccessCrudRole(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updateRoleModel)
 	if updateErr != nil {
-		t.Error(shouldNotErr)
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// Value reset
@@ -130,7 +124,7 @@ func TestSuccessCrudRole(t *testing.T) {
 
 	deleteErr := svc.Delete(ctx, roleID)
 	if deleteErr != nil {
-		t.Error(shouldNotErr)
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// Value reset
@@ -147,11 +141,11 @@ func TestFailedCrudRoles(t *testing.T) {
 	ctx := c.Context()
 	permSvc := permService.NewPermissionService()
 	if permSvc == nil || ctx == nil {
-		t.Error(shouldNotNil)
+		t.Error(constants.ShouldNotNil)
 	}
 	svc := NewRoleService(permSvc)
 	if svc == nil {
-		t.Error(shouldNotNil)
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// failed create: permissions not found
@@ -188,7 +182,7 @@ func TestFailedCrudRoles(t *testing.T) {
 	}
 	connectErr := svc.ConnectPermissions(ctx, modelConnectFailed)
 	if connectErr == nil {
-		t.Error(shouldErr)
+		t.Error(constants.ShouldErr)
 	}
 
 	modelConnectFailed = model.RoleConnectToPermissions{
@@ -198,7 +192,7 @@ func TestFailedCrudRoles(t *testing.T) {
 	connectErr = nil
 	connectErr = svc.ConnectPermissions(ctx, modelConnectFailed)
 	if connectErr == nil {
-		t.Error(shouldErr)
+		t.Error(constants.ShouldErr)
 	}
 
 	// failed update
@@ -209,12 +203,12 @@ func TestFailedCrudRoles(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updateRoleModel)
 	if updateErr == nil {
-		t.Error(shouldErr)
+		t.Error(constants.ShouldErr)
 	}
 
 	// failed delete
 	deleteErr := svc.Delete(ctx, -1)
 	if deleteErr == nil {
-		t.Error(shouldErr)
+		t.Error(constants.ShouldErr)
 	}
 }

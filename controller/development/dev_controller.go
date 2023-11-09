@@ -199,11 +199,11 @@ func (ctr *DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
 		FileName string `validate:"required,min=4,max=150" json:"file_name"`
 	}
 	if err := c.BodyParser(&fileName); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&fileName); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	removeErr := ctr.fileSvc.RemoveFile(fileName.FileName)
