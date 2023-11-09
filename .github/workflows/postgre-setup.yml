@@ -65,8 +65,9 @@ jobs:
       - name: Create .env file
         run: echo "${{ secrets.ENV }}" > .env
 
-      - name: Test
+      - name: Run Test
         run: |
+          go get .
           go run database/migration/main.go
           go test -p 1 -timeout 1200s ./...
 

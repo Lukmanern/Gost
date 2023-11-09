@@ -1,4 +1,5 @@
 .env
+.env.test
 /log
 /keys
 cover.out
