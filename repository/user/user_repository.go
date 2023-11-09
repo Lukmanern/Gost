@@ -14,23 +14,36 @@ import (
 )
 
 type UserRepository interface {
+	// Create adds a new user to the repository with a specified role.
 	Create(ctx context.Context, user entity.User, roleID int) (id int, err error)
+
+	// GetByID retrieves a user by their unique identifier.
 	GetByID(ctx context.Context, id int) (user *entity.User, err error)
+
+	// GetByEmail retrieves a user by their email address.
 	GetByEmail(ctx context.Context, email string) (user *entity.User, err error)
+
+	// GetByConditions retrieves a user based on specified conditions.
 	GetByConditions(ctx context.Context, conds map[string]any) (user *entity.User, err error)
+
+	// GetAll retrieves all users based on a filter for pagination.
 	GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.User, total int, err error)
+
+	// Update modifies user information in the repository.
 	Update(ctx context.Context, user entity.User) (err error)
+
+	// Delete removes a user from the repository by their ID.
 	Delete(ctx context.Context, id int) (err error)
+
+	// UpdatePassword updates a user's password in the repository.
 	UpdatePassword(ctx context.Context, id int, passwordHashed string) (err error)
 }
 
 type UserRepositoryImpl struct {
-	userTableName string
-	db            *gorm.DB
+	db *gorm.DB
 }
 
 var (
-	userTableName          string = "users"
 	userRepositoryImpl     *UserRepositoryImpl
 	userRepositoryImplOnce sync.Once
 )
@@ -38,8 +51,7 @@ var (
 func NewUserRepository() UserRepository {
 	userRepositoryImplOnce.Do(func() {
 		userRepositoryImpl = &UserRepositoryImpl{
-			userTableName: userTableName,
-			db:            connector.LoadDatabase(),
+			db: connector.LoadDatabase(),
 		}
 	})
 	return userRepositoryImpl

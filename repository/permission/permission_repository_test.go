@@ -24,8 +24,7 @@ func init() {
 	timeNow = time.Now()
 	ctx = context.Background()
 	permissionRepoImpl = PermissionRepositoryImpl{
-		permissionTableName: permissionTableName,
-		db:                  connector.LoadDatabase(),
+		db: connector.LoadDatabase(),
 	}
 
 }

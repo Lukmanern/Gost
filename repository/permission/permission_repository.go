@@ -11,21 +11,30 @@ import (
 )
 
 type PermissionRepository interface {
+	// Create adds a new permission to the repository.
 	Create(ctx context.Context, permission entity.Permission) (id int, err error)
+
+	// GetByID retrieves a permission by its unique identifier.
 	GetByID(ctx context.Context, id int) (permission *entity.Permission, err error)
+
+	// GetByName retrieves a permission by its name.
 	GetByName(ctx context.Context, name string) (permission *entity.Permission, err error)
+
+	// GetAll retrieves all permissions based on a filter for pagination.
 	GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []entity.Permission, total int, err error)
+
+	// Update modifies permission information in the repository.
 	Update(ctx context.Context, permission entity.Permission) (err error)
+
+	// Delete removes a permission from the repository by its ID.
 	Delete(ctx context.Context, id int) (err error)
 }
 
 type PermissionRepositoryImpl struct {
-	permissionTableName string
-	db                  *gorm.DB
+	db *gorm.DB
 }
 
 var (
-	permissionTableName          string = "permissions"
 	permissionRepositoryImpl     *PermissionRepositoryImpl
 	permissionRepositoryImplOnce sync.Once
 )
@@ -33,8 +42,7 @@ var (
 func NewPermissionRepository() PermissionRepository {
 	permissionRepositoryImplOnce.Do(func() {
 		permissionRepositoryImpl = &PermissionRepositoryImpl{
-			permissionTableName: permissionTableName,
-			db:                  connector.LoadDatabase(),
+			db: connector.LoadDatabase(),
 		}
 	})
 	return permissionRepositoryImpl

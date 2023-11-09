@@ -28,8 +28,7 @@ func init() {
 	ctx = context.Background()
 
 	roleRepoImpl = RoleRepositoryImpl{
-		roleTableName: roleTableName,
-		db:            connector.LoadDatabase(),
+		db: connector.LoadDatabase(),
 	}
 	permissionsID = []int{1, 2, 3, 4, 5}
 

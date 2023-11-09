@@ -11,22 +11,33 @@ import (
 )
 
 type RoleRepository interface {
+	// Create adds a new role to the repository with specified permissions.
 	Create(ctx context.Context, role entity.Role, permissionsID []int) (id int, err error)
+
+	// ConnectToPermission associates a role with specified permissions.
 	ConnectToPermission(ctx context.Context, roleID int, permissionsID []int) (err error)
+
+	// GetByID retrieves a role by its unique identifier.
 	GetByID(ctx context.Context, id int) (role *entity.Role, err error)
+
+	// GetByName retrieves a role by its name.
 	GetByName(ctx context.Context, name string) (role *entity.Role, err error)
+
+	// GetAll retrieves all roles based on a filter for pagination.
 	GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error)
+
+	// Update modifies role information in the repository.
 	Update(ctx context.Context, role entity.Role) (err error)
+
+	// Delete removes a role from the repository by its ID.
 	Delete(ctx context.Context, id int) (err error)
 }
 
 type RoleRepositoryImpl struct {
-	roleTableName string
-	db            *gorm.DB
+	db *gorm.DB
 }
 
 var (
-	roleTableName          string = "roles"
 	roleRepositoryImpl     *RoleRepositoryImpl
 	roleRepositoryImplOnce sync.Once
 )
@@ -34,8 +45,7 @@ var (
 func NewRoleRepository() RoleRepository {
 	roleRepositoryImplOnce.Do(func() {
 		roleRepositoryImpl = &RoleRepositoryImpl{
-			roleTableName: roleTableName,
-			db:            connector.LoadDatabase(),
+			db: connector.LoadDatabase(),
 		}
 	})
 	return roleRepositoryImpl
