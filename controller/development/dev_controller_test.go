@@ -21,7 +21,7 @@ func init() {
 	env.ReadConfig("./../../.env")
 
 	connector.LoadDatabase()
-	connector.LoadRedisDatabase()
+	connector.LoadRedisCache()
 }
 
 func TestNewDevControllerImpl(t *testing.T) {

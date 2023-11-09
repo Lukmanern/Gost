@@ -15,11 +15,24 @@ import (
 )
 
 type RoleController interface {
+
+	// Create func creates a new role
 	Create(c *fiber.Ctx) error
+
+	// Connect func connects a role with some permissions
+	// and storing data in role_has_permissions table
 	Connect(c *fiber.Ctx) error
+
+	// Get func gets a role
 	Get(c *fiber.Ctx) error
+
+	// GetAll func gets some roles
 	GetAll(c *fiber.Ctx) error
+
+	// Update func updates a role
 	Update(c *fiber.Ctx) error
+
+	// Delete func deletes a role
 	Delete(c *fiber.Ctx) error
 }
 

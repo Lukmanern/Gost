@@ -46,7 +46,7 @@ func NewJWTHandler() *JWTHandler {
 	if privateKeyErr != nil {
 		log.Fatalln("jwt private key parser failed: please check in log file at ./log/log-files")
 	}
-	newJWTHandler.cache = connector.LoadRedisDatabase()
+	newJWTHandler.cache = connector.LoadRedisCache()
 
 	if newJWTHandler.privateKey == nil {
 		log.Fatalln("jwt private keys are missed (nil)")

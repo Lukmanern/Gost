@@ -90,7 +90,7 @@ func TestRoutes(t *testing.T) {
 	})
 
 	t.Run("getRBACAuthRoutes", func(t *testing.T) {
-		getRbacRoutes(router)
+		getRolePermissionRoutes(router)
 	})
 
 	t.Run("getUserAuthRoutes", func(t *testing.T) {

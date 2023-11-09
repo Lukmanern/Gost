@@ -1,3 +1,11 @@
+// 📌 Origin Github Repository: https://github.com/Lukmanern<slash>gost
+
+// 🔍 README
+// User Routes provides some features and action that user can use.
+// User Routes provide the typical web application authentication flow,
+// such as registration, sending verification codes, and verifying accounts
+// with a verification code.
+
 package application
 
 import (

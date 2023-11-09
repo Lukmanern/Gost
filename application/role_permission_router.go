@@ -1,3 +1,10 @@
+// 📌 Origin Github Repository: https://github.com/Lukmanern<slash>gost
+
+// 🔍 README
+// Role-Permission Routes provides des create, read (get & getAll), update, and
+// delete functionalities for Role and Permission entities including connecting
+// both of them. This routes can be access by user that has admin-role (see database/migration).
+
 package application
 
 import (
@@ -20,7 +27,7 @@ var (
 	permissionController permCtr.PermissionController
 )
 
-func getRbacRoutes(router fiber.Router) {
+func getRolePermissionRoutes(router fiber.Router) {
 	jwtHandler := middleware.NewJWTHandler()
 
 	permissionService = permSvc.NewPermissionService()

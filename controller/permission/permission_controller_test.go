@@ -46,7 +46,7 @@ func init() {
 	appUrl = config.AppUrl
 
 	connector.LoadDatabase()
-	connector.LoadRedisDatabase()
+	connector.LoadRedisCache()
 
 	userRepo = userRepository.NewUserRepository()
 	permService = service.NewPermissionService()

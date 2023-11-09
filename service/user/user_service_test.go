@@ -25,7 +25,7 @@ func init() {
 	env.ReadConfig("./../../.env")
 
 	connector.LoadDatabase()
-	connector.LoadRedisDatabase()
+	connector.LoadRedisCache()
 }
 
 func TestNewUserService(t *testing.T) {
@@ -39,7 +39,7 @@ func TestNewUserService(t *testing.T) {
 
 func TestSuccessRegister(t *testing.T) {
 	defer func() {
-		connector.LoadRedisDatabase().FlushAll()
+		connector.LoadRedisCache().FlushAll()
 	}()
 	permSvc := permService.NewPermissionService()
 	roleSvc := roleService.NewRoleService(permSvc)
@@ -280,7 +280,7 @@ func TestSuccessRegister(t *testing.T) {
 
 func TestFailedRegister(t *testing.T) {
 	defer func() {
-		connector.LoadRedisDatabase().FlushAll()
+		connector.LoadRedisCache().FlushAll()
 	}()
 	permSvc := permService.NewPermissionService()
 	roleSvc := roleService.NewRoleService(permSvc)
@@ -370,7 +370,7 @@ func TestFailedRegister(t *testing.T) {
 
 func TestBannedIPAddress(t *testing.T) {
 	defer func() {
-		connector.LoadRedisDatabase().FlushAll()
+		connector.LoadRedisCache().FlushAll()
 	}()
 	permSvc := permService.NewPermissionService()
 	roleSvc := roleService.NewRoleService(permSvc)

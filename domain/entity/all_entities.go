@@ -1,6 +1,6 @@
 package entity
 
-// Don't forget to Add Your new
+// ⚠️ Don't forget to Add Your new
 // Table Here : must sorted by developer.
 func AllTables() []interface{} {
 	return []any{

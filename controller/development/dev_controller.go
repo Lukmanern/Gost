@@ -18,36 +18,38 @@ import (
 )
 
 type DevController interface {
-	// Ping-ing database 5 times
+	// PingDatabase func Ping database 5 times
 	PingDatabase(c *fiber.Ctx) error
 
-	// Ping-ing redis 5 times
+	// PingRedis func Ping redis 5 times
 	PingRedis(c *fiber.Ctx) error
 
-	// Developing Panic handler with defer func()
+	// Panic func handles panic with defer func
 	Panic(c *fiber.Ctx) error
 
-	// Storing data{key:value} to redis
+	// StoringToRedis func stores data{key:value} to redis
 	StoringToRedis(c *fiber.Ctx) error
 
-	// Getting data from redis
+	// GetFromRedis func gets data from redis
 	GetFromRedis(c *fiber.Ctx) error
 
-	// Checking middleware for new role
+	// CheckNewRole func gives result for checking
+	// middleware for new role
 	CheckNewRole(c *fiber.Ctx) error
 
-	// Checking middleware for new role
+	// CheckNewPermission func gives result for
+	// checking middleware for new permission
 	CheckNewPermission(c *fiber.Ctx) error
 
-	// Uploading file into Supabase Bucket
+	// UploadFile func uploads a new file into Supabase Bucket
 	// See : https://supabase.com/docs/guides/storage
 	UploadFile(c *fiber.Ctx) error
 
-	// Removing file from Supabase Bucket
+	// RemoveFile func removes file from Supabase Bucket
 	// See : https://supabase.com/docs/guides/storage
 	RemoveFile(c *fiber.Ctx) error
 
-	// Get list file/s from Supabase Bucket
+	// GetFilesList func gets list file/s from Supabase Bucket
 	// See : https://supabase.com/docs/guides/storage
 	GetFilesList(c *fiber.Ctx) error
 }
@@ -67,7 +69,7 @@ func NewDevControllerImpl() DevController {
 	devImplOnce.Do(func() {
 		devImpl = &DevControllerImpl{
 			fileSvc: fileService.NewFileService(),
-			redis:   connector.LoadRedisDatabase(),
+			redis:   connector.LoadRedisCache(),
 			db:      connector.LoadDatabase(),
 		}
 	})

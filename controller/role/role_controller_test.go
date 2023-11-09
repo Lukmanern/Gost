@@ -40,7 +40,7 @@ func init() {
 	appUrl = config.AppUrl
 
 	connector.LoadDatabase()
-	connector.LoadRedisDatabase()
+	connector.LoadRedisCache()
 
 	permService = permSvc.NewPermissionService()
 	permController = permissionController.NewPermissionController(permService)

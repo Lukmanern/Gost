@@ -39,7 +39,7 @@ func init() {
 	appUrl = config.AppUrl
 
 	connector.LoadDatabase()
-	r := connector.LoadRedisDatabase()
+	r := connector.LoadRedisCache()
 	r.FlushAll() // clear all key:value in redis
 
 	userDevService = service.NewUserManagementService()

@@ -59,7 +59,7 @@ func NewUserService(roleService roleService.RoleService) UserService {
 			repository:   repository.NewUserRepository(),
 			emailService: emailService.NewEmailService(),
 			jwtHandler:   middleware.NewJWTHandler(),
-			redis:        connector.LoadRedisDatabase(),
+			redis:        connector.LoadRedisCache(),
 		}
 	})
 

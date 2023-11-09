@@ -16,6 +16,7 @@ import (
 	"github.com/Lukmanern/gost/application"
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/response"
@@ -43,7 +44,7 @@ func init() {
 	}
 
 	connector.LoadDatabase()
-	r := connector.LoadRedisDatabase()
+	r := connector.LoadRedisCache()
 	r.FlushAll() // clear all key:value in redis
 
 	userDevService = service.NewUserManagementService()
@@ -60,7 +61,7 @@ func TestCreate(t *testing.T) {
 	}
 	c := helper.NewFiberCtx()
 	if ctr == nil || c == nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	ctx := c.Context()
@@ -122,7 +123,7 @@ func TestCreate(t *testing.T) {
 	for _, tc := range testCases {
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		req, httpReqErr := http.NewRequest(http.MethodPost, appUrl+"user-management/create", strings.NewReader(string(jsonObject)))
 		if httpReqErr != nil {
@@ -139,39 +140,39 @@ func TestCreate(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.wantHttpCode {
-			t.Error("should equal")
+			t.Error(constants.ShouldEqual, "but got", resp.StatusCode)
 		}
 
 		respModel := response.Response{}
 		decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
 		if decodeErr != nil {
-			t.Error("should not error", decodeErr)
+			t.Error(constants.ShouldNotErr, decodeErr)
 		}
 
 		if tc.resp.Success != respModel.Success {
-			t.Fatal("should equal")
+			t.Error(constants.ShouldEqual, "but got", resp.StatusCode)
 		}
 		if tc.resp.Message != "" {
 			if tc.resp.Message != respModel.Message {
-				t.Error("should equal")
+				t.Error(constants.ShouldEqual)
 			}
 		}
 		if tc.resp.Data != nil {
 			if !reflect.DeepEqual(tc.resp.Data, respModel.Data) {
-				t.Error("should equal")
+				t.Error(constants.ShouldEqual)
 			}
 		}
 		if respModel.Success {
 			userByEmail, getErr := userDevService.GetByEmail(ctx, tc.payload.Email)
 			if userByEmail.Name != helper.ToTitle(tc.payload.Name) {
-				t.Error("should equal")
+				t.Error(constants.ShouldEqual)
 			}
 			if getErr != nil {
-				t.Error("should not error", getErr)
+				t.Error(constants.ShouldNotErr, getErr)
 			}
 			deleteErr := userDevService.Delete(ctx, userByEmail.ID)
 			if deleteErr != nil {
-				t.Error("should not error", deleteErr)
+				t.Error(constants.ShouldNotErr, deleteErr)
 			}
 		}
 	}

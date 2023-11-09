@@ -19,10 +19,19 @@ import (
 )
 
 type UserManagementController interface {
+	// Create func creates a new user
 	Create(c *fiber.Ctx) error
+
+	// Get func gets a user
 	Get(c *fiber.Ctx) error
+
+	// GetAll func gets some users
 	GetAll(c *fiber.Ctx) error
+
+	// Update func updates a user
 	Update(c *fiber.Ctx) error
+
+	// Delete func deletes a user
 	Delete(c *fiber.Ctx) error
 }
 

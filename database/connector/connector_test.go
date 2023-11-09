@@ -18,8 +18,8 @@ func TestLoadDatabase(t *testing.T) {
 	}
 }
 
-func TestLoadRedisDatabase(t *testing.T) {
-	rds := LoadRedisDatabase()
+func TestLoadRedisCache(t *testing.T) {
+	rds := LoadRedisCache()
 	if rds == nil {
 		t.Error("rds shouldn't nil")
 	}

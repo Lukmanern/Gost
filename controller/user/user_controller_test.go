@@ -38,7 +38,7 @@ func init() {
 	appUrl = config.AppUrl
 
 	connector.LoadDatabase()
-	r := connector.LoadRedisDatabase()
+	r := connector.LoadRedisCache()
 	r.FlushAll() // clear all key:value in redis
 
 	permService := permService.NewPermissionService()
@@ -954,7 +954,7 @@ func TestLogin(t *testing.T) {
 		}
 	}
 
-	redis := connector.LoadRedisDatabase()
+	redis := connector.LoadRedisCache()
 	if redis == nil {
 		t.Fatal(constants.ShouldNotNil)
 	}

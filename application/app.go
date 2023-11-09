@@ -5,6 +5,7 @@
 // handles OS signals for gracefully stopping the server when receiving
 // an interrupt signal. This package provides routes related to user
 // management and role-based access control (RBAC). And so on.
+
 package application
 
 import (
@@ -68,7 +69,7 @@ func setup() {
 	port = config.AppPort
 
 	connector.LoadDatabase()
-	connector.LoadRedisDatabase()
+	connector.LoadRedisCache()
 }
 
 func RunApp() {
@@ -107,10 +108,10 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getDevopmentRouter(router)      // do not use for production/deployment, you can comment
-	getUserManagementRoutes(router) // do not use for production/deployment, you can comment
-	getUserRoutes(router)
-	getRbacRoutes(router)
+	getUserManagementRoutes(router) // user CRUD without auth ⚠️
+	getDevopmentRouter(router)      // experimental without auth ⚠️
+	getUserRoutes(router)           // user with auth
+	getRolePermissionRoutes(router) // RBAC CRUD with auth
 
 	if err := router.Listen(fmt.Sprintf(":%d", port)); err != nil {
 		log.Printf("Oops... Server is not running! Reason: %v", err)

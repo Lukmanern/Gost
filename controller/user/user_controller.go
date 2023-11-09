@@ -16,15 +16,38 @@ import (
 )
 
 type UserController interface {
+	// Register func registers a new user
+	// and send verification code to user's email
 	Register(c *fiber.Ctx) error
+
+	// AccountActivation func activations
+	// a new registed user with code
 	AccountActivation(c *fiber.Ctx) error
+
+	// DeleteAccountActivation func deletes
+	// a new registed user with code
 	DeleteAccountActivation(c *fiber.Ctx) error
+
+	// ForgetPassword func sends code to user's email
 	ForgetPassword(c *fiber.Ctx) error
+
+	// ResetPassword func resets by creating
+	// new user's password
 	ResetPassword(c *fiber.Ctx) error
+
+	// Login func gives token and access to user
 	Login(c *fiber.Ctx) error
+
+	// Logout func stores user's token into Redis
 	Logout(c *fiber.Ctx) error
+
+	// UpdatePassword func updates user's password
 	UpdatePassword(c *fiber.Ctx) error
+
+	// UpdateProfile func updates user's data
 	UpdateProfile(c *fiber.Ctx) error
+
+	// MyProfile func shows user's profile data
 	MyProfile(c *fiber.Ctx) error
 }
 

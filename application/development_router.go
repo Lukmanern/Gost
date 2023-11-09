@@ -1,6 +1,11 @@
-// don't use this for production
-// use this file just for testing
-// and testing management.
+// 📌 Origin Github Repository: https://github.com/Lukmanern<slash>gost
+
+// 🔍 README
+// Development Routes provides experimental/ developing/ testing
+// for routes, middleware, connection and many more without JWT
+// authentication in header. ⚠️ So, don't forget to commented
+// on the line of code that routes getDevopmentRouter
+// in the app.go file.
 
 package application
 

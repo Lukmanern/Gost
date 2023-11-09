@@ -1,3 +1,6 @@
+// ⚠️ Don't forget to Add Your new Table
+// at AllTables func at all_entities.go file
+
 package entity
 
 import (

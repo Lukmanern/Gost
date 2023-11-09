@@ -22,9 +22,10 @@ func setup() {
 	config = env.Configuration()
 }
 
-// be careful using this
-// this will delete entire DB tables,
-// and recreate from the beginning
+// ⚠️ Do not run this on production.
+// ⚠️ Warning: This script will drop all tables in Database.
+// This script is designed to perform a complete reset of the database,
+// which involves the deletion of all existing tables and recreating them from scratch.
 func main() {
 	setup()
 	log.Println("Start Migration")
@@ -61,6 +62,7 @@ func main() {
 	}
 }
 
+// dropAll func drops all tables that listed in entity.AllTables()
 func dropAll() {
 	log.Println("Warning: dropping all tables in 9 seconds (CTRL+C to stop)")
 	time.Sleep(10 * time.Second)
@@ -71,6 +73,9 @@ func dropAll() {
 	}
 }
 
+// seeding func seed data like role, permission,
+// and role_has_permissions tables. You can add
+// more seed if you want.
 func seeding() {
 	// Create a new transaction for seeding
 	tx := db.Begin()
