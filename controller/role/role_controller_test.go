@@ -31,13 +31,13 @@ var (
 	roleService    service.RoleService
 	roleController RoleController
 	permController permissionController.PermissionController
-	appUrl         string
+	appURL         string
 )
 
 func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
-	appUrl = config.AppUrl
+	appURL = config.AppURL
 
 	connector.LoadDatabase()
 	connector.LoadRedisCache()
@@ -150,7 +150,7 @@ func TestRoleCreate(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + "role"
+		url := appURL + "role"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -176,15 +176,15 @@ func TestRoleCreate(t *testing.T) {
 			if !ok1 {
 				t.Error("should ok1")
 			}
-			anyId, ok2 := data["id"]
+			anyID, ok2 := data["id"]
 			if !ok2 {
 				t.Error("should ok2")
 			}
-			intId, ok3 := anyId.(float64)
+			intID, ok3 := anyID.(float64)
 			if !ok3 {
 				t.Error("should ok3")
 			}
-			deleteErr := roleService.Delete(ctx, int(intId))
+			deleteErr := roleService.Delete(ctx, int(intID))
 			if deleteErr != nil {
 				t.Error(constants.ShouldNotErr)
 			}
@@ -290,7 +290,7 @@ func TestRoleConnect(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + "role/connect"
+		url := appURL + "role/connect"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -396,7 +396,7 @@ func TestRoleGet(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		url := fmt.Sprintf(appUrl+"role/%d", tc.roleID)
+		url := fmt.Sprintf(appURL+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -487,7 +487,7 @@ func TestRoleGetAll(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		url := appUrl + "role?" + tc.params
+		url := appURL + "role?" + tc.params
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -614,7 +614,7 @@ func TestRoleUpdate(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := fmt.Sprintf(appUrl+"role/%d", tc.roleID)
+		url := fmt.Sprintf(appURL+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -722,7 +722,7 @@ func TestRoleDelete(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		url := fmt.Sprintf(appUrl+"role/%d", tc.roleID)
+		url := fmt.Sprintf(appURL+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())

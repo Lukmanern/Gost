@@ -21,13 +21,13 @@ var (
 	timeNow    time.Time
 	userRepo   repository.UserRepository
 	ctx        context.Context
-	appUrl     string
+	appURL     string
 )
 
 func init() {
 	env.ReadConfig("./../.env")
 	c := env.Configuration()
-	appUrl = c.AppUrl
+	appURL = c.AppURL
 
 	jwtHandler = middleware.NewJWTHandler()
 	timeNow = time.Now()

@@ -62,8 +62,8 @@ func TestSuccessCrud(t *testing.T) {
 		svc.Delete(ctx, userID)
 	}()
 
-	userByID, getByIdErr := svc.GetByID(ctx, userID)
-	if getByIdErr != nil || userByID == nil {
+	userByID, getByIDErr := svc.GetByID(ctx, userID)
+	if getByIDErr != nil || userByID == nil {
 		t.Error("should not error or user should not nil")
 	}
 	if userByID.Name != userModel.Name || userByID.Email != userModel.Email {
@@ -93,10 +93,10 @@ func TestSuccessCrud(t *testing.T) {
 	}
 
 	// reset value
-	getByIdErr = nil
+	getByIDErr = nil
 	userByID = nil
-	userByID, getByIdErr = svc.GetByID(ctx, userID)
-	if getByIdErr != nil || userByID == nil {
+	userByID, getByIDErr = svc.GetByID(ctx, userID)
+	if getByIDErr != nil || userByID == nil {
 		t.Error("should not error or user should not nil")
 	}
 	if userByID.Name != updateUserData.Name || userByID.Email != userModel.Email {
@@ -109,13 +109,13 @@ func TestSuccessCrud(t *testing.T) {
 	}
 
 	// reset value
-	getByIdErr = nil
+	getByIDErr = nil
 	userByID = nil
-	userByID, getByIdErr = svc.GetByID(ctx, userID)
-	if getByIdErr == nil || userByID != nil {
+	userByID, getByIDErr = svc.GetByID(ctx, userID)
+	if getByIDErr == nil || userByID != nil {
 		t.Error("should error and user should nil")
 	}
-	fiberErr, ok := getByIdErr.(*fiber.Error)
+	fiberErr, ok := getByIDErr.(*fiber.Error)
 	if ok {
 		if fiberErr.Code != fiber.StatusNotFound {
 			t.Error("should error 404")

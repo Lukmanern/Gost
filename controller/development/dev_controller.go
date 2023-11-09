@@ -181,7 +181,7 @@ func (ctr *DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 		return response.BadRequest(c, "file size exceeds the maximum allowed (3MB)")
 	}
 
-	fileUrl, uploadErr := ctr.fileSvc.UploadFile(file)
+	fileURL, uploadErr := ctr.fileSvc.UploadFile(file)
 	if uploadErr != nil {
 		fiberErr, ok := uploadErr.(*fiber.Error)
 		if ok {
@@ -190,7 +190,7 @@ func (ctr *DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 		return response.Error(c, constants.ServerErr+uploadErr.Error())
 	}
 	return response.SuccessCreated(c, map[string]any{
-		"file_url": fileUrl,
+		"file_url": fileURL,
 	})
 }
 

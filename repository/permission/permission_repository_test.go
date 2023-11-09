@@ -97,12 +97,12 @@ func TestPermissionRepositoryImplCreate(t *testing.T) {
 					t.Errorf("create() do not panic")
 				}
 			}()
-			gotId, err := tt.repo.Create(tt.args.ctx, tt.args.permission)
+			gotID, err := tt.repo.Create(tt.args.ctx, tt.args.permission)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PermissionRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotId <= 0 {
+			if gotID <= 0 {
 				t.Errorf("ID should be positive")
 			}
 		})

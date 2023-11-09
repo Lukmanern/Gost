@@ -54,8 +54,8 @@ func TestConfigGetPublicKeyAndGetPrivateKey(t *testing.T) {
 	ReadConfig(validPath)
 	c := Configuration()
 
-	dbUri := c.GetDatabaseURI()
-	if len(dbUri) < 1 {
+	dbURI := c.GetDatabaseURI()
+	if len(dbURI) < 1 {
 		t.Error("should more long")
 	}
 
@@ -75,9 +75,9 @@ func TestConfigGetPublicKeyAndGetPrivateKey(t *testing.T) {
 	}
 
 	c.ShowConfig()
-	c.setAppUrl()
-	_, parseUrlErr := url.Parse(c.AppUrl)
-	if parseUrlErr != nil {
+	c.setAppURL()
+	_, parseURLErr := url.Parse(c.AppURL)
+	if parseURLErr != nil {
 		t.Error("should not error while parsing url")
 	}
 }

@@ -37,13 +37,13 @@ var (
 	userRepo       userRepository.UserRepository
 	permService    service.PermissionService
 	permController PermissionController
-	appUrl         string
+	appURL         string
 )
 
 func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
-	appUrl = config.AppUrl
+	appURL = config.AppURL
 
 	connector.LoadDatabase()
 	connector.LoadRedisCache()
@@ -389,7 +389,7 @@ func TestPermUpdate(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := fmt.Sprintf(appUrl+"permission/%d", tc.permID)
+		url := fmt.Sprintf(appURL+"permission/%d", tc.permID)
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -473,7 +473,7 @@ func TestPermDelete(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		url := appUrl + "permission/" + strconv.Itoa(tc.permID)
+		url := appURL + "permission/" + strconv.Itoa(tc.permID)
 		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)

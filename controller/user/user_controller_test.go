@@ -29,13 +29,13 @@ var (
 	userSvc  service.UserService
 	userCtr  UserController
 	userRepo repository.UserRepository
-	appUrl   string
+	appURL   string
 )
 
 func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
-	appUrl = config.AppUrl
+	appURL = config.AppURL
 
 	connector.LoadDatabase()
 	r := connector.LoadRedisCache()
@@ -194,7 +194,7 @@ func TestRegister(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -315,7 +315,7 @@ func TestAccountActivation(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -426,7 +426,7 @@ func TestDeleteAccountActivation(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -555,7 +555,7 @@ func TestForgetPassword(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -696,7 +696,7 @@ func TestResetPassword(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -896,7 +896,7 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -937,7 +937,7 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil {
 			t.Fatal(constants.ShouldNotNil)

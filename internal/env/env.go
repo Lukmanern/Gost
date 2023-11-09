@@ -17,7 +17,7 @@ type Config struct {
 	AppAccessTokenTTL time.Duration `env:"APP_ACCESS_TOKEN_TTL"`
 	AppPort           int           `env:"APP_PORT"`
 	AppTimeZone       string        `env:"APP_TIME_ZONE"`
-	AppUrl            string
+	AppURL            string
 
 	DatabaseHost     string `env:"DB_HOST"`
 	DatabasePort     string `env:"DB_PORT"`
@@ -85,7 +85,7 @@ func Configuration() Config {
 	if err != nil {
 		log.Fatalf("Config error %s", err.Error())
 	}
-	cfg.setAppUrl()
+	cfg.setAppURL()
 	return cfg
 }
 
@@ -104,10 +104,10 @@ func (c *Config) GetAppInProduction() bool {
 	return c.AppInProduction
 }
 
-// setAppUrl func combine set AppUrl with localhost and port.
-func (c *Config) setAppUrl() {
+// setAppURL func combine set AppURL with localhost and port.
+func (c *Config) setAppURL() {
 	localAddr := fmt.Sprintf("http://127.0.0.1:%d/", c.AppPort)
-	c.AppUrl = localAddr
+	c.AppURL = localAddr
 }
 
 // GetPublicKey func gets PublicKey values.
@@ -163,7 +163,7 @@ func (c *Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "AppAccessTokenTTL", c.AppAccessTokenTTL)
 	fmt.Printf("%-21s: %d\n", "AppPort", c.AppPort)
 	fmt.Printf("%-21s: %s\n", "AppTimeZone", c.AppTimeZone)
-	fmt.Printf("%-21s: %s\n", "AppUrl", c.AppUrl)
+	fmt.Printf("%-21s: %s\n", "AppURL", c.AppURL)
 
 	fmt.Printf("%-21s: %s\n", "DatabaseHost", c.DatabaseHost)
 	fmt.Printf("%-21s: %s\n", "DatabasePort", c.DatabasePort)

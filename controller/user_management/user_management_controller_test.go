@@ -30,13 +30,13 @@ import (
 var (
 	userDevService    service.UserManagementService
 	userDevController controller.UserManagementController
-	appUrl            string
+	appURL            string
 )
 
 func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
-	appUrl = config.AppUrl
+	appURL = config.AppURL
 
 	connector.LoadDatabase()
 	r := connector.LoadRedisCache()
@@ -445,7 +445,7 @@ func TestUpdate(t *testing.T) {
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + "user-management/" + strconv.Itoa(tc.payload.ID)
+		url := appURL + "user-management/" + strconv.Itoa(tc.payload.ID)
 		req, httpReqErr := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -527,7 +527,7 @@ func TestDelete(t *testing.T) {
 
 	for _, tc := range testCases {
 		log.Println(tc.caseName)
-		url := appUrl + "user-management/" + strconv.Itoa(tc.paramID)
+		url := appURL + "user-management/" + strconv.Itoa(tc.paramID)
 		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
