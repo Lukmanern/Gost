@@ -14,7 +14,6 @@ import (
 type Config struct {
 	AppName           string        `env:"APP_NAME"`
 	AppInProduction   bool          `env:"APP_IN_PRODUCTION"`
-	AppKey            string        `env:"APP_SECRET_KEY"`
 	AppAccessTokenTTL time.Duration `env:"APP_ACCESS_TOKEN_TTL"`
 	AppPort           int           `env:"APP_PORT"`
 	AppTimeZone       string        `env:"APP_TIME_ZONE"`
@@ -161,7 +160,6 @@ func (c *Config) GetPrivateKey() []byte {
 func (c *Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "AppName", c.AppName)
 	fmt.Printf("%-21s: %v\n", "AppInProduction", c.AppInProduction)
-	fmt.Printf("%-21s: %s\n", "AppKey", c.AppKey)
 	fmt.Printf("%-21s: %s\n", "AppAccessTokenTTL", c.AppAccessTokenTTL)
 	fmt.Printf("%-21s: %d\n", "AppPort", c.AppPort)
 	fmt.Printf("%-21s: %s\n", "AppTimeZone", c.AppTimeZone)

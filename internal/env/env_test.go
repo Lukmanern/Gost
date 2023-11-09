@@ -18,10 +18,6 @@ func TestReadConfigAndConfiguration(t *testing.T) {
 		t.Error("Expected configuration to be initialized, but it is null")
 	}
 
-	if c.AppKey == "" {
-		t.Error("AppKey is empty; it should have a valid value")
-	}
-
 	if c.AppPort < 1 {
 		t.Error("AppPort is less than 1; it should be a positive integer")
 	}

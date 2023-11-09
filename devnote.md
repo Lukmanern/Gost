@@ -2,8 +2,9 @@
 
 ### Todo / OnDev
 
-1. Remove IsTokenValid
-2. Add email to userAccountDelete
+1. End to end test using postman
+2. Add postman to project
+3. Secret Management github -> add .env.test
 
 ### Read List
 
