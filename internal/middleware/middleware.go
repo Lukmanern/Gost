@@ -146,22 +146,6 @@ func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-// IsTokenValid func check token valid or not by checking encrypt algorithm.
-func (j JWTHandler) IsTokenValid(cookie string) bool {
-	claims := Claims{}
-	token, err := jwt.ParseWithClaims(cookie, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
-		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fiber.NewError(fiber.StatusUnauthorized)
-		}
-
-		return j.publicKey, nil
-	})
-	if err != nil || !token.Valid {
-		return false
-	}
-	return true
-}
-
 // extractToken func extracts token from fiber Ctx.
 func extractToken(c *fiber.Ctx) string {
 	bearerToken := c.Get(fiber.HeaderAuthorization)

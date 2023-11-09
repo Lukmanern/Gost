@@ -162,9 +162,6 @@ func TestSuccessRegister(t *testing.T) {
 	}
 
 	jwtHandler := middleware.NewJWTHandler()
-	if !jwtHandler.IsTokenValid(token) {
-		t.Error("token should valid")
-	}
 	if jwtHandler.IsBlacklisted(token) {
 		t.Error("should not in black-list")
 	}

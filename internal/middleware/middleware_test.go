@@ -11,7 +11,6 @@ import (
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/gofiber/fiber/v2"
-	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
 )
 
@@ -191,26 +190,6 @@ func TestJWTHandlerIsAuthenticated(t *testing.T) {
 			t.Error("Expected error for no token")
 		}
 	}()
-}
-
-func TestJWTHandlerIsTokenValid(t *testing.T) {
-	jwtHandler := NewJWTHandler()
-	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
-	if err != nil {
-		t.Error("error while generating token")
-	}
-	if token == "" {
-		t.Error("error : token void")
-	}
-
-	isValid := jwtHandler.IsTokenValid(token)
-	assert.True(t, isValid, "Valid token should be considered valid")
-
-	isValid = jwtHandler.IsTokenValid("expiredToken")
-	assert.False(t, isValid, "Expired token should be considered invalid")
-
-	isValid = jwtHandler.IsTokenValid("invalidToken")
-	assert.False(t, isValid, "Invalid token should be considered invalid")
 }
 
 func TestJWTHandlerHasPermission(t *testing.T) {
