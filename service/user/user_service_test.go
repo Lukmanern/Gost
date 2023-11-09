@@ -190,6 +190,7 @@ func TestSuccessRegister(t *testing.T) {
 
 	passwd := helper.RandomString(12)
 	modelUserResetPasswd := model.UserResetPassword{
+		Email:              userByID.Email,
 		Code:               *userByID.VerificationCode,
 		NewPassword:        passwd,
 		NewPasswordConfirm: passwd,

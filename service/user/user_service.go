@@ -357,7 +357,7 @@ func (svc *UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserF
 
 func (svc *UserServiceImpl) ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) {
 	userByCode, err := svc.repository.GetByConditions(ctx, map[string]any{
-		// "email =": user.Email,
+		"email =":             user.Email,
 		"verification_code =": user.Code,
 	})
 	if err != nil {
@@ -392,6 +392,7 @@ func (svc *UserServiceImpl) ResetPassword(ctx context.Context, user model.UserRe
 	}
 
 	userByCode.VerificationCode = nil
+	userByCode.SetUpdateTime()
 	updateErr := svc.repository.Update(ctx, *userByCode)
 	if updateErr != nil {
 		return updateErr

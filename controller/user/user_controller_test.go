@@ -661,6 +661,7 @@ func TestResetPassword(t *testing.T) {
 			caseName: "success reset password",
 			respCode: http.StatusAccepted,
 			payload: &model.UserResetPassword{
+				Email:              userByID.Email,
 				Code:               *userByID.VerificationCode,
 				NewPassword:        "newPassword",
 				NewPasswordConfirm: "newPassword",
@@ -670,6 +671,7 @@ func TestResetPassword(t *testing.T) {
 			caseName: "failed reset password: password not match",
 			respCode: http.StatusBadRequest,
 			payload: &model.UserResetPassword{
+				Email:              userByID.Email,
 				Code:               *userByID.VerificationCode,
 				NewPassword:        "newPassword",
 				NewPasswordConfirm: "newPasswordNotMatch",
@@ -679,6 +681,7 @@ func TestResetPassword(t *testing.T) {
 			caseName: "failed reset password: verification code too short",
 			respCode: http.StatusBadRequest,
 			payload: &model.UserResetPassword{
+				Email:              helper.RandomEmail(),
 				Code:               "short",
 				NewPassword:        "newPassword",
 				NewPasswordConfirm: "newPasswordNotMatch",
