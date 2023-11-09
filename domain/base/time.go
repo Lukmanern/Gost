@@ -19,7 +19,8 @@ func (att *TimeFields) SetCreateTimes() {
 }
 
 // SetCreateTimes func fills updated_at fields
-// This struct prevents developers from forgets or any common mistake.
+// This struct prevents developers from forgets
+// or any common mistake.
 func (att *TimeFields) SetUpdateTime() {
 	timeNow := time.Now()
 	att.UpdatedAt = &timeNow

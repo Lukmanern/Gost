@@ -27,37 +27,47 @@ import (
 
 type UserService interface {
 
-	// Register func
+	// Register function register user account, than send verification-code to email
 	Register(ctx context.Context, user model.UserRegister) (id int, err error)
 
-	// Verification func
+	// Verification function activates user account with
+	// verification code that has been sended to the user's email
 	Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error)
 
-	// DeleteUserByVerification func
+	// DeleteUserByVerification function deletes user data if the user account is not yet verified.
+	// This implies that the email owner hasn't actually registered the email, indicating that
+	// the user who registered may be making typing errors or may be a hacker attempting to get
+	// the verification code.
 	DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error)
 
-	// FailedLoginCounter func
+	// FailedLoginCounter function counts failed login attempts and stores them in Redis.
+	// After the N-th attempt to log in with the same IP address results in continuous failures,
+	// the system will impose a 50-minute ban. During this period, login requests (refer to
+	// the login function in the user controller) will not be processed.
 	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
 
-	// Login func
+	// Login func give user token/ jwt for auth header.
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
 
-	// Logout func
+	// Logout function stores the user's active token in Redis, effectively
+	// blacklisting the token. This ensures that the token cannot be reused
+	// for authentication (refer to the IsBlacklisted function in internal/middleware).
 	Logout(c *fiber.Ctx) (err error)
 
-	// ForgetPassword func
+	// ForgetPassword func send verification code into user's email
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
 
-	// ResetPassword func
+	// ResetPassword func resets password by creating
+	// new password by email and verification code
 	ResetPassword(ctx context.Context, user model.UserResetPassword) (err error)
 
-	// UpdatePassword func
+	// UpdatePassword func updates user's password
 	UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
 
-	// UpdateProfile func
+	// UpdateProfile func updates user's profile data
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
 
-	// MyProfile func
+	// MyProfile func shows user's profile data
 	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
 }
 

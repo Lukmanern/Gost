@@ -3,6 +3,7 @@
 ### Todo / OnDev
 
 1. Remove IsTokenValid
+2. Add email to userAccountDelete
 
 ### Read List
 

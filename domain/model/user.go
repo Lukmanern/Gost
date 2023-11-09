@@ -25,6 +25,7 @@ type UserForgetPassword struct {
 }
 
 type UserResetPassword struct {
+	// Email              string `validate:"required,email,min=5,max=60" json:"email"`
 	Code               string `validate:"required,min=21,max=60" json:"code"`
 	NewPassword        string `validate:"required,min=8,max=30" json:"new_password"`
 	NewPasswordConfirm string `validate:"required,min=8,max=30" json:"new_password_confirm"`

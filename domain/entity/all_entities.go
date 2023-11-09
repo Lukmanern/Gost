@@ -2,6 +2,8 @@
 // Table Here : must sorted by developer.
 package entity
 
+import "log"
+
 // Table interface is contract that make developer
 // not forget to add TableName method for struct
 type Table interface {
@@ -11,8 +13,8 @@ type Table interface {
 // AllTables func serve/ return all structs that
 // developer has been created. This func used in
 // database migration scripts.
-func AllTables() []Table {
-	return []Table{
+func AllTables() []any {
+	allTables := []any{
 		&User{},
 		&UserHasRoles{},
 		&Role{},
@@ -22,4 +24,11 @@ func AllTables() []Table {
 		// ...
 		// Add more tables/structs
 	}
+	for _, table := range allTables {
+		_, ok := table.(Table)
+		if !ok {
+			log.Fatal("please add TableName() func to all structs")
+		}
+	}
+	return allTables
 }

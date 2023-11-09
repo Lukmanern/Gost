@@ -16,23 +16,27 @@ import (
 )
 
 type UserController interface {
-	// Register func registers a new user
-	// and send verification code to user's email
+	// Register function register user account,
+	// than send verification-code to email
 	Register(c *fiber.Ctx) error
 
-	// AccountActivation func activations
-	// a new registed user with code
+	// AccountActivation function activates user account with
+	// verification code that has been sended to the user's email
 	AccountActivation(c *fiber.Ctx) error
 
-	// DeleteAccountActivation func deletes
-	// a new registed user with code
+	// DeleteUserByVerification function deletes user data if the
+	// user account is not yet verified. This implies that the email
+	// owner hasn't actually registered the email, indicating that
+	// the user who registered may be making typing errors or may
+	// be a hacker attempting to get the verification code.
 	DeleteAccountActivation(c *fiber.Ctx) error
 
-	// ForgetPassword func sends code to user's email
+	// ForgetPassword function send
+	// verification code into user's email
 	ForgetPassword(c *fiber.Ctx) error
 
-	// ResetPassword func resets by creating
-	// new user's password
+	// ResetPassword func resets password by creating
+	// new password by email and verification code
 	ResetPassword(c *fiber.Ctx) error
 
 	// Login func gives token and access to user
@@ -44,7 +48,7 @@ type UserController interface {
 	// UpdatePassword func updates user's password
 	UpdatePassword(c *fiber.Ctx) error
 
-	// UpdateProfile func updates user's data
+	// UpdateProfile func updates user's profile data
 	UpdateProfile(c *fiber.Ctx) error
 
 	// MyProfile func shows user's profile data
