@@ -23,8 +23,13 @@ type FileReponse struct {
 }
 
 type FileService interface {
+	// UploadFile func uploads file to supabase bucket.
 	UploadFile(fileHeader *multipart.FileHeader) (fileURL string, err error)
+
+	// RemoveFile func deletes a file from supabase bucket.
 	RemoveFile(fileName string) (err error)
+
+	// GetFilesList func get list of files from supabase bucket.
 	GetFilesList() (files []map[string]any, err error)
 }
 

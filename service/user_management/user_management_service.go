@@ -23,11 +23,23 @@ import (
 )
 
 type UserManagementService interface {
+
+	// Create func create one user.
 	Create(ctx context.Context, user model.UserCreate) (id int, err error)
+
+	// GetByID func get one user by ID.
 	GetByID(ctx context.Context, id int) (user *model.UserResponse, err error)
+
+	// GetByEmail func get one user by Email.
 	GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error)
+
+	// GetAll func get some users
 	GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error)
+
+	// Update func update one user data.
 	Update(ctx context.Context, user model.UserProfileUpdate) (err error)
+
+	// Delete func delete one user.
 	Delete(ctx context.Context, id int) (err error)
 }
 

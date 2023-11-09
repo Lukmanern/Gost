@@ -11,6 +11,7 @@ import (
 )
 
 type EmailService interface {
+	// SendMail func sends message with subject to some emails address.
 	SendMail(emails []string, subject, message string) error
 }
 

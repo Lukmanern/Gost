@@ -1,3 +1,5 @@
+// Constants used for error messages and testing assertions.
+
 package constants
 
 const (

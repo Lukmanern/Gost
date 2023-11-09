@@ -15,10 +15,19 @@ import (
 )
 
 type PermissionService interface {
+	// Create func create one permission.
 	Create(ctx context.Context, permission model.PermissionCreate) (id int, err error)
+
+	// GetByID func get one permission by ID.
 	GetByID(ctx context.Context, id int) (permission *model.PermissionResponse, err error)
+
+	// GetAll func get some permissions with payload.
 	GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []model.PermissionResponse, total int, err error)
+
+	// Update func update one permission by ID and payload.
 	Update(ctx context.Context, permission model.PermissionUpdate) (err error)
+
+	// Delete func delete one permission by ID.
 	Delete(ctx context.Context, id int) (err error)
 }
 

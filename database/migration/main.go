@@ -43,7 +43,7 @@ func main() {
 	}
 
 	// Recreate or create new tables within the transaction
-	if migrateErr := tx.AutoMigrate(entity.AllTables()...); migrateErr != nil {
+	if migrateErr := tx.AutoMigrate(entity.AllTables()); migrateErr != nil {
 		tx.Rollback()
 		log.Panicf("Error while migrating DB : %s", migrateErr)
 	}
@@ -68,7 +68,7 @@ func dropAll() {
 	time.Sleep(10 * time.Second)
 	log.Println("Start dropping tables . . .")
 	tables := entity.AllTables()
-	if deleteErr := db.Migrator().DropTable(tables...); deleteErr != nil {
+	if deleteErr := db.Migrator().DropTable(tables); deleteErr != nil {
 		log.Panicf("Error while deleting tables DB: %s", deleteErr)
 	}
 }

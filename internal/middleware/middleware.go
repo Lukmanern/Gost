@@ -17,12 +17,17 @@ import (
 	"github.com/Lukmanern/gost/internal/response"
 )
 
+// JWTHandler struct handles some key and redis connection
+// The purpose of this is to handler and checking HTTP Header
+// and/or checking is JWT blacklisted or not. See IsBlacklisted func.
 type JWTHandler struct {
 	publicKey  *rsa.PublicKey
 	privateKey *rsa.PrivateKey
 	cache      *redis.Client
 }
 
+// Claims struct will be generated as token,contains
+// user data like ID, email, role and permissions.
 type Claims struct {
 	ID          int         `json:"id"`
 	Email       string      `json:"email"`
@@ -31,6 +36,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// NewJWTHandler func creates new JwtHandler struct
 func NewJWTHandler() *JWTHandler {
 	env.ReadConfig("./.env")
 	config := env.Configuration()
@@ -60,7 +66,7 @@ func NewJWTHandler() *JWTHandler {
 	return &newJWTHandler
 }
 
-// This func used for login.
+// GenerateJWT func generate new token with expire time for user
 func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions map[int]int, expired time.Time) (t string, err error) {
 	if email == "" || role == "" || len(permissions) < 1 {
 		return "", errors.New("email/ role/ permission too short or void")
@@ -86,6 +92,9 @@ func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions map[int
 	return t, nil
 }
 
+// InvalidateToken func stores (blacklistings) token to redis.
+// After storing token in redis, the token is already blacklisted.
+// This func is used in Logout feature.
 func (j JWTHandler) InvalidateToken(c *fiber.Ctx) error {
 	cookie := extractToken(c)
 	claims := Claims{}
@@ -107,12 +116,15 @@ func (j JWTHandler) InvalidateToken(c *fiber.Ctx) error {
 	return nil
 }
 
+// IsBlacklisted func check the token/cookie is blacklisted or not.
 func (j JWTHandler) IsBlacklisted(cookie string) bool {
 	status := j.cache.Get(cookie)
 	val, _ := status.Result()
 	return val != ""
 }
 
+// IsAuthenticated func extracts token from context (fiber Ctx),
+// check is blacklisted or not. And checks the expire time too.
 func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 	cookie := extractToken(c)
 	if j.IsBlacklisted(cookie) {
@@ -134,6 +146,7 @@ func (j JWTHandler) IsAuthenticated(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+// IsTokenValid func check token valid or not by checking encrypt algorithm.
 func (j JWTHandler) IsTokenValid(cookie string) bool {
 	claims := Claims{}
 	token, err := jwt.ParseWithClaims(cookie, &claims, func(jwtToken *jwt.Token) (interface{}, error) {
@@ -149,6 +162,7 @@ func (j JWTHandler) IsTokenValid(cookie string) bool {
 	return true
 }
 
+// extractToken func extracts token from fiber Ctx.
 func extractToken(c *fiber.Ctx) string {
 	bearerToken := c.Get(fiber.HeaderAuthorization)
 	// Normally Authorization HTTP header.
@@ -160,6 +174,7 @@ func extractToken(c *fiber.Ctx) string {
 	return ""
 }
 
+// GenerateClaims func generates claims struct from jwt.
 func (j JWTHandler) GenerateClaims(cookieToken string) *Claims {
 	if j.IsBlacklisted(cookieToken) {
 		return nil
@@ -179,6 +194,14 @@ func (j JWTHandler) GenerateClaims(cookieToken string) *Claims {
 	return &claims
 }
 
+// BuildBitGroups func builds bit-group that can contains
+// so much permissions data inside with fast and effective
+// with bit manipulations. See the example :
+// permissions = {9:10,10:256}
+// => read as : bit-group-9th, contains 2 permissions
+// => read as : bit-group-10th, contains 8 permissions
+// per group contain max 8 permissions sequentially,
+// for more You can read in paper (for link, see in readme-md)
 func BuildBitGroups(permIDs ...int) map[int]int {
 	groups := make(map[int]int)
 	for _, id := range permIDs {
@@ -189,8 +212,10 @@ func BuildBitGroups(permIDs ...int) map[int]int {
 	return groups
 }
 
-func CheckHasPermission(endpointPermID int, userPermissions map[int]int) bool {
-	endpointBits := BuildBitGroups(endpointPermID)
+// CheckHasPermission func checks if bitGroups (map[int]int)
+// contains require permission ID or not
+func CheckHasPermission(requirePermID int, userPermissions map[int]int) bool {
+	endpointBits := BuildBitGroups(requirePermID)
 	// it seems O(n), but it's actually O(1)
 	// because length of $endpointBits is 1
 	for key, requiredBits := range endpointBits {
@@ -202,7 +227,7 @@ func CheckHasPermission(endpointPermID int, userPermissions map[int]int) bool {
 	return true
 }
 
-// type PermissionMap = map[uint8]uint8
+// HasPermission func extracts and checks for claims from fiber Ctx
 func (j JWTHandler) HasPermission(c *fiber.Ctx, endpointPermID int) error {
 	claims, ok := c.Locals("claims").(*Claims)
 	if !ok {
@@ -221,6 +246,7 @@ func (j JWTHandler) HasPermission(c *fiber.Ctx, endpointPermID int) error {
 	return c.Next()
 }
 
+// HasRole func check claims-role equal or not with require role
 func (j JWTHandler) HasRole(c *fiber.Ctx, role string) error {
 	claims, ok := c.Locals("claims").(*Claims)
 	if !ok || role != claims.Role {
@@ -229,14 +255,16 @@ func (j JWTHandler) HasRole(c *fiber.Ctx, role string) error {
 	return c.Next()
 }
 
-// for handler or middleware
+// CheckHasPermission func is handler/middleware that
+// called before the controller for checks the fiber ctx
 func (j JWTHandler) CheckHasPermission(endpointPermID int) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		return j.HasPermission(c, endpointPermID)
 	}
 }
 
-// for handler or middleware
+// CheckHasRole func is handler/middleware that
+// called before the controller for checks the fiber ctx
 func (j JWTHandler) CheckHasRole(role string) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		return j.HasRole(c, role)

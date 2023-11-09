@@ -16,11 +16,23 @@ import (
 )
 
 type RoleService interface {
+
+	// Create func create one role.
 	Create(ctx context.Context, data model.RoleCreate) (id int, err error)
+
+	// ConnectPermissions func connect one role with one or more permissions.
 	ConnectPermissions(ctx context.Context, data model.RoleConnectToPermissions) (err error)
+
+	// GetByID func get one role.
 	GetByID(ctx context.Context, id int) (role *entity.Role, err error)
+
+	// GetAll func get some roles.
 	GetAll(ctx context.Context, filter base.RequestGetAll) (roles []model.RoleResponse, total int, err error)
+
+	// Update func update one role.
 	Update(ctx context.Context, data model.RoleUpdate) (err error)
+
+	// Delete func delete one role.
 	Delete(ctx context.Context, id int) (err error)
 }
 

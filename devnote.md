@@ -2,7 +2,7 @@
 
 ### Todo / OnDev
 
-1. Add new feature file management (upload and download)
+1. Remove IsTokenValid
 
 ### Read List
 

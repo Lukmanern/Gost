@@ -14,6 +14,8 @@ import (
 	"golang.org/x/text/language"
 )
 
+// RandomString func generate random string
+// used for testing and any needs.
 func RandomString(n uint) string {
 	letterBytes := "abcdefghijklmnopqrstuvwxyz"
 	letterBytes += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -25,6 +27,8 @@ func RandomString(n uint) string {
 	return string(b)
 }
 
+// RandomEmails func return some emails
+// used for testing and any needs.
 func RandomEmails(n uint) []string {
 	emailsMap := make(map[string]int)
 	for uint(len(emailsMap)) < n {
@@ -40,12 +44,16 @@ func RandomEmails(n uint) []string {
 	return emails
 }
 
+// RandomEmail func return a email
+// used for testing and any needs.
 func RandomEmail() string {
 	body := strings.ToLower(RandomString(7) + RandomString(7) + RandomString(7))
 	randEmail := body + "@gost.project"
 	return randEmail
 }
 
+// RandomIPAddress func return a IP Address
+// used for testing and any needs.
 func RandomIPAddress() string {
 	source := rand.NewSource(time.Now().UnixNano())
 	rng := rand.New(source)
@@ -58,6 +66,7 @@ func RandomIPAddress() string {
 	return ip.String()
 }
 
+// ValidateEmails func validates emails
 func ValidateEmails(emails ...string) error {
 	for _, email := range emails {
 		_, err := mail.ParseAddress(email)
@@ -74,6 +83,8 @@ func NewFiberCtx() *fiber.Ctx {
 	return app.AcquireCtx(&fasthttp.RequestCtx{})
 }
 
+// ToTitle func make string to Title Case
+// Example : Your name => Your Name
 func ToTitle(s string) string {
 	return cases.Title(language.Und).String(s)
 }

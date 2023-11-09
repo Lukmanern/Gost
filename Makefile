@@ -26,3 +26,7 @@ migrate-test-report:
 # windowsOS only
 st-redis:
 	redis-server.exe --service-start
+
+# unix base only
+generate-keys:
+	openssl req -x509 -newkey rsa:4096 -keyout keys/private.key -out keys/publickey.crt -days 365 -nodes -subj "/CN=localhost"

@@ -26,16 +26,38 @@ import (
 )
 
 type UserService interface {
+
+	// Register func
 	Register(ctx context.Context, user model.UserRegister) (id int, err error)
+
+	// Verification func
 	Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error)
+
+	// DeleteUserByVerification func
 	DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error)
+
+	// FailedLoginCounter func
 	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
+
+	// Login func
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
+
+	// Logout func
 	Logout(c *fiber.Ctx) (err error)
+
+	// ForgetPassword func
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
+
+	// ResetPassword func
 	ResetPassword(ctx context.Context, user model.UserResetPassword) (err error)
+
+	// UpdatePassword func
 	UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
+
+	// UpdateProfile func
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
+
+	// MyProfile func
 	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
 }
 

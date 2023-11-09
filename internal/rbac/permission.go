@@ -6,8 +6,10 @@ import (
 	"github.com/Lukmanern/gost/domain/entity"
 )
 
-// Don't forget to run TestAllPermissions
-// to audit
+// ⚠️ Do not forget to run TestAllPermissions to audit
+// AllPermissions func return all permissions entities
+// that has been created by developer. This func run self
+// audit that check for name and id should be unique value.
 func AllPermissions() []entity.Permission {
 	permissions := []entity.Permission{
 		// user
@@ -72,5 +74,5 @@ var (
 	// add more permissions
 	// Rule :
 	// Name should unique
-	// ID +1 from before
+	// ID +1 from the ID before
 )
