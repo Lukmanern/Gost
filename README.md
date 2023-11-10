@@ -12,13 +12,13 @@ The following tools were used in this project:
 - [Fiber Framework](https://docs.gofiber.io/)
 - [GORM](https://gorm.io/)
 - [Supabase Services: PostgreSQL and Bucket](https://www.supabase.com)
-- [Github CLI](https://cli.github.com/)
-- [Github Action](https://github.com/features/actions)
-- [Snyk](https://app.snyk.io/)
-- [SonarLint, VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode)
-- [GoLint](https://github.com/golang/lint)
+- [Github CLI](https://cli.github.com/) -> add github secret
+- [Github Action](https://github.com/features/actions) -> automatic testing and builds
+- [Snyk](https://app.snyk.io/) -> dependency scanning
+- [SonarLint, VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) -> VSCode static code analytic for code-styling & many more
+- [GoLint](https://github.com/golang/lint) -> CLI static code analytic for code-styling & many more
 
-## :book: Read List
+## :closed_book: Read List
 
 - [Database Connection Configuration](https://www.alexedwards.net/blog/configuring-sqldb)
 - [Go-Fiber Testing](https://dev.to/koddr/go-fiber-by-examples-testing-the-application-1ldf)
