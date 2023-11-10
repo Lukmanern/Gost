@@ -11,14 +11,11 @@ The following tools were used in this project:
 - [Go](https://go.dev)
 - [PostgreSQL](https://www.postgresql.org)
 
-```
-
 ## :memo: License
 
 This project is under license from MIT. For more details, see the [LICENSE](LICENSE) file.
 
 &#xa0;
-
 
 ## Gost Project
 
@@ -37,4 +34,7 @@ Go-Fiber project starter, with jwt-auth and highly effective RBAC implementation
 9. Go Module and Package https://stackoverflow.com/questions/61940117/go-modules-vs-package
 
 <!-- Todo: edit readme, see tips github action -->
+
+```
+
 ```
