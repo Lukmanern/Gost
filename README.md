@@ -4,7 +4,7 @@
 
 Golang project starter with Fiber Framework, jwt-auth and highly effective bit-manipulation RBAC implementation to build a robust RestAPI Application.
 
-## :rocket: Technologies And :wrench: :hammer: Tools
+## :rocket: Technologies And :wrench: Tools
 
 The following tools were used in this project:
 
@@ -18,7 +18,7 @@ The following tools were used in this project:
 - [SonarLint, VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode)
 - [GoLint](https://github.com/golang/lint)
 
-## :books: Read List
+## :book: Read List
 
 - [Database Connection Configuration](https://www.alexedwards.net/blog/configuring-sqldb)
 - [Go-Fiber Testing](https://dev.to/koddr/go-fiber-by-examples-testing-the-application-1ldf)
