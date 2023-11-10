@@ -6,15 +6,15 @@ Golang project starter with Fiber Framework, jwt-auth and highly effective bit-m
 
 ## :rocket: Technologies And :wrench: Tools
 
-The following tools were used in this project:
+Techs and tools were used in this project:
 
 - [Go](https://go.dev)
-- [Fiber Framework](https://docs.gofiber.io/)
-- [GORM](https://gorm.io/)
-- [Supabase Services: PostgreSQL and Bucket](https://www.supabase.com)
-- [Github CLI](https://cli.github.com/) -> add github secret
-- [Github Action](https://github.com/features/actions) -> automatic testing and builds
-- [Snyk](https://app.snyk.io/) -> dependency scanning
+- [Fiber Framework](https://docs.gofiber.io/) -> Framework for routing and HTTP handler
+- [GORM](https://gorm.io/) -> Database logic and query
+- [Supabase Services: PostgreSQL and Bucket](https://www.supabase.com) -> Free database and storage
+- [Github CLI](https://cli.github.com/) -> Github secret management
+- [Github Action](https://github.com/features/actions) -> Automatic testing and builds
+- [Snyk](https://app.snyk.io/) -> Dependency scanning
 - [SonarLint, VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) -> VSCode static code analytic for code-styling & many more
 - [GoLint](https://github.com/golang/lint) -> CLI static code analytic for code-styling & many more
 
@@ -34,5 +34,3 @@ The following tools were used in this project:
 This project is under license from MIT. For more details, see the [LICENSE](LICENSE) file.
 
 &#xa0;
-
-<!-- Todo: edit readme, see tips github action -->
