@@ -2,6 +2,8 @@ package hash
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerate(t *testing.T) {
@@ -17,9 +19,7 @@ func TestGenerate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := Generate(tt.data)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Generate() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			assert.Equal(t, (err != nil), tt.wantErr, "Generate() error")
 		})
 	}
 }
@@ -43,12 +43,8 @@ func TestVerify(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Verify(tt.hashedPassword, tt.password)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Verify() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if got != tt.want {
-				t.Errorf("Verify() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, (err != nil), tt.wantErr, "Verify() error")
+			assert.Equal(t, got, tt.want, "Verify() result")
 		})
 	}
 }

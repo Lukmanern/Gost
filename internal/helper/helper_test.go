@@ -6,30 +6,23 @@ import (
 	"testing"
 
 	"github.com/Lukmanern/gost/internal/constants"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRandomString(t *testing.T) {
 	for i := 0; i < 25; i++ {
 		s := RandomString(uint(i))
-		if len(s) != i {
-			t.Error("len of string should equal")
-		}
+		assert.Len(t, s, i, "length of string should equal")
 	}
 }
 
 func TestRandomEmails(t *testing.T) {
 	for i := 1; i <= 20; i++ {
 		emails := RandomEmails(uint(i))
-		if len(emails) != i {
-			t.Error("total of emails should equal")
-		}
+		assert.Len(t, emails, i, "total of emails should equal")
 		for _, email := range emails {
-			if len(email) < 10 {
-				t.Error("length of an email should not less than 10")
-			}
-			if email != strings.ToLower(email) {
-				t.Error("email should lower by results")
-			}
+			assert.GreaterOrEqual(t, len(email), 10, "length of an email should not less than 10")
+			assert.Equal(t, email, strings.ToLower(email), "email should be lowercase")
 		}
 	}
 }
@@ -37,13 +30,8 @@ func TestRandomEmails(t *testing.T) {
 func TestRandomEmail(t *testing.T) {
 	for i := 0; i < 25; i++ {
 		email := RandomEmail()
-		validateErr := ValidateEmails(email)
-		if validateErr != nil {
-			t.Error("should not error")
-		}
-		if len(email) < 25 {
-			t.Error("should more than 25")
-		}
+		assert.NoError(t, ValidateEmails(email), "should not error")
+		assert.GreaterOrEqual(t, len(email), 25, "should be more than 25")
 	}
 }
 
@@ -51,39 +39,27 @@ func TestRandomIPAddress(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		ipRand := RandomIPAddress()
 		ip := net.ParseIP(ipRand)
-		if ip == nil {
-			t.Error(constants.ShouldNotNil)
-		}
+		assert.NotNil(t, ip, constants.ShouldNotNil)
 	}
 }
 
 func TestValidateEmails(t *testing.T) {
 	err1 := ValidateEmails("f", "a")
-	if err1 == nil {
-		t.Error(constants.ShouldErr)
-	}
+	assert.Error(t, err1, constants.ShouldErr)
 
 	err2 := ValidateEmails("validemail098@gmail.com")
-	if err2 != nil {
-		t.Error("should not err")
-	}
+	assert.NoError(t, err2, "should not error")
 
 	err3 := ValidateEmails("validemail0911@gmail.com", "invalidemail0987@.gmail.com")
-	if err3 == nil {
-		t.Error(constants.ShouldErr)
-	}
+	assert.Error(t, err3, constants.ShouldErr)
 
 	err4 := ValidateEmails("validemail0987@gmail.com", "valid_email0987@gmail.com", "invalidemail0987@gmail.com.")
-	if err4 == nil {
-		t.Error(constants.ShouldErr)
-	}
+	assert.Error(t, err4, constants.ShouldErr)
 }
 
 func TestNewFiberCtx(t *testing.T) {
 	c := NewFiberCtx()
-	if c == nil {
-		t.Error(constants.ShouldNotNil)
-	}
+	assert.NotNil(t, c, constants.ShouldNotNil)
 }
 
 func TestToTitle(t *testing.T) {
@@ -108,9 +84,9 @@ func TestToTitle(t *testing.T) {
 		res := ToTitle(payload.str)
 
 		if res != payload.str && payload.isEqual {
-			t.Errorf("should equal, but not at: %s got %s", payload.str, res)
+			assert.Failf(t, "should equal, but not at: %s got %s", payload.str, res)
 		} else if res == payload.str && !payload.isEqual {
-			t.Errorf("should not equal, but equal at: %s got %s", payload.str, res)
+			assert.Failf(t, "should not equal, but equal at: %s got %s", payload.str, res)
 		}
 	}
 }
