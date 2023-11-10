@@ -1,6 +1,5 @@
 package model
 
-// Role
 type RoleCreate struct {
 	Name          string `validate:"required,min=1,max=60" json:"name"`
 	Description   string `validate:"required,min=1,max=100" json:"description"`
@@ -24,7 +23,6 @@ type RoleConnectToPermissions struct {
 	PermissionsID []int `validate:"required" json:"permissions_id"`
 }
 
-// Permission
 type PermissionCreate struct {
 	Name        string `validate:"required,min=1,max=60" json:"name"`
 	Description string `validate:"required,min=1,max=100" json:"description"`

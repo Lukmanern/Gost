@@ -91,7 +91,7 @@ func seeding() {
 		}
 	}
 	for _, perm := range rbac.AllPermissions() {
-		perm.SetCreateTimes()
+		perm.SetCreateTime()
 		perm.ID = 0
 		if createErr := tx.Create(&perm).Error; createErr != nil {
 			tx.Rollback()

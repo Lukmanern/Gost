@@ -1,5 +1,7 @@
 // ⚠️ Don't forget to Add Your new
 // Table Here : must sorted by developer.
+
+// Package entity contains all the structs that will be used to build tables in the database.
 package entity
 
 import "log"

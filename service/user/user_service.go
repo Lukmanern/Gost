@@ -129,7 +129,7 @@ func (svc *UserServiceImpl) Register(ctx context.Context, user model.UserRegiste
 		if getByCodeErr != nil || userGetByCode == nil {
 			break
 		}
-		counter += 1
+		counter++
 		if counter >= 150 {
 			return 0, errors.New("failed generating verification code")
 		}
@@ -141,7 +141,7 @@ func (svc *UserServiceImpl) Register(ctx context.Context, user model.UserRegiste
 		if hashErr == nil {
 			break
 		}
-		counter += 1
+		counter++
 		if counter >= 150 {
 			return 0, errors.New("failed hashing user password")
 		}
@@ -155,7 +155,7 @@ func (svc *UserServiceImpl) Register(ctx context.Context, user model.UserRegiste
 		ActivatedAt:      nil,
 	}
 	// set created_at and updated_at equal to now
-	userEntity.SetCreateTimes()
+	userEntity.SetCreateTime()
 	id, err = svc.repository.Create(ctx, userEntity, user.RoleID)
 	if err != nil {
 		return 0, err
@@ -323,7 +323,7 @@ func (svc *UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserF
 		if getByCodeErr != nil || userGetByCode == nil {
 			break
 		}
-		counter += 1
+		counter++
 		if counter >= 150 {
 			return errors.New("failed generating verification code")
 		}
@@ -385,7 +385,7 @@ func (svc *UserServiceImpl) ResetPassword(ctx context.Context, user model.UserRe
 		if hashErr == nil {
 			break
 		}
-		counter += 1
+		counter++
 		if counter >= 150 {
 			return errors.New("failed hashing user password")
 		}
@@ -435,7 +435,7 @@ func (svc *UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserP
 		if hashErr == nil {
 			break
 		}
-		counter += 1
+		counter++
 		if counter >= 150 {
 			return errors.New("failed hashing user password")
 		}

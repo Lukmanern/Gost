@@ -86,13 +86,13 @@ func TestUserRepositoryImplCreate(t *testing.T) {
 				if (err != nil) != tt.wantErr {
 					t.Errorf("UserRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 					return
-				} else {
-					gotID2, err2 := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
-					if err2 == nil || gotID2 != 0 {
-						t.Error("should be error, couse email is already used")
-					}
-					tt.repo.Delete(tt.args.ctx, gotID)
 				}
+				gotID2, err2 := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
+				if err2 == nil || gotID2 != 0 {
+					t.Error("should be error, couse email is already used")
+				}
+				tt.repo.Delete(tt.args.ctx, gotID)
+
 				return
 			}
 			// want panic

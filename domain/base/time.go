@@ -10,15 +10,15 @@ type TimeFields struct {
 	UpdatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"updated_at"`
 }
 
-// SetCreateTimes func fills created_at and updated_at fields
+// SetCreateTime func fills created_at and updated_at fields
 // This struct prevents developers from forgets or any common mistake.
-func (att *TimeFields) SetCreateTimes() {
+func (att *TimeFields) SetCreateTime() {
 	timeNow := time.Now()
 	att.CreatedAt = &timeNow
 	att.UpdatedAt = &timeNow
 }
 
-// SetCreateTimes func fills updated_at fields
+// SetUpdateTime func fills updated_at fields
 // This struct prevents developers from forgets
 // or any common mistake.
 func (att *TimeFields) SetUpdateTime() {

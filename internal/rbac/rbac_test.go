@@ -25,7 +25,7 @@ func TestCountPermissions(t *testing.T) {
 	hashMapPermissions := make(map[string]int, 0)
 
 	for _, permission := range AllPermissions() {
-		hashMapPermissions[permission.Name] += 1
+		hashMapPermissions[permission.Name]++
 		if hashMapPermissions[permission.Name] > 1 {
 			t.Error("should 1, not more, non-unique permission detected : ", permission.Name)
 		}
@@ -48,7 +48,7 @@ func TestCountRoles(t *testing.T) {
 	hashMapRoles := make(map[string]int, 0)
 
 	for _, role := range AllRoles() {
-		hashMapRoles[role.Name] += 1
+		hashMapRoles[role.Name]++
 		if hashMapRoles[role.Name] > 1 {
 			t.Error("should 1, not more, non-unique role (role:name) detected : ", role.Name)
 		}

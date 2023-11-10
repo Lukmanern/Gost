@@ -120,7 +120,7 @@ func (ctr *DevControllerImpl) Panic(c *fiber.Ctx) error {
 		}
 		return nil
 	}()
-	panic("Panic message") // message should string
+	panic("your panic message") // should string
 }
 
 func (ctr *DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {

@@ -75,7 +75,7 @@ func (svc *RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (
 		Name:        data.Name,
 		Description: data.Description,
 	}
-	entityRole.SetCreateTimes()
+	entityRole.SetCreateTime()
 	id, err = svc.repository.Create(ctx, entityRole, data.PermissionsID)
 	if err != nil {
 		return 0, err

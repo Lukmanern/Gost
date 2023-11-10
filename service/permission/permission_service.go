@@ -62,7 +62,7 @@ func (svc *PermissionServiceImpl) Create(ctx context.Context, permission model.P
 		Name:        permission.Name,
 		Description: permission.Description,
 	}
-	entityPermission.SetCreateTimes()
+	entityPermission.SetCreateTime()
 	id, err = svc.repository.Create(ctx, entityPermission)
 	if err != nil {
 		return 0, err

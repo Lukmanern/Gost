@@ -15,6 +15,8 @@ type EmailService interface {
 	SendMail(emails []string, subject, message string) error
 }
 
+// EmailServiceImpl struct contains all the
+// SMTP needs for sending emails.
 // SMTP => Simple Mail Transfer Protocol
 type EmailServiceImpl struct {
 	Server   string

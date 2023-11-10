@@ -34,7 +34,7 @@ func RandomEmails(n uint) []string {
 	for uint(len(emailsMap)) < n {
 		body := strings.ToLower(RandomString(7) + RandomString(7) + RandomString(7))
 		randEmail := body + "@gost.project"
-		emailsMap[randEmail] += 1
+		emailsMap[randEmail]++
 	}
 
 	emails := make([]string, 0, len(emailsMap))
@@ -77,7 +77,8 @@ func ValidateEmails(emails ...string) error {
 	return nil
 }
 
-// This used for testing handler : controller/ middleware/ any
+// NewFiberCtx func create new fiber.Ctx used for testing
+// handler like controller and middleware.
 func NewFiberCtx() *fiber.Ctx {
 	app := fiber.New()
 	return app.AcquireCtx(&fasthttp.RequestCtx{})

@@ -86,7 +86,7 @@ func TestCreate(t *testing.T) {
 		CaseName     string
 		payload      model.UserCreate
 		resp         response.Response
-		wantHttpCode int
+		wantHTTPCode int
 	}{
 		{
 			CaseName: "failed create: email has already used",
@@ -101,7 +101,7 @@ func TestCreate(t *testing.T) {
 				Success: false,
 				Message: "",
 			},
-			wantHttpCode: http.StatusBadRequest,
+			wantHTTPCode: http.StatusBadRequest,
 		},
 		{
 			CaseName: "success create",
@@ -116,7 +116,7 @@ func TestCreate(t *testing.T) {
 				Success: true,
 				Message: response.MessageSuccessCreated,
 			},
-			wantHttpCode: http.StatusCreated,
+			wantHTTPCode: http.StatusCreated,
 		},
 	}
 
@@ -139,7 +139,7 @@ func TestCreate(t *testing.T) {
 			t.Fatalf("HTTP request failed: %v", clientErr)
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode != tc.wantHttpCode {
+		if resp.StatusCode != tc.wantHTTPCode {
 			t.Error(constants.ShouldEqual, "but got", resp.StatusCode)
 		}
 
