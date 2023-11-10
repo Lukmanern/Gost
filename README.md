@@ -1,3 +1,25 @@
+<h1 align="center">Gost: Go Starter</h1>
+
+<br>
+
+Simple and scalable starter kit to build powerful and organized REST projects with Fiber.
+
+## :rocket: Technologies
+
+The following tools were used in this project:
+
+- [Go](https://go.dev)
+- [PostgreSQL](https://www.postgresql.org)
+
+```
+
+## :memo: License
+
+This project is under license from MIT. For more details, see the [LICENSE](LICENSE) file.
+
+&#xa0;
+
+
 ## Gost Project
 
 Go-Fiber project starter, with jwt-auth and highly effective RBAC implementation.
@@ -13,3 +35,6 @@ Go-Fiber project starter, with jwt-auth and highly effective RBAC implementation
 7. https://www.alexedwards.net/blog/ci-with-go-and-github-actions
 8. https://roadmap.sh/best-practices/api-security/
 9. Go Module and Package https://stackoverflow.com/questions/61940117/go-modules-vs-package
+
+<!-- Todo: edit readme, see tips github action -->
+```
