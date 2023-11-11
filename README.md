@@ -12,8 +12,8 @@ Techs and tools were used in this project:
 - [Fiber Framework](https://docs.gofiber.io/) -> Framework for routing & HTTP handler
 - [GORM](https://gorm.io/) -> Database logics & queries
 - [Supabase Services: PostgreSQL & Bucket](https://www.supabase.com) -> Free database & storage (bucket)
-- [Github CLI](https://cli.github.com/) -> Github management for secrets repository & etc.
-- [Github Action](https://github.com/features/actions) -> Automatic testing & builds
+- [Github CLI](https://cli.github.com/) -> Github management for repository's secrets & etc.
+- [Github Action](https://github.com/features/actions) -> Automated testing and building across multiple versions of Go.
 - [Snyk](https://app.snyk.io/) -> Dependency scanning
 - [SonarLint, VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) -> Detects & highlights issues that can lead to bugs & vulnerabilities.
 - [GoLint](https://github.com/golang/lint) -> CLI static code analytic for code-styling & many more
