@@ -9,13 +9,13 @@ Golang project starter with Fiber Framework, jwt-auth and highly effective bit-m
 Techs and tools were used in this project:
 
 - [Go](https://go.dev)
-- [Fiber Framework](https://docs.gofiber.io/) -> Framework for routing and HTTP handler
-- [GORM](https://gorm.io/) -> Database logic and query
-- [Supabase Services: PostgreSQL and Bucket](https://www.supabase.com) -> Free database and storage
-- [Github CLI](https://cli.github.com/) -> Github secret management
-- [Github Action](https://github.com/features/actions) -> Automatic testing and builds
+- [Fiber Framework](https://docs.gofiber.io/) -> Framework for routing & HTTP handler
+- [GORM](https://gorm.io/) -> Database logics & queries
+- [Supabase Services: PostgreSQL & Bucket](https://www.supabase.com) -> Free database & storage (bucket)
+- [Github CLI](https://cli.github.com/) -> Github management for secrets repository & etc.
+- [Github Action](https://github.com/features/actions) -> Automatic testing & builds
 - [Snyk](https://app.snyk.io/) -> Dependency scanning
-- [SonarLint, VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) -> VSCode static code analytic for code-styling & many more
+- [SonarLint, VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) -> Detects & highlights issues that can lead to bugs & vulnerabilities.
 - [GoLint](https://github.com/golang/lint) -> CLI static code analytic for code-styling & many more
 
 ## :closed_book: Read List
