@@ -4,6 +4,8 @@
 
 Golang project starter with Fiber Framework, jwt-auth and highly effective bit-manipulation RBAC implementation to build a robust RestAPI Application.
 
+&#xa0;
+
 ## :rocket: Technologies And :wrench: Tools
 
 Techs and tools were used in this project:
@@ -17,6 +19,8 @@ Techs and tools were used in this project:
 - [Snyk](https://app.snyk.io/) → Dependency scanning.
 - [SonarLint, VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) → Detects & highlights issues that can lead to bugs & vulnerabilities.
 - [GoLint](https://github.com/golang/lint) → CLI static code analytic for code-styling & many more.
+
+&#xa0;
 
 ## :closed_book: Read List
 
