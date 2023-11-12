@@ -5,3 +5,6 @@
 cover.out
 cover.html
 /.cover
+.dockerignore
+docker-compose.yml
+Dockerfile
