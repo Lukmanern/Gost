@@ -33,6 +33,8 @@ Techs and tools were used in this project:
 - [CI with Github Actions](https://www.alexedwards.net/blog/ci-with-go-and-github-actions)
 - [RestAPI Security Checklist](https://roadmap.sh/best-practices/api-security/)
 
+&#xa0;
+
 ## :memo: License
 
 This project is under license from MIT. For more details, see the [LICENSE](LICENSE) file.
