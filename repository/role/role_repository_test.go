@@ -16,8 +16,8 @@ import (
 var (
 	roleRepoImpl  RoleRepositoryImpl
 	permissionsID []int
-	// timeNow and ctx is declared
-	// at permission_repository_test file
+	timeNow       time.Time
+	ctx           context.Context
 )
 
 func init() {
@@ -28,8 +28,7 @@ func init() {
 	ctx = context.Background()
 
 	roleRepoImpl = RoleRepositoryImpl{
-		roleTableName: roleTableName,
-		db:            connector.LoadDatabase(),
+		db: connector.LoadDatabase(),
 	}
 	permissionsID = []int{1, 2, 3, 4, 5}
 
@@ -59,7 +58,7 @@ func TestNewRoleRepository(t *testing.T) {
 	}
 }
 
-func TestRoleRepositoryImpl_Create(t *testing.T) {
+func TestCreate(t *testing.T) {
 	role := createOneRole(t, "create-same-name")
 	if role == nil {
 		t.Error("failed creating role : role is nil")
@@ -103,19 +102,19 @@ func TestRoleRepositoryImpl_Create(t *testing.T) {
 					t.Errorf("create() do not panic")
 				}
 			}()
-			gotId, err := tt.repo.Create(tt.args.ctx, tt.args.role, tt.args.permissionsID)
+			gotID, err := tt.repo.Create(tt.args.ctx, tt.args.role, tt.args.permissionsID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RoleRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotId <= 0 {
+			if gotID <= 0 {
 				t.Errorf("ID should be positive")
 			}
 		})
 	}
 }
 
-func TestRoleRepositoryImpl_ConnectToPermission(t *testing.T) {
+func TestConnectToPermission(t *testing.T) {
 	role := createOneRole(t, "TestRoleConnectToPermission")
 	if role == nil || role.ID == 0 {
 		t.Error("failed creating role : role is nil")
@@ -172,7 +171,7 @@ func TestRoleRepositoryImpl_ConnectToPermission(t *testing.T) {
 	}
 }
 
-func TestRoleRepositoryImpl_GetByID(t *testing.T) {
+func TestGetByID(t *testing.T) {
 	role := createOneRole(t, "TestGetByID")
 	if role == nil {
 		t.Error("failed creating role : role is nil")
@@ -224,7 +223,7 @@ func TestRoleRepositoryImpl_GetByID(t *testing.T) {
 	}
 }
 
-func TestRoleRepositoryImpl_GetByName(t *testing.T) {
+func TestGetByName(t *testing.T) {
 	role := createOneRole(t, "TestGetByName")
 	if role == nil {
 		t.Error("failed creating role : role is nil")
@@ -276,7 +275,7 @@ func TestRoleRepositoryImpl_GetByName(t *testing.T) {
 	}
 }
 
-func TestRoleRepositoryImpl_GetAll(t *testing.T) {
+func TestGetAll(t *testing.T) {
 	roles := make([]entity.Role, 0)
 	for i := 0; i < 10; i++ {
 		role := createOneRole(t, "TestGetAll"+strconv.Itoa(i))
@@ -345,7 +344,7 @@ func TestRoleRepositoryImpl_GetAll(t *testing.T) {
 	}
 }
 
-func TestRoleRepositoryImpl_Update(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	role := createOneRole(t, "TestUpdateByID")
 	if role == nil {
 		t.Error("failed creating role : role is nil")
@@ -408,7 +407,7 @@ func TestRoleRepositoryImpl_Update(t *testing.T) {
 	}
 }
 
-func TestRoleRepositoryImpl_Delete(t *testing.T) {
+func TestDelete(t *testing.T) {
 	role := createOneRole(t, "TestDeleteByID")
 	if role == nil {
 		t.Error("failed creating role : role is nil")

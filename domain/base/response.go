@@ -6,6 +6,7 @@ type PageMeta struct {
 	Page  int `json:"page"`
 }
 
+// GetAllResponse struct used for response getAll controller funcs
 type GetAllResponse struct {
 	Meta PageMeta    `json:"meta"`
 	Data interface{} `json:"data"`

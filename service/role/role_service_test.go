@@ -11,8 +11,10 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
+	permService "github.com/Lukmanern/gost/service/permission"
 )
 
 func init() {
@@ -20,30 +22,29 @@ func init() {
 	env.ReadConfig("./../../.env")
 
 	connector.LoadDatabase()
-	connector.LoadRedisDatabase()
+	connector.LoadRedisCache()
 }
 
 func TestNewRoleService(t *testing.T) {
-	permSvc := NewPermissionService()
+	permSvc := permService.NewPermissionService()
 	svc := NewRoleService(permSvc)
 	if svc == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
 // create 1 role, create 4 permissions
 // trying to connect
-
-func TestSuccessCRUD_Role(t *testing.T) {
+func TestSuccessCrudRole(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	permSvc := NewPermissionService()
+	permSvc := permService.NewPermissionService()
 	if permSvc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	svc := NewRoleService(permSvc)
 	if svc == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	modelRole := model.RoleCreate{
@@ -55,7 +56,7 @@ func TestSuccessCRUD_Role(t *testing.T) {
 		t.Error("should not error and id should more than zero")
 	}
 
-	// save the id for delete the perms
+	// Save the ID for deleting the permissions
 	permsID := make([]int, 0)
 	for i := 0; i < 3; i++ {
 		modelPerm := model.PermissionCreate{
@@ -64,7 +65,7 @@ func TestSuccessCRUD_Role(t *testing.T) {
 		}
 		permID, createErr := permSvc.Create(ctx, modelPerm)
 		if createErr != nil || permID < 1 {
-			t.Error("should not error and permID should more than one")
+			t.Error("should not error and permID should be more than one")
 		}
 
 		permsID = append(permsID, permID)
@@ -77,14 +78,14 @@ func TestSuccessCRUD_Role(t *testing.T) {
 		}
 	}()
 
-	// success connect
+	// Success connect
 	modelConnect := model.RoleConnectToPermissions{
 		RoleID:        roleID,
 		PermissionsID: permsID,
 	}
 	connectErr := svc.ConnectPermissions(ctx, modelConnect)
 	if connectErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	roleByID, getErr := svc.GetByID(ctx, roleID)
@@ -92,12 +93,12 @@ func TestSuccessCRUD_Role(t *testing.T) {
 		t.Error("should not error and role not nil")
 	}
 	if len(roleByID.Permissions) != len(permsID) {
-		t.Error("total of permissions connected by role should equal")
+		t.Error("total of permissions connected by role should be equal")
 	}
 
 	roles, total, getAllErr := svc.GetAll(ctx, base.RequestGetAll{Limit: 10, Page: 1})
 	if len(roles) < 1 || total < 1 || getAllErr != nil {
-		t.Error("should more than or equal one and not error at all")
+		t.Error("should be more than or equal to one and not error at all")
 	}
 
 	updateRoleModel := model.RoleUpdate{
@@ -107,44 +108,44 @@ func TestSuccessCRUD_Role(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updateRoleModel)
 	if updateErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
-	// value reset
+	// Value reset
 	roleByID = nil
 	getErr = nil
 	roleByID, getErr = svc.GetByID(ctx, roleID)
 	if getErr != nil || roleByID == nil {
-		t.Error("should not error and roleByID should not nil")
+		t.Error("should not error and roleByID should not be nil")
 	}
 	if roleByID.Name != updateRoleModel.Name || roleByID.Description != updateRoleModel.Description {
-		t.Error("name and desc should same")
+		t.Error("name and description should be the same")
 	}
 
 	deleteErr := svc.Delete(ctx, roleID)
 	if deleteErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
-	// value reset
+	// Value reset
 	roleByID = nil
 	getErr = nil
 	roleByID, getErr = svc.GetByID(ctx, roleID)
 	if getErr == nil || roleByID != nil {
-		t.Error("should error and roleByID should nil")
+		t.Error("should error and roleByID should be nil")
 	}
 }
 
-func TestFailedCRUD_Roles(t *testing.T) {
+func TestFailedCrudRoles(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	permSvc := NewPermissionService()
+	permSvc := permService.NewPermissionService()
 	if permSvc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	svc := NewRoleService(permSvc)
 	if svc == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// failed create: permissions not found
@@ -181,7 +182,7 @@ func TestFailedCRUD_Roles(t *testing.T) {
 	}
 	connectErr := svc.ConnectPermissions(ctx, modelConnectFailed)
 	if connectErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	modelConnectFailed = model.RoleConnectToPermissions{
@@ -191,7 +192,7 @@ func TestFailedCRUD_Roles(t *testing.T) {
 	connectErr = nil
 	connectErr = svc.ConnectPermissions(ctx, modelConnectFailed)
 	if connectErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	// failed update
@@ -202,12 +203,12 @@ func TestFailedCRUD_Roles(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updateRoleModel)
 	if updateErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	// failed delete
 	deleteErr := svc.Delete(ctx, -1)
 	if deleteErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 }

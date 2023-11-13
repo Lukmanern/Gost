@@ -3,6 +3,8 @@ package env
 import (
 	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -14,74 +16,39 @@ func TestReadConfigAndConfiguration(t *testing.T) {
 	ReadConfig(validPath)
 	c := Configuration()
 
-	if c == config {
-		t.Error("Expected configuration to be initialized, but it is null")
-	}
-
-	if c.AppKey == "" {
-		t.Error("AppKey is empty; it should have a valid value")
-	}
-
-	if c.AppPort < 1 {
-		t.Error("AppPort is less than 1; it should be a positive integer")
-	}
-
-	if c.DatabasePort == "" {
-		t.Error("DatabasePort is empty; it should have a valid value")
-	}
-
-	if c.PublicKey == "" {
-		t.Error("PublicKey is empty; it should have a valid value")
-	}
-
-	if c.PrivateKey == "" {
-		t.Error("PrivateKey is empty; it should have a valid value")
-	}
-
-	if c.RedisURI == "" {
-		t.Error("RedisURI is empty; it should have a valid value")
-	}
-
-	if c.SMTPPort < 1 {
-		t.Error("SMTPPort is less than 1; it should be a positive integer")
-	}
+	assert.NotEqual(t, c, config, "Expected configuration to be initialized, but it is null")
+	assert.True(t, c.AppPort >= 1, "AppPort is less than 1; it should be a positive integer")
+	assert.NotEmpty(t, c.DatabasePort, "DatabasePort is empty; it should have a valid value")
+	assert.NotEmpty(t, c.PublicKey, "PublicKey is empty; it should have a valid value")
+	assert.NotEmpty(t, c.PrivateKey, "PrivateKey is empty; it should have a valid value")
+	assert.NotEmpty(t, c.RedisURI, "RedisURI is empty; it should have a valid value")
+	assert.True(t, c.SMTPPort >= 1, "SMTPPort is less than 1; it should be a positive integer")
 }
 
-func TestConfig_GetPublicKeyAndGetPrivateKey(t *testing.T) {
+func TestConfigGetPublicKeyAndGetPrivateKey(t *testing.T) {
 	defer func() {
 		r := recover()
-		if r != nil {
-			t.Error("should not panic")
-		}
+		assert.Nil(t, r, "should not panic")
 	}()
 
 	ReadConfig(validPath)
 	c := Configuration()
 
-	dbUri := c.GetDatabaseURI()
-	if len(dbUri) < 1 {
-		t.Error("should more long")
-	}
+	rawDbURI := "host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=%s"
+	dbURI := c.GetDatabaseURI()
+	assert.True(t, len(dbURI) >= len(rawDbURI), "should be more long")
 
 	isProd := c.GetAppInProduction()
-	if c.AppInProduction != isProd {
-		t.Error("Expected AppInProduction to match the configuration, but it doesn't")
-	}
+	assert.Equal(t, c.AppInProduction, isProd, "Expected AppInProduction to match the configuration, but it doesn't")
 
 	pubKey := c.GetPublicKey()
-	if pubKey == nil {
-		t.Error("Public Key should not be nil")
-	}
+	assert.NotNil(t, pubKey, "Public Key should not be nil")
 
 	privKey := c.GetPrivateKey()
-	if privKey == nil {
-		t.Error("Private Key should not be nil")
-	}
+	assert.NotNil(t, privKey, "Private Key should not be nil")
 
 	c.ShowConfig()
-	c.setAppUrl()
-	_, parseUrlErr := url.Parse(c.AppUrl)
-	if parseUrlErr != nil {
-		t.Error("should not error while parsing url")
-	}
+	c.setAppURL()
+	_, parseURLErr := url.Parse(c.AppURL)
+	assert.NoError(t, parseURLErr, "should not error while parsing url")
 }

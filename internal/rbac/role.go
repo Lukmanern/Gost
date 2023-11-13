@@ -2,11 +2,15 @@ package rbac
 
 import "github.com/Lukmanern/gost/domain/entity"
 
-// for migration and seeder
+// AllRoles func return all roles entities that has been
+// created by developer. This func run self audit that
+// check for name should be unique value.
+// ⚠️ Do not forget to put new role here.
 func AllRoles() []entity.Role {
 	roleNames := []string{
 		RoleAdmin,
 		RoleUser,
+
 		// ...
 		// add more here
 	}
@@ -16,7 +20,7 @@ func AllRoles() []entity.Role {
 		newRoleEntity := entity.Role{
 			Name: name,
 		}
-		newRoleEntity.SetCreateTimes()
+		newRoleEntity.SetCreateTime()
 		roles = append(roles, newRoleEntity)
 	}
 
@@ -26,6 +30,7 @@ func AllRoles() []entity.Role {
 const (
 	RoleAdmin = "admin"
 	RoleUser  = "user"
+
 	// ...
 	// add more here
 )

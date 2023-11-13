@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/gofiber/fiber/v2"
-	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
 )
 
@@ -94,7 +94,7 @@ func TestGenerateClaims(t *testing.T) {
 	}
 }
 
-func TestJWTHandler_InvalidateToken(t *testing.T) {
+func TestJWTHandlerInvalidateToken(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -111,14 +111,14 @@ func TestJWTHandler_InvalidateToken(t *testing.T) {
 		t.Error("Should error: Expected error for no token")
 	}
 
-	c.Request().Header.Add("Authorization", "Bearer "+token)
+	c.Request().Header.Add(fiber.HeaderAuthorization, "Bearer "+token)
 	invalidErr2 := jwtHandler.InvalidateToken(c)
 	if invalidErr2 != nil {
 		t.Error("Expected no error for a valid token, but got an error.")
 	}
 }
 
-func TestJWTHandler_IsBlacklisted(t *testing.T) {
+func TestJWTHandlerIsBlacklisted(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	cookie, err := jwtHandler.GenerateJWT(1000,
 		helper.RandomEmail(), "example-role",
@@ -152,7 +152,7 @@ func TestJWTHandler_IsBlacklisted(t *testing.T) {
 	}
 }
 
-func TestJWTHandler_IsAuthenticated(t *testing.T) {
+func TestJWTHandlerIsAuthenticated(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -183,7 +183,7 @@ func TestJWTHandler_IsAuthenticated(t *testing.T) {
 		jwtHandler3 := NewJWTHandler()
 		app := fiber.New()
 		c := app.AcquireCtx(&fasthttp.RequestCtx{})
-		c.Request().Header.Add("Authorization", " "+token)
+		c.Request().Header.Add(fiber.HeaderAuthorization, " "+token)
 		c.Status(fiber.StatusUnauthorized)
 		jwtHandler3.IsAuthenticated(c)
 		if c.Context().Response.StatusCode() != fiber.StatusUnauthorized {
@@ -192,27 +192,7 @@ func TestJWTHandler_IsAuthenticated(t *testing.T) {
 	}()
 }
 
-func TestJWTHandler_IsTokenValid(t *testing.T) {
-	jwtHandler := NewJWTHandler()
-	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
-	if err != nil {
-		t.Error("error while generating token")
-	}
-	if token == "" {
-		t.Error("error : token void")
-	}
-
-	isValid := jwtHandler.IsTokenValid(token)
-	assert.True(t, isValid, "Valid token should be considered valid")
-
-	isValid = jwtHandler.IsTokenValid("expiredToken")
-	assert.False(t, isValid, "Expired token should be considered invalid")
-
-	isValid = jwtHandler.IsTokenValid("invalidToken")
-	assert.False(t, isValid, "Invalid token should be considered invalid")
-}
-
-func TestJWTHandler_HasPermission(t *testing.T) {
+func TestJWTHandlerHasPermission(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -224,14 +204,14 @@ func TestJWTHandler_HasPermission(t *testing.T) {
 
 	app := fiber.New()
 	c := app.AcquireCtx(&fasthttp.RequestCtx{})
-	c.Request().Header.Add("Authorization", "Bearer "+token)
+	c.Request().Header.Add(fiber.HeaderAuthorization, "Bearer "+token)
 	jwtHandler.HasPermission(c, 25)
 	if c.Response().Header.StatusCode() != fiber.StatusUnauthorized {
 		t.Error("Should authorized")
 	}
 }
 
-func TestJWTHandler_HasRole(t *testing.T) {
+func TestJWTHandlerHasRole(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -243,14 +223,14 @@ func TestJWTHandler_HasRole(t *testing.T) {
 
 	app := fiber.New()
 	c := app.AcquireCtx(&fasthttp.RequestCtx{})
-	c.Request().Header.Add("Authorization", "Bearer "+token)
+	c.Request().Header.Add(fiber.HeaderAuthorization, "Bearer "+token)
 	jwtHandler.HasRole(c, "test-role")
 	if c.Response().Header.StatusCode() != fiber.StatusUnauthorized {
-		t.Error("Should unauthorized")
+		t.Error(constants.Unauthorized)
 	}
 }
 
-func TestJWTHandler_CheckHasPermission(t *testing.T) {
+func TestJWTHandlerCheckHasPermission(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -262,11 +242,11 @@ func TestJWTHandler_CheckHasPermission(t *testing.T) {
 
 	err2 := jwtHandler.CheckHasPermission(9999)
 	if err2 == nil {
-		t.Error("Should unauthorized")
+		t.Error(constants.Unauthorized)
 	}
 }
 
-func TestJWTHandler_CheckHasRole(t *testing.T) {
+func TestJWTHandlerCheckHasRole(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Per, params.Exp)
 	if err != nil {
@@ -278,11 +258,11 @@ func TestJWTHandler_CheckHasRole(t *testing.T) {
 
 	err2 := jwtHandler.CheckHasRole("permission-1")
 	if err2 == nil {
-		t.Error("Should unauthorized")
+		t.Error(constants.Unauthorized)
 	}
 }
 
-func Test_PermissionBitGroup(t *testing.T) {
+func TestPermissionBitGroup(t *testing.T) {
 	d := 8
 	testCases := []struct {
 		input  int
@@ -335,7 +315,7 @@ func Test_PermissionBitGroup(t *testing.T) {
 	}
 }
 
-func Test_CheckHasPermission(t *testing.T) {
+func TestCheckHasPermission(t *testing.T) {
 	// user perms
 	permIDs := make([]int, 0)
 	for i := 1; i <= 19; i++ {

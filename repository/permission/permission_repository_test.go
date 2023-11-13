@@ -24,8 +24,7 @@ func init() {
 	timeNow = time.Now()
 	ctx = context.Background()
 	permissionRepoImpl = PermissionRepositoryImpl{
-		permissionTableName: permissionTableName,
-		db:                  connector.LoadDatabase(),
+		db: connector.LoadDatabase(),
 	}
 
 }
@@ -54,7 +53,7 @@ func TestNewPermissionRepository(t *testing.T) {
 	}
 }
 
-func TestPermissionRepositoryImpl_Create(t *testing.T) {
+func TestPermissionRepositoryImplCreate(t *testing.T) {
 	permission := createOnePermission(t, "create-same-name")
 	if permission == nil {
 		t.Error("failed creating permission : permission is nil")
@@ -98,19 +97,19 @@ func TestPermissionRepositoryImpl_Create(t *testing.T) {
 					t.Errorf("create() do not panic")
 				}
 			}()
-			gotId, err := tt.repo.Create(tt.args.ctx, tt.args.permission)
+			gotID, err := tt.repo.Create(tt.args.ctx, tt.args.permission)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PermissionRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotId <= 0 {
+			if gotID <= 0 {
 				t.Errorf("ID should be positive")
 			}
 		})
 	}
 }
 
-func TestPermissionRepositoryImpl_GetByID(t *testing.T) {
+func TestPermissionRepositoryImplGetByID(t *testing.T) {
 	permission := createOnePermission(t, "TestGetByID")
 	if permission == nil {
 		t.Error("failed creating permission : permission is nil")
@@ -162,7 +161,7 @@ func TestPermissionRepositoryImpl_GetByID(t *testing.T) {
 	}
 }
 
-func TestPermissionRepositoryImpl_GetByName(t *testing.T) {
+func TestPermissionRepositoryImplGetByName(t *testing.T) {
 	permission := createOnePermission(t, "TestGetByName")
 	if permission == nil {
 		t.Error("failed creating permission : permission is nil")
@@ -215,7 +214,7 @@ func TestPermissionRepositoryImpl_GetByName(t *testing.T) {
 	}
 }
 
-func TestPermissionRepositoryImpl_GetAll(t *testing.T) {
+func TestPermissionRepositoryImplGetAll(t *testing.T) {
 	permissions := make([]entity.Permission, 0)
 	for i := 0; i < 10; i++ {
 		permission := createOnePermission(t, "TestGetAll-"+strconv.Itoa(i))
@@ -285,7 +284,7 @@ func TestPermissionRepositoryImpl_GetAll(t *testing.T) {
 	}
 }
 
-func TestPermissionRepositoryImpl_Update(t *testing.T) {
+func TestPermissionRepositoryImplUpdate(t *testing.T) {
 	permission := createOnePermission(t, "TestUpdateByID")
 	if permission == nil {
 		t.Error("failed creating permission : permission is nil")
@@ -349,7 +348,7 @@ func TestPermissionRepositoryImpl_Update(t *testing.T) {
 	}
 }
 
-func TestPermissionRepositoryImpl_Delete(t *testing.T) {
+func TestPermissionRepositoryImplDelete(t *testing.T) {
 	permission := createOnePermission(t, "TestDeleteByID")
 	if permission == nil {
 		t.Error("failed creating permission : permission is nil")

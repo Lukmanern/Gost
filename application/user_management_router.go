@@ -1,6 +1,10 @@
-// don't use this for production
-// use this file just for testing
-// and testing management.
+// 📌 Origin Github Repository: https://github.com/Lukmanern<slash>gost
+
+// 🔍 README
+// User Management Routes provides create, read (get & getAll), update, and
+// delete functionalities for user data management without JWT authentication
+// in header. ⚠️ So, don't forget to commented on the line of code that routes
+// getUserManagementRoutes in the app.go file.
 
 package application
 

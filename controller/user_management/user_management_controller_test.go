@@ -15,11 +15,10 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/response"
@@ -31,27 +30,27 @@ import (
 var (
 	userDevService    service.UserManagementService
 	userDevController controller.UserManagementController
-	appUrl            string
+	appURL            string
 )
 
 func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
-	appUrl = config.AppUrl
+	appURL = config.AppURL
 
 	connector.LoadDatabase()
-	r := connector.LoadRedisDatabase()
+	r := connector.LoadRedisCache()
 	r.FlushAll() // clear all key:value in redis
 
 	userDevService = service.NewUserManagementService()
 	userDevController = controller.NewUserManagementController(userDevService)
 }
 
-func Test_Create(t *testing.T) {
+func TestCreate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctr := userDevController
 	if ctr == nil || c == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -148,13 +147,13 @@ func Test_Create(t *testing.T) {
 	for _, tc := range testCases {
 		jsonObject, marshalErr := json.Marshal(&tc.payload)
 		if marshalErr != nil {
-			t.Error("should not error", marshalErr.Error())
+			t.Error(constants.ShouldNotErr, marshalErr.Error())
 		}
 		c.Request().SetBody(jsonObject)
 
 		createErr := ctr.Create(c)
 		if createErr != nil {
-			t.Error("should not erro", createErr)
+			t.Error(constants.ShouldNotErr, createErr)
 		} else if tc.payload == nil {
 			continue
 		}
@@ -168,25 +167,25 @@ func Test_Create(t *testing.T) {
 		}
 		if !tc.wantErr {
 			if userByEMail == nil {
-				t.Fatal("should not nil")
+				t.Fatal(constants.ShouldNotNil)
 			} else {
 				deleteErr := userDevService.Delete(ctx, userByEMail.ID)
 				if deleteErr != nil {
-					t.Error("should not error")
+					t.Error(constants.ShouldNotErr)
 				}
 			}
-			if userByEMail.Name != cases.Title(language.Und).String(tc.payload.Name) {
-				t.Error("should equal")
+			if userByEMail.Name != helper.ToTitle(tc.payload.Name) {
+				t.Error(constants.ShouldEqual)
 			}
 		}
 	}
 }
 
-func Test_Get(t *testing.T) {
+func TestGet(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	createdUser := model.UserCreate{
@@ -250,34 +249,34 @@ func Test_Get(t *testing.T) {
 		app.Get("/user-management/:id", userDevController.Get)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error("should equal")
+			t.Error(constants.ShouldEqual)
 		}
 		if !tc.wantErr {
 			respModel := response.Response{}
 			decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
 			if decodeErr != nil {
-				t.Error("should not error", decodeErr)
+				t.Error(constants.ShouldNotErr, decodeErr)
 			}
 
 			if tc.response.Message != respModel.Message && tc.response.Message != "" {
-				t.Error("should equal")
+				t.Error(constants.ShouldEqual)
 			}
 			if respModel.Success != tc.response.Success {
-				t.Error("should equal")
+				t.Error(constants.ShouldEqual)
 			}
 		}
 	}
 }
 
-func Test_GetAll(t *testing.T) {
+func TestGetAll(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	userIDs := make([]int, 0)
@@ -331,21 +330,21 @@ func Test_GetAll(t *testing.T) {
 		app.Get("/user-management", userDevController.GetAll)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error", err.Error())
+			t.Fatal(constants.ShouldNotErr, err.Error())
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error("should equal")
+			t.Error(constants.ShouldEqual)
 		}
 		if !tc.wantErr {
 			body := response.Response{}
 			bytes, err := io.ReadAll(resp.Body)
 			if err != nil {
-				t.Fatal("should not error", err.Error())
+				t.Fatal(constants.ShouldNotErr, err.Error())
 			}
 			err = json.Unmarshal(bytes, &body)
 			if err != nil {
-				t.Fatal("should not error", err.Error())
+				t.Fatal(constants.ShouldNotErr, err.Error())
 			}
 			if !body.Success {
 				t.Fatal("should be success")
@@ -357,12 +356,12 @@ func Test_GetAll(t *testing.T) {
 	}
 }
 
-func Test_Update(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctr := userDevController
 	ctx := c.Context()
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPut)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -444,12 +443,12 @@ func Test_Update(t *testing.T) {
 		log.Println(tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + "user-management/" + strconv.Itoa(tc.payload.ID)
+		url := appURL + "user-management/" + strconv.Itoa(tc.payload.ID)
 		req, httpReqErr := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -458,28 +457,28 @@ func Test_Update(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error("should equal", resp.StatusCode)
+			t.Error(constants.ShouldEqual, resp.StatusCode)
 		}
 		if tc.payload != nil {
 			respModel := response.Response{}
 			decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
 			if decodeErr != nil && decodeErr != io.EOF {
-				t.Error("should not error", decodeErr)
+				t.Error(constants.ShouldNotErr, decodeErr)
 			}
 		}
 	}
 }
 
-func Test_Delete(t *testing.T) {
+func TestDelete(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctr := userDevController
 	ctx := c.Context()
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPut)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -528,10 +527,10 @@ func Test_Delete(t *testing.T) {
 
 	for _, tc := range testCases {
 		log.Println(tc.caseName)
-		url := appUrl + "user-management/" + strconv.Itoa(tc.paramID)
+		url := appURL + "user-management/" + strconv.Itoa(tc.paramID)
 		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -540,11 +539,11 @@ func Test_Delete(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error("should equal", resp.StatusCode)
+			t.Error(constants.ShouldEqual, resp.StatusCode)
 		}
 	}
 

@@ -21,13 +21,13 @@ var (
 	timeNow    time.Time
 	userRepo   repository.UserRepository
 	ctx        context.Context
-	appUrl     string
+	appURL     string
 )
 
 func init() {
 	env.ReadConfig("./../.env")
 	c := env.Configuration()
-	appUrl = c.AppUrl
+	appURL = c.AppURL
 
 	jwtHandler = middleware.NewJWTHandler()
 	timeNow = time.Now()
@@ -35,7 +35,7 @@ func init() {
 	ctx = context.Background()
 }
 
-func Test_RunApp(t *testing.T) {
+func TestRunApp(t *testing.T) {
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -47,7 +47,7 @@ func Test_RunApp(t *testing.T) {
 	time.Sleep(3 * time.Second)
 }
 
-func Test_app_router(t *testing.T) {
+func TestAppRouter(t *testing.T) {
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -90,7 +90,7 @@ func TestRoutes(t *testing.T) {
 	})
 
 	t.Run("getRBACAuthRoutes", func(t *testing.T) {
-		getRbacRoutes(router)
+		getRolePermissionRoutes(router)
 	})
 
 	t.Run("getUserAuthRoutes", func(t *testing.T) {

@@ -6,8 +6,10 @@ import (
 	"github.com/Lukmanern/gost/domain/entity"
 )
 
-// Don't forget to run Test_AllPermissions
-// to audit
+// AllPermissions func return all permissions entities
+// that has been created by developer. This func run self
+// audit that check for name and id should be unique value.
+// ⚠️ Do not forget to run TestAllPermissions to audit
 func AllPermissions() []entity.Permission {
 	permissions := []entity.Permission{
 		// user
@@ -32,8 +34,8 @@ func AllPermissions() []entity.Permission {
 		if perm.ID < 1 || len(perm.Name) <= 1 {
 			log.Fatal("permission name too short or invalid id at:", perm)
 		}
-		checkIDs[perm.ID] += 1
-		checkNames[perm.Name] += 1
+		checkIDs[perm.ID]++
+		checkNames[perm.Name]++
 		if checkIDs[perm.ID] > 1 || checkNames[perm.Name] > 1 {
 			log.Fatal("permission name or id should unique, but got:", perm)
 		}
@@ -72,5 +74,5 @@ var (
 	// add more permissions
 	// Rule :
 	// Name should unique
-	// ID +1 from before
+	// ID +1 from the ID before
 )

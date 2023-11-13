@@ -19,7 +19,9 @@ var (
 	redisDatastoreOnce sync.Once
 )
 
-// SQL Database
+// LoadDatabase func read env intenal package and
+// give database connection using gorm package,
+// also pings the DB before the function end.
 func LoadDatabase() *gorm.DB {
 	gormDatabaseOnce.Do(func() {
 		// try to read env
@@ -60,8 +62,10 @@ func LoadDatabase() *gorm.DB {
 	return gormDatabase
 }
 
-// Redis
-func LoadRedisDatabase() *redis.Client {
+// LoadRedisCache func read env intenal package and
+// give redis connection using redis external package,
+// also pings the DB before the function end.
+func LoadRedisCache() *redis.Client {
 	redisDatastoreOnce.Do(func() {
 		env.ReadConfig("./.env")
 		config := env.Configuration()

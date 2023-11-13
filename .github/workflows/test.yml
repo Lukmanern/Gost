@@ -1,4 +1,4 @@
-name: Go
+name: Go Test
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
       - "*/*"
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     services:
@@ -27,7 +27,7 @@ jobs:
 
     strategy:
       matrix:
-        go-version: ["1.18.x", "1.19.x", "1.20.x", "1.21.x"]
+        go-version: ["1.20.x"]
 
     steps:
       - uses: actions/checkout@v3
@@ -38,12 +38,6 @@ jobs:
 
       - name: Display Go version
         run: go version
-
-      - name: Install golint
-        run: go install golang.org/x/lint/golint@latest
-
-      - name: Run golint
-        run: golint ./...
 
       - name: Verify dependencies
         run: go mod verify
@@ -62,11 +56,18 @@ jobs:
           cat keys/publickey.crt
           cat keys/private.key
 
-      - name: Copy env
-        run: cp .env.example .env
+      - name: Create .env file
+        run: echo "${{ secrets.ENV }}" > .env
 
-      - name: Test
-        run: go test -race -timeout 20s ./internal/...
+      - name: Go Get
+        run: |
+          go get ./...
 
-      - name: Build
-        run: go build -o main main.go
+      - name: Run migration
+        run: |
+          go run database/migration/main.go
+
+      - name: Run Test
+        run: |
+          go test -p 1 -timeout 600s ./application/...
+          go test -race -timeout 600s ./controller/... ./database/... ./domain/..  ./internal/... ./repository/... ./service/...

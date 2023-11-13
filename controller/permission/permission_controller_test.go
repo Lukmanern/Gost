@@ -20,6 +20,7 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
@@ -27,7 +28,8 @@ import (
 
 	userController "github.com/Lukmanern/gost/controller/user"
 	userRepository "github.com/Lukmanern/gost/repository/user"
-	service "github.com/Lukmanern/gost/service/rbac"
+	service "github.com/Lukmanern/gost/service/permission"
+	roleService "github.com/Lukmanern/gost/service/role"
 	userService "github.com/Lukmanern/gost/service/user"
 )
 
@@ -35,37 +37,37 @@ var (
 	userRepo       userRepository.UserRepository
 	permService    service.PermissionService
 	permController PermissionController
-	appUrl         string
+	appURL         string
 )
 
 func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
-	appUrl = config.AppUrl
+	appURL = config.AppURL
 
 	connector.LoadDatabase()
-	connector.LoadRedisDatabase()
+	connector.LoadRedisCache()
 
 	userRepo = userRepository.NewUserRepository()
 	permService = service.NewPermissionService()
 	permController = NewPermissionController(permService)
 }
 
-func Test_Perm_NewPermissionController(t *testing.T) {
+func TestPermNewPermissionController(t *testing.T) {
 	permSvc := service.NewPermissionService()
 	permCtr := NewPermissionController(permSvc)
 
 	if permSvc == nil || permCtr == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
-func Test_Perm_Create(t *testing.T) {
+func TestPermCreate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	userID, userToken := createUserAndToken()
@@ -113,7 +115,7 @@ func Test_Perm_Create(t *testing.T) {
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", tc.token))
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", tc.token))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		requestBody, err := json.Marshal(tc.payload)
 		if err != nil {
@@ -166,12 +168,12 @@ func Test_Perm_Create(t *testing.T) {
 	}
 }
 
-func Test_Perm_Get(t *testing.T) {
+func TestPermGet(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	testCases := []struct {
@@ -207,7 +209,7 @@ func Test_Perm_Get(t *testing.T) {
 		app.Get("/permission/:id", permController.Get)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -233,12 +235,12 @@ func Test_Perm_Get(t *testing.T) {
 	}
 }
 
-func Test_Perm_GetAll(t *testing.T) {
+func TestPermGetAll(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	testCases := []struct {
@@ -278,7 +280,7 @@ func Test_Perm_GetAll(t *testing.T) {
 		app.Get("/permission", permController.GetAll)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -307,12 +309,12 @@ func Test_Perm_GetAll(t *testing.T) {
 	}
 }
 
-func Test_Perm_Update(t *testing.T) {
+func TestPermUpdate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create 1 permission
@@ -385,19 +387,19 @@ func Test_Perm_Update(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := fmt.Sprintf(appUrl+"permission/%d", tc.permID)
+		url := fmt.Sprintf(appURL+"permission/%d", tc.permID)
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Put("/permission/:id", permController.Update)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -422,12 +424,12 @@ func Test_Perm_Update(t *testing.T) {
 	}
 }
 
-func Test_Perm_Delete(t *testing.T) {
+func TestPermDelete(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create 1 permission
@@ -471,17 +473,17 @@ func Test_Perm_Delete(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		url := appUrl + "permission/" + strconv.Itoa(tc.permID)
+		url := appURL + "permission/" + strconv.Itoa(tc.permID)
 		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Delete("/permission/:id", permController.Delete)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -492,7 +494,7 @@ func Test_Perm_Delete(t *testing.T) {
 
 func createUserAndToken() (userID int, token string) {
 	permService := service.NewPermissionService()
-	roleService := service.NewRoleService(permService)
+	roleService := roleService.NewRoleService(permService)
 	userSvc := userService.NewUserService(roleService)
 	userCtr := userController.NewUserController(userSvc)
 
@@ -500,7 +502,7 @@ func createUserAndToken() (userID int, token string) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		log.Fatal("should not nil")
+		log.Fatal(constants.ShouldNotNil)
 	}
 
 	createdUser := model.UserRegister{
@@ -527,7 +529,7 @@ func createUserAndToken() (userID int, token string) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		log.Fatal("should not error")
+		log.Fatal(constants.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)

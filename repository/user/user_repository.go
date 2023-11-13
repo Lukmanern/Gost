@@ -14,23 +14,36 @@ import (
 )
 
 type UserRepository interface {
+	// Create adds a new user to the repository with a specified role.
 	Create(ctx context.Context, user entity.User, roleID int) (id int, err error)
+
+	// GetByID retrieves a user by their unique identifier.
 	GetByID(ctx context.Context, id int) (user *entity.User, err error)
+
+	// GetByEmail retrieves a user by their email address.
 	GetByEmail(ctx context.Context, email string) (user *entity.User, err error)
+
+	// GetByConditions retrieves a user based on specified conditions.
 	GetByConditions(ctx context.Context, conds map[string]any) (user *entity.User, err error)
+
+	// GetAll retrieves all users based on a filter for pagination.
 	GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.User, total int, err error)
+
+	// Update modifies user information in the repository.
 	Update(ctx context.Context, user entity.User) (err error)
+
+	// Delete removes a user from the repository by their ID.
 	Delete(ctx context.Context, id int) (err error)
+
+	// UpdatePassword updates a user's password in the repository.
 	UpdatePassword(ctx context.Context, id int, passwordHashed string) (err error)
 }
 
 type UserRepositoryImpl struct {
-	userTableName string
-	db            *gorm.DB
+	db *gorm.DB
 }
 
 var (
-	userTableName          string = "users"
 	userRepositoryImpl     *UserRepositoryImpl
 	userRepositoryImplOnce sync.Once
 )
@@ -38,14 +51,13 @@ var (
 func NewUserRepository() UserRepository {
 	userRepositoryImplOnce.Do(func() {
 		userRepositoryImpl = &UserRepositoryImpl{
-			userTableName: userTableName,
-			db:            connector.LoadDatabase(),
+			db: connector.LoadDatabase(),
 		}
 	})
 	return userRepositoryImpl
 }
 
-func (repo UserRepositoryImpl) Create(ctx context.Context, user entity.User, roleID int) (id int, err error) {
+func (repo *UserRepositoryImpl) Create(ctx context.Context, user entity.User, roleID int) (id int, err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		if res := tx.Create(&user); res.Error != nil {
 			tx.Rollback()
@@ -68,7 +80,7 @@ func (repo UserRepositoryImpl) Create(ctx context.Context, user entity.User, rol
 	return id, nil
 }
 
-func (repo UserRepositoryImpl) GetByID(ctx context.Context, id int) (user *entity.User, err error) {
+func (repo *UserRepositoryImpl) GetByID(ctx context.Context, id int) (user *entity.User, err error) {
 	user = &entity.User{}
 	result := repo.db.Where("id = ?", id).Preload("Roles.Permissions").First(&user)
 	if result.Error != nil {
@@ -77,7 +89,7 @@ func (repo UserRepositoryImpl) GetByID(ctx context.Context, id int) (user *entit
 	return user, nil
 }
 
-func (repo UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (user *entity.User, err error) {
+func (repo *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (user *entity.User, err error) {
 	user = &entity.User{}
 	result := repo.db.Where("email = ?", email).Preload("Roles.Permissions").First(&user)
 	if result.Error != nil {
@@ -86,7 +98,7 @@ func (repo UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (us
 	return user, nil
 }
 
-func (repo UserRepositoryImpl) GetByConditions(ctx context.Context, conds map[string]any) (user *entity.User, err error) {
+func (repo *UserRepositoryImpl) GetByConditions(ctx context.Context, conds map[string]any) (user *entity.User, err error) {
 	// this func is easy-contain-vunarable by default
 	user = &entity.User{}
 	query := repo.db
@@ -100,7 +112,7 @@ func (repo UserRepositoryImpl) GetByConditions(ctx context.Context, conds map[st
 	return user, nil
 }
 
-func (repo UserRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.User, total int, err error) {
+func (repo *UserRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.User, total int, err error) {
 	var count int64
 	args := []interface{}{"%" + filter.Keyword + "%"}
 	cond := "name LIKE ?"
@@ -120,7 +132,7 @@ func (repo UserRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGe
 	return users, total, nil
 }
 
-func (repo UserRepositoryImpl) Update(ctx context.Context, user entity.User) (err error) {
+func (repo *UserRepositoryImpl) Update(ctx context.Context, user entity.User) (err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		var oldData entity.User
 		result := tx.Where("id = ?", user.ID).First(&oldData)
@@ -142,7 +154,7 @@ func (repo UserRepositoryImpl) Update(ctx context.Context, user entity.User) (er
 	return err
 }
 
-func (repo UserRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
+func (repo *UserRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
 	deleted := entity.User{}
 	result := repo.db.Where("id = ?", id).Delete(&deleted)
 	if result.Error != nil {
@@ -151,7 +163,7 @@ func (repo UserRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
 	return nil
 }
 
-func (repo UserRepositoryImpl) UpdatePassword(ctx context.Context, id int, passwordHashed string) (err error) {
+func (repo *UserRepositoryImpl) UpdatePassword(ctx context.Context, id int, passwordHashed string) (err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		var user entity.User
 		result := tx.Where("id = ?", id).First(&user)

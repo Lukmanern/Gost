@@ -1,6 +1,11 @@
-// don't use this for production
-// use this file just for testing
-// and testing management.
+// 📌 Origin Github Repository: https://github.com/Lukmanern<slash>gost
+
+// 🔍 README
+// Development Routes provides experimental/ developing/ testing
+// for routes, middleware, connection and many more without JWT
+// authentication in header. ⚠️ So, don't forget to commented
+// on the line of code that routes getDevopmentRouter
+// in the app.go file.
 
 package application
 
@@ -8,7 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	controller "github.com/Lukmanern/gost/controller/development"
-	"github.com/Lukmanern/gost/internal/middleware"
 )
 
 var (
@@ -16,7 +20,6 @@ var (
 )
 
 func getDevopmentRouter(router fiber.Router) {
-	jwtHandler := middleware.NewJWTHandler()
 	devController = controller.NewDevControllerImpl()
 	// Developement 'helper' Process
 	devRouter := router.Group("development")
@@ -31,9 +34,10 @@ func getDevopmentRouter(router fiber.Router) {
 
 	// you should create new role named new-role-001 and new permission
 	// named new-permission-001 from RBAC-endpoints to test these endpoints
-	devRouterAuth := devRouter.Use(jwtHandler.IsAuthenticated)
-	devRouterAuth.Get("test-new-role",
-		jwtHandler.CheckHasRole("new-role-001"), devController.CheckNewRole)
-	devRouterAuth.Get("test-new-permission",
-		jwtHandler.CheckHasPermission(21), devController.CheckNewPermission)
+	// jwtHandler := middleware.NewJWTHandler()
+	// devRouterAuth := devRouter.Use(jwtHandler.IsAuthenticated)
+	// devRouterAuth.Get("test-new-role",
+	// 	jwtHandler.CheckHasRole("new-role-001"), devController.CheckNewRole)
+	// devRouterAuth.Get("test-new-permission",
+	// 	jwtHandler.CheckHasPermission(21), devController.CheckNewPermission)
 }

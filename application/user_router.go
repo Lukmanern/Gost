@@ -1,3 +1,11 @@
+// 📌 Origin Github Repository: https://github.com/Lukmanern<slash>gost
+
+// 🔍 README
+// User Routes provides some features and action that user can use.
+// User Routes provide the typical web application authentication flow,
+// such as registration, sending verification codes, and verifying accounts
+// with a verification code.
+
 package application
 
 import (
@@ -8,19 +16,20 @@ import (
 	controller "github.com/Lukmanern/gost/controller/user"
 	service "github.com/Lukmanern/gost/service/user"
 
-	rbacService "github.com/Lukmanern/gost/service/rbac"
+	permSvc "github.com/Lukmanern/gost/service/permission"
+	roleSvc "github.com/Lukmanern/gost/service/role"
 )
 
 var (
-	userPermService rbacService.PermissionService
-	userRoleService rbacService.RoleService
+	userPermService permSvc.PermissionService
+	userRoleService roleSvc.RoleService
 	userService     service.UserService
 	userController  controller.UserController
 )
 
 func getUserRoutes(router fiber.Router) {
-	userPermService = rbacService.NewPermissionService()
-	userRoleService = rbacService.NewRoleService(userPermService)
+	userPermService = permSvc.NewPermissionService()
+	userRoleService = roleSvc.NewRoleService(userPermService)
 	userService = service.NewUserService(userRoleService)
 	userController = controller.NewUserController(userService)
 	jwtHandler := middleware.NewJWTHandler()

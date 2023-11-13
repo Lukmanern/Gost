@@ -11,22 +11,33 @@ import (
 )
 
 type RoleRepository interface {
+	// Create adds a new role to the repository with specified permissions.
 	Create(ctx context.Context, role entity.Role, permissionsID []int) (id int, err error)
+
+	// ConnectToPermission associates a role with specified permissions.
 	ConnectToPermission(ctx context.Context, roleID int, permissionsID []int) (err error)
+
+	// GetByID retrieves a role by its unique identifier.
 	GetByID(ctx context.Context, id int) (role *entity.Role, err error)
+
+	// GetByName retrieves a role by its name.
 	GetByName(ctx context.Context, name string) (role *entity.Role, err error)
+
+	// GetAll retrieves all roles based on a filter for pagination.
 	GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error)
+
+	// Update modifies role information in the repository.
 	Update(ctx context.Context, role entity.Role) (err error)
+
+	// Delete removes a role from the repository by its ID.
 	Delete(ctx context.Context, id int) (err error)
 }
 
 type RoleRepositoryImpl struct {
-	roleTableName string
-	db            *gorm.DB
+	db *gorm.DB
 }
 
 var (
-	roleTableName          string = "roles"
 	roleRepositoryImpl     *RoleRepositoryImpl
 	roleRepositoryImplOnce sync.Once
 )
@@ -34,14 +45,13 @@ var (
 func NewRoleRepository() RoleRepository {
 	roleRepositoryImplOnce.Do(func() {
 		roleRepositoryImpl = &RoleRepositoryImpl{
-			roleTableName: roleTableName,
-			db:            connector.LoadDatabase(),
+			db: connector.LoadDatabase(),
 		}
 	})
 	return roleRepositoryImpl
 }
 
-func (repo RoleRepositoryImpl) Create(ctx context.Context, role entity.Role, permissionsID []int) (id int, err error) {
+func (repo *RoleRepositoryImpl) Create(ctx context.Context, role entity.Role, permissionsID []int) (id int, err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		res := tx.Create(&role)
 		if res.Error != nil {
@@ -69,7 +79,7 @@ func (repo RoleRepositoryImpl) Create(ctx context.Context, role entity.Role, per
 	return id, nil
 }
 
-func (repo RoleRepositoryImpl) ConnectToPermission(ctx context.Context, roleID int, permissionsID []int) (err error) {
+func (repo *RoleRepositoryImpl) ConnectToPermission(ctx context.Context, roleID int, permissionsID []int) (err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		deleted := entity.RoleHasPermission{}
 		result := tx.Where("role_id = ?", roleID).Delete(&deleted)
@@ -96,7 +106,7 @@ func (repo RoleRepositoryImpl) ConnectToPermission(ctx context.Context, roleID i
 	return nil
 }
 
-func (repo RoleRepositoryImpl) GetByID(ctx context.Context, id int) (role *entity.Role, err error) {
+func (repo *RoleRepositoryImpl) GetByID(ctx context.Context, id int) (role *entity.Role, err error) {
 	role = &entity.Role{}
 	result := repo.db.Where("id = ?", id).Preload("Permissions").First(&role)
 	if result.Error != nil {
@@ -105,7 +115,7 @@ func (repo RoleRepositoryImpl) GetByID(ctx context.Context, id int) (role *entit
 	return role, nil
 }
 
-func (repo RoleRepositoryImpl) GetByName(ctx context.Context, name string) (role *entity.Role, err error) {
+func (repo *RoleRepositoryImpl) GetByName(ctx context.Context, name string) (role *entity.Role, err error) {
 	role = &entity.Role{}
 	result := repo.db.Where("name = ?", name).Preload("Permissions").First(&role)
 	if result.Error != nil {
@@ -114,7 +124,7 @@ func (repo RoleRepositoryImpl) GetByName(ctx context.Context, name string) (role
 	return role, nil
 }
 
-func (repo RoleRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error) {
+func (repo *RoleRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error) {
 	var count int64
 	args := []interface{}{"%" + filter.Keyword + "%"}
 	cond := "name LIKE ?"
@@ -134,7 +144,7 @@ func (repo RoleRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGe
 	return roles, total, nil
 }
 
-func (repo RoleRepositoryImpl) Update(ctx context.Context, role entity.Role) (err error) {
+func (repo *RoleRepositoryImpl) Update(ctx context.Context, role entity.Role) (err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		var oldData entity.Role
 		result := tx.Where("id = ?", role.ID).First(&oldData)
@@ -157,7 +167,7 @@ func (repo RoleRepositoryImpl) Update(ctx context.Context, role entity.Role) (er
 	return err
 }
 
-func (repo RoleRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
+func (repo *RoleRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
 	deleted := entity.Role{}
 	result := repo.db.Where("id = ?", id).Delete(&deleted)
 	if result.Error != nil {

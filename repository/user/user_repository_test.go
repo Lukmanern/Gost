@@ -30,7 +30,7 @@ func TestNewUserRepository(t *testing.T) {
 	}
 }
 
-func TestUserRepositoryImpl_Create(t *testing.T) {
+func TestUserRepositoryImplCreate(t *testing.T) {
 	userRepositoryImpl := UserRepositoryImpl{
 		db: connector.LoadDatabase(),
 	}
@@ -82,17 +82,17 @@ func TestUserRepositoryImpl_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if !tt.wantPanic {
-				gotId, err := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
+				gotID, err := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("UserRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 					return
-				} else {
-					gotId2, err2 := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
-					if err2 == nil || gotId2 != 0 {
-						t.Error("should be error, couse email is already used")
-					}
-					tt.repo.Delete(tt.args.ctx, gotId)
 				}
+				gotID2, err2 := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
+				if err2 == nil || gotID2 != 0 {
+					t.Error("should be error, couse email is already used")
+				}
+				tt.repo.Delete(tt.args.ctx, gotID)
+
 				return
 			}
 			// want panic
@@ -111,7 +111,7 @@ func TestUserRepositoryImpl_Create(t *testing.T) {
 	}
 }
 
-func TestUserRepositoryImpl_GetByID(t *testing.T) {
+func TestUserRepositoryImplGetByID(t *testing.T) {
 	// create user
 	user := entity.User{
 		Name:     "validname",
@@ -181,7 +181,7 @@ func TestUserRepositoryImpl_GetByID(t *testing.T) {
 	}
 }
 
-func TestUserRepositoryImpl_GetByEmail(t *testing.T) {
+func TestUserRepositoryImplGetByEmail(t *testing.T) {
 	// create user
 	user := entity.User{
 		Name:     "validname",
@@ -251,7 +251,7 @@ func TestUserRepositoryImpl_GetByEmail(t *testing.T) {
 	}
 }
 
-func TestUserRepositoryImpl_GetAll(t *testing.T) {
+func TestUserRepositoryImplGetAll(t *testing.T) {
 	// create user
 	allUsersID := make([]int, 0)
 	userRepositoryImpl := UserRepositoryImpl{
@@ -336,7 +336,7 @@ func TestUserRepositoryImpl_GetAll(t *testing.T) {
 	}
 }
 
-func TestUserRepositoryImpl_Update(t *testing.T) {
+func TestUserRepositoryImplUpdate(t *testing.T) {
 	// create user
 	user := entity.User{
 		Name:     "validname",
@@ -399,7 +399,7 @@ func TestUserRepositoryImpl_Update(t *testing.T) {
 	}
 }
 
-func TestUserRepositoryImpl_Delete(t *testing.T) {
+func TestUserRepositoryImplDelete(t *testing.T) {
 	userRepository := NewUserRepository()
 	if userRepository == nil {
 		t.Error("shouldn't nil")
@@ -415,7 +415,7 @@ func TestUserRepositoryImpl_Delete(t *testing.T) {
 	}
 }
 
-func TestUserRepositoryImpl_UpdatePassword(t *testing.T) {
+func TestUserRepositoryImplUpdatePassword(t *testing.T) {
 	// create user
 	user := entity.User{
 		Name:     "validname",
@@ -489,7 +489,7 @@ func TestUserRepositoryImpl_UpdatePassword(t *testing.T) {
 	}
 }
 
-func TestUserRepositoryImpl_GetByConditions(t *testing.T) {
+func TestUserRepositoryImplGetByConditions(t *testing.T) {
 	user := entity.User{
 		Name:     "validname",
 		Email:    "valid10@email.com",

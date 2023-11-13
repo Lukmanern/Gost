@@ -10,33 +10,64 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	repository "github.com/Lukmanern/gost/repository/user"
 	emailService "github.com/Lukmanern/gost/service/email"
-	roleService "github.com/Lukmanern/gost/service/rbac"
+	roleService "github.com/Lukmanern/gost/service/role"
 )
 
 type UserService interface {
+
+	// Register function register user account, than send verification-code to email
 	Register(ctx context.Context, user model.UserRegister) (id int, err error)
+
+	// Verification function activates user account with
+	// verification code that has been sended to the user's email
 	Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error)
+
+	// DeleteUserByVerification function deletes user data if the user account is not yet verified.
+	// This implies that the email owner hasn't actually registered the email, indicating that
+	// the user who registered may be making typing errors or may be a hacker attempting to get
+	// the verification code.
 	DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error)
+
+	// FailedLoginCounter function counts failed login attempts and stores them in Redis.
+	// After the N-th attempt to log in with the same IP address results in continuous failures,
+	// the system will impose a 50-minute ban. During this period, login requests (refer to
+	// the login function in the user controller) will not be processed.
 	FailedLoginCounter(userIP string, increment bool) (counter int, err error)
+
+	// Login func give user token/ jwt for auth header.
 	Login(ctx context.Context, user model.UserLogin) (token string, err error)
+
+	// Logout function stores the user's active token in Redis, effectively
+	// blacklisting the token. This ensures that the token cannot be reused
+	// for authentication (refer to the IsBlacklisted function in internal/middleware).
 	Logout(c *fiber.Ctx) (err error)
+
+	// ForgetPassword func send verification code into user's email
 	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
+
+	// ResetPassword func resets password by creating
+	// new password by email and verification code
 	ResetPassword(ctx context.Context, user model.UserResetPassword) (err error)
+
+	// UpdatePassword func updates user's password
 	UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error)
+
+	// UpdateProfile func updates user's profile data
 	UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error)
+
+	// MyProfile func shows user's profile data
 	MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error)
 }
 
@@ -60,14 +91,14 @@ func NewUserService(roleService roleService.RoleService) UserService {
 			repository:   repository.NewUserRepository(),
 			emailService: emailService.NewEmailService(),
 			jwtHandler:   middleware.NewJWTHandler(),
-			redis:        connector.LoadRedisDatabase(),
+			redis:        connector.LoadRedisCache(),
 		}
 	})
 
 	return userAuthService
 }
 
-func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {
+func (svc *UserServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {
 	// search user by email
 	// if exist, return error
 	userByEmail, getUserErr := svc.repository.GetByEmail(ctx, user.Email)
@@ -98,7 +129,7 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 		if getByCodeErr != nil || userGetByCode == nil {
 			break
 		}
-		counter += 1
+		counter++
 		if counter >= 150 {
 			return 0, errors.New("failed generating verification code")
 		}
@@ -110,21 +141,21 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 		if hashErr == nil {
 			break
 		}
-		counter += 1
+		counter++
 		if counter >= 150 {
 			return 0, errors.New("failed hashing user password")
 		}
 	}
 
 	userEntity := entity.User{
-		Name:             cases.Title(language.Und).String(user.Name),
+		Name:             helper.ToTitle(user.Name),
 		Email:            user.Email,
 		Password:         passwordHashed,
 		VerificationCode: &verifCode,
 		ActivatedAt:      nil,
 	}
 	// set created_at and updated_at equal to now
-	userEntity.SetCreateTimes()
+	userEntity.SetCreateTime()
 	id, err = svc.repository.Create(ctx, userEntity, user.RoleID)
 	if err != nil {
 		return 0, err
@@ -148,7 +179,7 @@ func (svc UserServiceImpl) Register(ctx context.Context, user model.UserRegister
 	return id, nil
 }
 
-func (svc UserServiceImpl) Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
+func (svc *UserServiceImpl) Verification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
 	// search user by code, if not exist return error
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
 		"verification_code =": verifyData.Code,
@@ -171,7 +202,7 @@ func (svc UserServiceImpl) Verification(ctx context.Context, verifyData model.Us
 	return nil
 }
 
-func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
+func (svc *UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyData model.UserVerificationCode) (err error) {
 	// search user by code, if not exist return error
 	userEntity, getByCodeErr := svc.repository.GetByConditions(ctx, map[string]any{
 		"verification_code =": verifyData.Code,
@@ -191,7 +222,7 @@ func (svc UserServiceImpl) DeleteUserByVerification(ctx context.Context, verifyD
 	return nil
 }
 
-func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
+func (svc *UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (counter int, err error) {
 	// set key for banned counter
 	key := "failed-login-" + userIP
 	getStatus := svc.redis.Get(key)
@@ -206,18 +237,18 @@ func (svc UserServiceImpl) FailedLoginCounter(userIP string, increment bool) (co
 	return counter, nil
 }
 
-func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
+func (svc *UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (token string, err error) {
 	// search user by email
 	// if not exist/found, return error
 	userEntity, err := svc.repository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return "", fiber.NewError(fiber.StatusNotFound, "data not found")
+			return "", fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return "", err
 	}
 	if userEntity == nil {
-		return "", fiber.NewError(fiber.StatusNotFound, "data not found")
+		return "", fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 	}
 
 	res, verfiryErr := hash.Verify(userEntity.Password, user.Password)
@@ -255,7 +286,7 @@ func (svc UserServiceImpl) Login(ctx context.Context, user model.UserLogin) (tok
 	return token, nil
 }
 
-func (svc UserServiceImpl) Logout(c *fiber.Ctx) (err error) {
+func (svc *UserServiceImpl) Logout(c *fiber.Ctx) (err error) {
 	err = svc.jwtHandler.InvalidateToken(c)
 	if err != nil {
 		return errors.New("problem invalidating token")
@@ -264,16 +295,16 @@ func (svc UserServiceImpl) Logout(c *fiber.Ctx) (err error) {
 	return nil
 }
 
-func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
+func (svc *UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
 	userEntity, err := svc.repository.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return err
 	}
 	if userEntity == nil {
-		return fiber.NewError(fiber.StatusNotFound, "data not found")
+		return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 	}
 	if userEntity.ActivatedAt == nil {
 		message := "your account has not been activated since register, please check your inbox/ spam mail."
@@ -292,7 +323,7 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 		if getByCodeErr != nil || userGetByCode == nil {
 			break
 		}
-		counter += 1
+		counter++
 		if counter >= 150 {
 			return errors.New("failed generating verification code")
 		}
@@ -324,13 +355,14 @@ func (svc UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserFo
 	return nil
 }
 
-func (svc UserServiceImpl) ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) {
+func (svc *UserServiceImpl) ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) {
 	userByCode, err := svc.repository.GetByConditions(ctx, map[string]any{
+		"email =":             user.Email,
 		"verification_code =": user.Code,
 	})
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return err
 	}
@@ -353,13 +385,14 @@ func (svc UserServiceImpl) ResetPassword(ctx context.Context, user model.UserRes
 		if hashErr == nil {
 			break
 		}
-		counter += 1
+		counter++
 		if counter >= 150 {
 			return errors.New("failed hashing user password")
 		}
 	}
 
 	userByCode.VerificationCode = nil
+	userByCode.SetUpdateTime()
 	updateErr := svc.repository.Update(ctx, *userByCode)
 	if updateErr != nil {
 		return updateErr
@@ -372,11 +405,11 @@ func (svc UserServiceImpl) ResetPassword(ctx context.Context, user model.UserRes
 	return nil
 }
 
-func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
+func (svc *UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPasswordUpdate) (err error) {
 	userByID, err := svc.repository.GetByID(ctx, user.ID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return err
 	}
@@ -402,7 +435,7 @@ func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPa
 		if hashErr == nil {
 			break
 		}
-		counter += 1
+		counter++
 		if counter >= 150 {
 			return errors.New("failed hashing user password")
 		}
@@ -415,7 +448,7 @@ func (svc UserServiceImpl) UpdatePassword(ctx context.Context, user model.UserPa
 	return nil
 }
 
-func (svc UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
+func (svc *UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model.UserProfile, err error) {
 	// search profile by ID
 	user, err := svc.repository.GetByID(ctx, id)
 	if err != nil {
@@ -440,22 +473,22 @@ func (svc UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model
 	return profile, nil
 }
 
-func (svc UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
+func (svc *UserServiceImpl) UpdateProfile(ctx context.Context, user model.UserProfileUpdate) (err error) {
 	// search profile by ID
 	userByID, getErr := svc.repository.GetByID(ctx, user.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return err
 	}
 	if userByID == nil {
-		return fiber.NewError(fiber.StatusNotFound, "data not found")
+		return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 	}
 
 	userEntity := entity.User{
 		ID:               user.ID,
-		Name:             cases.Title(language.Und).String(user.Name),
+		Name:             helper.ToTitle(user.Name),
 		VerificationCode: userByID.VerificationCode,
 		ActivatedAt:      userByID.ActivatedAt,
 	}

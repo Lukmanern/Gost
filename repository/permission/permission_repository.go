@@ -11,21 +11,30 @@ import (
 )
 
 type PermissionRepository interface {
+	// Create adds a new permission to the repository.
 	Create(ctx context.Context, permission entity.Permission) (id int, err error)
+
+	// GetByID retrieves a permission by its unique identifier.
 	GetByID(ctx context.Context, id int) (permission *entity.Permission, err error)
+
+	// GetByName retrieves a permission by its name.
 	GetByName(ctx context.Context, name string) (permission *entity.Permission, err error)
+
+	// GetAll retrieves all permissions based on a filter for pagination.
 	GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []entity.Permission, total int, err error)
+
+	// Update modifies permission information in the repository.
 	Update(ctx context.Context, permission entity.Permission) (err error)
+
+	// Delete removes a permission from the repository by its ID.
 	Delete(ctx context.Context, id int) (err error)
 }
 
 type PermissionRepositoryImpl struct {
-	permissionTableName string
-	db                  *gorm.DB
+	db *gorm.DB
 }
 
 var (
-	permissionTableName          string = "permissions"
 	permissionRepositoryImpl     *PermissionRepositoryImpl
 	permissionRepositoryImplOnce sync.Once
 )
@@ -33,14 +42,13 @@ var (
 func NewPermissionRepository() PermissionRepository {
 	permissionRepositoryImplOnce.Do(func() {
 		permissionRepositoryImpl = &PermissionRepositoryImpl{
-			permissionTableName: permissionTableName,
-			db:                  connector.LoadDatabase(),
+			db: connector.LoadDatabase(),
 		}
 	})
 	return permissionRepositoryImpl
 }
 
-func (repo PermissionRepositoryImpl) Create(ctx context.Context, permission entity.Permission) (id int, err error) {
+func (repo *PermissionRepositoryImpl) Create(ctx context.Context, permission entity.Permission) (id int, err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		res := tx.Create(&permission)
 		if res.Error != nil {
@@ -57,7 +65,7 @@ func (repo PermissionRepositoryImpl) Create(ctx context.Context, permission enti
 	return id, nil
 }
 
-func (repo PermissionRepositoryImpl) GetByID(ctx context.Context, id int) (permission *entity.Permission, err error) {
+func (repo *PermissionRepositoryImpl) GetByID(ctx context.Context, id int) (permission *entity.Permission, err error) {
 	permission = &entity.Permission{}
 	result := repo.db.Where("id = ?", id).First(&permission)
 	if result.Error != nil {
@@ -66,7 +74,7 @@ func (repo PermissionRepositoryImpl) GetByID(ctx context.Context, id int) (permi
 	return permission, nil
 }
 
-func (repo PermissionRepositoryImpl) GetByName(ctx context.Context, name string) (permission *entity.Permission, err error) {
+func (repo *PermissionRepositoryImpl) GetByName(ctx context.Context, name string) (permission *entity.Permission, err error) {
 	permission = &entity.Permission{}
 	result := repo.db.Where("name = ?", name).First(&permission)
 	if result.Error != nil {
@@ -75,7 +83,7 @@ func (repo PermissionRepositoryImpl) GetByName(ctx context.Context, name string)
 	return permission, nil
 }
 
-func (repo PermissionRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []entity.Permission, total int, err error) {
+func (repo *PermissionRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []entity.Permission, total int, err error) {
 	var count int64
 	args := []interface{}{"%" + filter.Keyword + "%"}
 	cond := "name LIKE ?"
@@ -95,7 +103,7 @@ func (repo PermissionRepositoryImpl) GetAll(ctx context.Context, filter base.Req
 	return permissions, total, nil
 }
 
-func (repo PermissionRepositoryImpl) Update(ctx context.Context, permission entity.Permission) (err error) {
+func (repo *PermissionRepositoryImpl) Update(ctx context.Context, permission entity.Permission) (err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		var oldData entity.Permission
 		result := tx.Where("id = ?", permission.ID).First(&oldData)
@@ -118,7 +126,7 @@ func (repo PermissionRepositoryImpl) Update(ctx context.Context, permission enti
 	return err
 }
 
-func (repo PermissionRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
+func (repo *PermissionRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
 	deleted := entity.Permission{}
 	result := repo.db.Where("id = ?", id).Delete(&deleted)
 	if result.Error != nil {

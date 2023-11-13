@@ -14,11 +14,10 @@ import (
 type Config struct {
 	AppName           string        `env:"APP_NAME"`
 	AppInProduction   bool          `env:"APP_IN_PRODUCTION"`
-	AppKey            string        `env:"APP_SECRET_KEY"`
 	AppAccessTokenTTL time.Duration `env:"APP_ACCESS_TOKEN_TTL"`
 	AppPort           int           `env:"APP_PORT"`
 	AppTimeZone       string        `env:"APP_TIME_ZONE"`
-	AppUrl            string
+	AppURL            string
 
 	DatabaseHost     string `env:"DB_HOST"`
 	DatabasePort     string `env:"DB_PORT"`
@@ -57,6 +56,7 @@ var (
 	paths = []string{"", "./..", "./../..", "./../../.."}
 )
 
+// ReadConfig func check .env file and read the value.
 func ReadConfig(filePath string) *Config {
 	cfgOnce.Do(func() {
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -75,6 +75,8 @@ func ReadConfig(filePath string) *Config {
 	return &cfg
 }
 
+// Configuration func set and update .env file
+// and returning config it self.
 func Configuration() Config {
 	if envFile == nil {
 		log.Panic(`configuration file is not set. Call ReadConfig("path_to_file") first`)
@@ -83,10 +85,11 @@ func Configuration() Config {
 	if err != nil {
 		log.Fatalf("Config error %s", err.Error())
 	}
-	cfg.setAppUrl()
+	cfg.setAppURL()
 	return cfg
 }
 
+// GetDatabaseURI func return string URI of database.
 func (c *Config) GetDatabaseURI() string {
 	c.DatabaseURI = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=%s",
 		c.DatabaseHost, c.DatabaseUser, c.DatabasePassword, c.DatabaseName, c.DatabasePort, c.AppTimeZone,
@@ -95,10 +98,19 @@ func (c *Config) GetDatabaseURI() string {
 	return c.DatabaseURI
 }
 
+// GetAppInProduction func return application condition is
+// under development or production ready.
 func (c *Config) GetAppInProduction() bool {
 	return c.AppInProduction
 }
 
+// setAppURL func combine set AppURL with localhost and port.
+func (c *Config) setAppURL() {
+	localAddr := fmt.Sprintf("http://127.0.0.1:%d/", c.AppPort)
+	c.AppURL = localAddr
+}
+
+// GetPublicKey func gets PublicKey values.
 func (c *Config) GetPublicKey() []byte {
 	PublicKeyReadOne.Do(func() {
 		var foundPath string
@@ -121,6 +133,7 @@ func (c *Config) GetPublicKey() []byte {
 	return *PublicKey
 }
 
+// GetPrivateKey func gets PrivateKey values.
 func (c *Config) GetPrivateKey() []byte {
 	PrivateKeyReadOne.Do(func() {
 		var foundPath string
@@ -143,19 +156,14 @@ func (c *Config) GetPrivateKey() []byte {
 	return *PrivateKey
 }
 
-func (c *Config) setAppUrl() {
-	localAddr := fmt.Sprintf("http://127.0.0.1:%d/", c.AppPort)
-	c.AppUrl = localAddr
-}
-
+// ShowConfig prints all fields that Config struct has
 func (c *Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "AppName", c.AppName)
 	fmt.Printf("%-21s: %v\n", "AppInProduction", c.AppInProduction)
-	fmt.Printf("%-21s: %s\n", "AppKey", c.AppKey)
 	fmt.Printf("%-21s: %s\n", "AppAccessTokenTTL", c.AppAccessTokenTTL)
 	fmt.Printf("%-21s: %d\n", "AppPort", c.AppPort)
 	fmt.Printf("%-21s: %s\n", "AppTimeZone", c.AppTimeZone)
-	fmt.Printf("%-21s: %s\n", "AppUrl", c.AppUrl)
+	fmt.Printf("%-21s: %s\n", "AppURL", c.AppURL)
 
 	fmt.Printf("%-21s: %s\n", "DatabaseHost", c.DatabaseHost)
 	fmt.Printf("%-21s: %s\n", "DatabasePort", c.DatabasePort)
@@ -174,4 +182,7 @@ func (c *Config) ShowConfig() {
 	fmt.Printf("%-21s: %s\n", "SMTPEmail", c.SMTPEmail)
 	fmt.Printf("%-21s: %s\n", "SMTPPassword", c.SMTPPassword)
 	fmt.Printf("%-21s: %s\n", "ClientURL", c.ClientURL)
+
+	// ...
+	// add more
 }

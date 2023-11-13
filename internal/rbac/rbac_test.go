@@ -2,63 +2,47 @@ package rbac
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAllPermissions(t *testing.T) {
-	for _, permission := range AllPermissions() {
-		if permission.Name == "" {
-			t.Error("permission name should not string-nil")
-		}
+	defer func() {
+		r := recover()
+		assert.Nil(t, r, "should not panic, but got:", r)
+	}()
+
+	permissions := AllPermissions()
+	for _, permission := range permissions {
+		assert.NotEmpty(t, permission.Name, "permission name should not be empty")
 	}
 }
 
-// This Test is to make sure
-// that permission value is unique
 func TestCountPermissions(t *testing.T) {
 	hashMapPermissions := make(map[string]int, 0)
 
 	for _, permission := range AllPermissions() {
-		hashMapPermissions[permission.Name] += 1
-		if hashMapPermissions[permission.Name] > 1 {
-			t.Error("should 1, not more, non-unique permission detected : ", permission.Name)
-		}
+		hashMapPermissions[permission.Name]++
+		assert.LessOrEqual(t, hashMapPermissions[permission.Name], 1, "should be 1, not more; non-unique permission detected: %s", permission.Name)
 	}
 
-	if len(hashMapPermissions) != len(AllPermissions()) {
-		t.Error("should equal len, non-unique permission detected")
-	}
+	assert.Equal(t, len(hashMapPermissions), len(AllPermissions()), "should have equal length; non-unique permission detected")
 }
 
-func Test_AllPermissions(t *testing.T) {
-	defer func() {
-		r := recover()
-		if r != nil {
-			t.Error("should not panic, but got:", r)
-		}
-	}()
-
-	AllPermissions()
-}
-
-func Test_AllRoles(t *testing.T) {
-	for _, role := range AllRoles() {
-		if role.Name == "" {
-			t.Error("name should not string-nil")
-		}
+func TestAllRoles(t *testing.T) {
+	roles := AllRoles()
+	for _, role := range roles {
+		assert.NotEmpty(t, role.Name, "name should not be empty")
 	}
 }
 
-func Test_CountRoles(t *testing.T) {
+func TestCountRoles(t *testing.T) {
 	hashMapRoles := make(map[string]int, 0)
 
 	for _, role := range AllRoles() {
-		hashMapRoles[role.Name] += 1
-		if hashMapRoles[role.Name] > 1 {
-			t.Error("should 1, not more, non-unique role (role:name) detected : ", role.Name)
-		}
+		hashMapRoles[role.Name]++
+		assert.LessOrEqual(t, hashMapRoles[role.Name], 1, "should be 1, not more; non-unique role (role:name) detected: %s", role.Name)
 	}
 
-	if len(hashMapRoles) != len(AllRoles()) {
-		t.Error("should equal len, non-unique role detected")
-	}
+	assert.Equal(t, len(hashMapRoles), len(AllRoles()), "should have equal length; non-unique role detected")
 }

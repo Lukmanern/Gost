@@ -10,18 +10,18 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/response"
 	repository "github.com/Lukmanern/gost/repository/user"
-	rbacService "github.com/Lukmanern/gost/service/rbac"
+	permService "github.com/Lukmanern/gost/service/permission"
+	roleService "github.com/Lukmanern/gost/service/role"
 	service "github.com/Lukmanern/gost/service/user"
 )
 
@@ -29,43 +29,43 @@ var (
 	userSvc  service.UserService
 	userCtr  UserController
 	userRepo repository.UserRepository
-	appUrl   string
+	appURL   string
 )
 
 func init() {
 	env.ReadConfig("./../../.env")
 	config := env.Configuration()
-	appUrl = config.AppUrl
+	appURL = config.AppURL
 
 	connector.LoadDatabase()
-	r := connector.LoadRedisDatabase()
+	r := connector.LoadRedisCache()
 	r.FlushAll() // clear all key:value in redis
 
-	permService := rbacService.NewPermissionService()
-	roleService := rbacService.NewRoleService(permService)
+	permService := permService.NewPermissionService()
+	roleService := roleService.NewRoleService(permService)
 	userSvc = service.NewUserService(roleService)
 	userCtr = NewUserController(userSvc)
 	userRepo = repository.NewUserRepository()
 }
 
 func TestNewUserController(t *testing.T) {
-	permService := rbacService.NewPermissionService()
-	roleService := rbacService.NewRoleService(permService)
+	permService := permService.NewPermissionService()
+	roleService := roleService.NewRoleService(permService)
 	userService := service.NewUserService(roleService)
 	userController := NewUserController(userService)
 
 	if userController == nil || userService == nil || roleService == nil || permService == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
-func Test_Register(t *testing.T) {
+func TestRegister(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -192,12 +192,12 @@ func Test_Register(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -206,7 +206,7 @@ func Test_Register(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -217,7 +217,7 @@ func Test_Register(t *testing.T) {
 			respModel := response.Response{}
 			decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
 			if decodeErr != nil {
-				t.Error("should not error", decodeErr)
+				t.Error(constants.ShouldNotErr, decodeErr)
 			}
 		}
 
@@ -226,7 +226,7 @@ func Test_Register(t *testing.T) {
 			if getErr != nil || userByEmail == nil {
 				t.Fatal("should success whilte create and get user")
 			}
-			if userByEmail.Name != cases.Title(language.Und).String(tc.payload.Name) {
+			if userByEmail.Name != helper.ToTitle(tc.payload.Name) {
 				t.Error("name should equal")
 			}
 
@@ -239,13 +239,13 @@ func Test_Register(t *testing.T) {
 
 }
 
-func Test_AccountActivation(t *testing.T) {
+func TestAccountActivation(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -313,12 +313,12 @@ func Test_AccountActivation(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -327,7 +327,7 @@ func Test_AccountActivation(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -350,13 +350,13 @@ func Test_AccountActivation(t *testing.T) {
 	}
 }
 
-func Test_DeleteAccountActivation(t *testing.T) {
+func TestDeleteAccountActivation(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -424,12 +424,12 @@ func Test_DeleteAccountActivation(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -438,7 +438,7 @@ func Test_DeleteAccountActivation(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -462,13 +462,13 @@ func Test_DeleteAccountActivation(t *testing.T) {
 	}
 }
 
-func Test_ForgetPassword(t *testing.T) {
+func TestForgetPassword(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -553,12 +553,12 @@ func Test_ForgetPassword(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -567,7 +567,7 @@ func Test_ForgetPassword(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -576,13 +576,13 @@ func Test_ForgetPassword(t *testing.T) {
 	}
 }
 
-func Test_ResetPassword(t *testing.T) {
+func TestResetPassword(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -610,7 +610,7 @@ func Test_ResetPassword(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// value reset
@@ -629,7 +629,7 @@ func Test_ResetPassword(t *testing.T) {
 	}
 	forgetPassErr := userSvc.ForgetPassword(ctx, userForgetPasswd)
 	if forgetPassErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// value reset
@@ -661,6 +661,7 @@ func Test_ResetPassword(t *testing.T) {
 			caseName: "success reset password",
 			respCode: http.StatusAccepted,
 			payload: &model.UserResetPassword{
+				Email:              userByID.Email,
 				Code:               *userByID.VerificationCode,
 				NewPassword:        "newPassword",
 				NewPasswordConfirm: "newPassword",
@@ -670,6 +671,7 @@ func Test_ResetPassword(t *testing.T) {
 			caseName: "failed reset password: password not match",
 			respCode: http.StatusBadRequest,
 			payload: &model.UserResetPassword{
+				Email:              userByID.Email,
 				Code:               *userByID.VerificationCode,
 				NewPassword:        "newPassword",
 				NewPasswordConfirm: "newPasswordNotMatch",
@@ -679,6 +681,7 @@ func Test_ResetPassword(t *testing.T) {
 			caseName: "failed reset password: verification code too short",
 			respCode: http.StatusBadRequest,
 			payload: &model.UserResetPassword{
+				Email:              helper.RandomEmail(),
 				Code:               "short",
 				NewPassword:        "newPassword",
 				NewPasswordConfirm: "newPasswordNotMatch",
@@ -691,12 +694,12 @@ func Test_ResetPassword(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -705,7 +708,7 @@ func Test_ResetPassword(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -726,13 +729,13 @@ func Test_ResetPassword(t *testing.T) {
 	}
 }
 
-func Test_Login(t *testing.T) {
+func TestLogin(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	c.Method(http.MethodPost)
 	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -768,13 +771,13 @@ func Test_Login(t *testing.T) {
 	// create active user
 	createdActiveUser := entity.User{}
 	func() {
-		createdUser_2 := model.UserRegister{
+		createdUser2 := model.UserRegister{
 			Name:     helper.RandomString(10),
 			Email:    helper.RandomEmail(),
 			Password: helper.RandomString(10),
 			RoleID:   1, // admin
 		}
-		userID, createErr := userSvc.Register(ctx, createdUser_2)
+		userID, createErr := userSvc.Register(ctx, createdUser2)
 		if createErr != nil || userID <= 0 {
 			t.Fatal("should success create user, user failed to create")
 		}
@@ -793,7 +796,7 @@ func Test_Login(t *testing.T) {
 			Email: userByID.Email,
 		})
 		if verifyErr != nil {
-			t.Error("should not error")
+			t.Error(constants.ShouldNotErr)
 		}
 		userByID = nil
 		userByID, getErr = userRepo.GetByID(ctx, userID)
@@ -802,7 +805,7 @@ func Test_Login(t *testing.T) {
 		}
 
 		createdActiveUser = *userByID
-		createdActiveUser.Password = createdUser_2.Password
+		createdActiveUser.Password = createdUser2.Password
 	}()
 
 	defer userRepo.Delete(ctx, createdActiveUser.ID)
@@ -891,12 +894,12 @@ func Test_Login(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -905,7 +908,7 @@ func Test_Login(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -932,12 +935,12 @@ func Test_Login(t *testing.T) {
 		log.Println(":::::::" + testCase.caseName)
 		jsonObject, err := json.Marshal(&testCase.payload)
 		if err != nil {
-			t.Error("should not error", err.Error())
+			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appUrl + endp
+		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil {
-			t.Fatal("should not nil")
+			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -946,7 +949,7 @@ func Test_Login(t *testing.T) {
 		req.Close = true
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal("should not error")
+			t.Fatal(constants.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != testCase.respCode {
@@ -954,9 +957,9 @@ func Test_Login(t *testing.T) {
 		}
 	}
 
-	redis := connector.LoadRedisDatabase()
+	redis := connector.LoadRedisCache()
 	if redis == nil {
-		t.Fatal("should not nil")
+		t.Fatal(constants.ShouldNotNil)
 	}
 	value := redis.Get("failed-login-" + clientIP).Val()
 	if value != "5" {
@@ -964,13 +967,13 @@ func Test_Login(t *testing.T) {
 	}
 }
 
-func Test_Logout(t *testing.T) {
+func TestLogout(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create inactive user
@@ -998,7 +1001,7 @@ func Test_Logout(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)
@@ -1051,7 +1054,7 @@ func Test_Logout(t *testing.T) {
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		fakeClaims := jwtHandler.GenerateClaims(tc.token)
 		if fakeClaims != nil {
@@ -1083,12 +1086,12 @@ func Test_Logout(t *testing.T) {
 	}
 }
 
-func Test_UpdatePassword(t *testing.T) {
+func TestUpdatePassword(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create inactive user
@@ -1116,7 +1119,7 @@ func Test_UpdatePassword(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)
@@ -1200,7 +1203,7 @@ func Test_UpdatePassword(t *testing.T) {
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		if tc.payload != nil {
 			requestBody, err := json.Marshal(tc.payload)
@@ -1232,13 +1235,13 @@ func Test_UpdatePassword(t *testing.T) {
 	}
 }
 
-func Test_UpdateProfile(t *testing.T) {
+func TestUpdateProfile(t *testing.T) {
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create inactive user
@@ -1266,7 +1269,7 @@ func Test_UpdateProfile(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)
@@ -1336,7 +1339,7 @@ func Test_UpdateProfile(t *testing.T) {
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		if tc.payload != nil {
 			requestBody, err := json.Marshal(tc.payload)
@@ -1358,22 +1361,22 @@ func Test_UpdateProfile(t *testing.T) {
 		if resp.StatusCode() == http.StatusNoContent {
 			userByID, err := userRepo.GetByID(ctx, userID)
 			if err != nil || userByID == nil {
-				t.Error("should not error")
+				t.Error(constants.ShouldNotErr)
 			}
 
-			if userByID.Name != cases.Title(language.Und).String(tc.payload.Name) {
+			if userByID.Name != helper.ToTitle(tc.payload.Name) {
 				t.Error("shoudl equal")
 			}
 		}
 	}
 }
 
-func Test_MyProfile(t *testing.T) {
+func TestMyProfile(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// create inactive user
@@ -1401,7 +1404,7 @@ func Test_MyProfile(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)
@@ -1454,7 +1457,7 @@ func Test_MyProfile(t *testing.T) {
 	jwtHandler := middleware.NewJWTHandler()
 	for _, tc := range testCases {
 		c := helper.NewFiberCtx()
-		c.Request().Header.Set("Authorization", fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		fakeClaims := jwtHandler.GenerateClaims(tc.token)
 		if fakeClaims != nil {

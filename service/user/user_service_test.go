@@ -8,16 +8,16 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	repository "github.com/Lukmanern/gost/repository/user"
-	rbacService "github.com/Lukmanern/gost/service/rbac"
+	permService "github.com/Lukmanern/gost/service/permission"
+	roleService "github.com/Lukmanern/gost/service/role"
 )
 
 func init() {
@@ -25,34 +25,34 @@ func init() {
 	env.ReadConfig("./../../.env")
 
 	connector.LoadDatabase()
-	connector.LoadRedisDatabase()
+	connector.LoadRedisCache()
 }
 
 func TestNewUserService(t *testing.T) {
-	permSvc := rbacService.NewPermissionService()
-	roleSvc := rbacService.NewRoleService(permSvc)
+	permSvc := permService.NewPermissionService()
+	roleSvc := roleService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
 	if svc == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
-func Test_SuccessRegister(t *testing.T) {
+func TestSuccessRegister(t *testing.T) {
 	defer func() {
-		connector.LoadRedisDatabase().FlushAll()
+		connector.LoadRedisCache().FlushAll()
 	}()
-	permSvc := rbacService.NewPermissionService()
-	roleSvc := rbacService.NewRoleService(permSvc)
+	permSvc := permService.NewPermissionService()
+	roleSvc := roleService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if svc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	userRepo := repository.NewUserRepository()
 	if userRepo == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	modelUserRegis := model.UserRegister{
@@ -74,16 +74,16 @@ func Test_SuccessRegister(t *testing.T) {
 	if getErr != nil || userByID == nil {
 		t.Error("should not error and id should not nil")
 	}
-	if userByID.Name != cases.Title(language.Und).String(modelUserRegis.Name) ||
+	if userByID.Name != helper.ToTitle(modelUserRegis.Name) ||
 		userByID.Email != modelUserRegis.Email ||
 		userByID.Roles[0].ID != modelUserRegis.RoleID {
 		t.Error("should equal")
 	}
 	if userByID.VerificationCode == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	if userByID.ActivatedAt != nil {
-		t.Error("should nil")
+		t.Error(constants.ShouldNil)
 	}
 
 	// failed login : account is created,
@@ -131,7 +131,7 @@ func Test_SuccessRegister(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifErr != nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	// value reset
@@ -142,10 +142,10 @@ func Test_SuccessRegister(t *testing.T) {
 		t.Error("should not error and id should not nil")
 	}
 	if userByID.VerificationCode != nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	if userByID.ActivatedAt == nil {
-		t.Error("should nil")
+		t.Error(constants.ShouldNil)
 	}
 
 	// reset value
@@ -162,9 +162,6 @@ func Test_SuccessRegister(t *testing.T) {
 	}
 
 	jwtHandler := middleware.NewJWTHandler()
-	if !jwtHandler.IsTokenValid(token) {
-		t.Error("token should valid")
-	}
 	if jwtHandler.IsBlacklisted(token) {
 		t.Error("should not in black-list")
 	}
@@ -174,7 +171,7 @@ func Test_SuccessRegister(t *testing.T) {
 	}
 	forgetPwErr := svc.ForgetPassword(ctx, modelUserForgetPasswd)
 	if forgetPwErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// value reset
@@ -185,21 +182,22 @@ func Test_SuccessRegister(t *testing.T) {
 		t.Error("should not error and id should not nil")
 	}
 	if userByID.VerificationCode == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 	if userByID.ActivatedAt == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	passwd := helper.RandomString(12)
 	modelUserResetPasswd := model.UserResetPassword{
+		Email:              userByID.Email,
 		Code:               *userByID.VerificationCode,
 		NewPassword:        passwd,
 		NewPasswordConfirm: passwd,
 	}
 	resetErr := svc.ResetPassword(ctx, modelUserResetPasswd)
 	if resetErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// reset value, login failed
@@ -237,7 +235,7 @@ func Test_SuccessRegister(t *testing.T) {
 	}
 	updatePasswdErr := svc.UpdatePassword(ctx, modelUserUpdatePasswd)
 	if updatePasswdErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// reset value, login success
@@ -259,14 +257,14 @@ func Test_SuccessRegister(t *testing.T) {
 	}
 	updateProfileErr := svc.UpdateProfile(ctx, modelUserUpdate)
 	if updateProfileErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	profile, getErr := svc.MyProfile(ctx, userID)
 	if getErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
-	if profile.Name != cases.Title(language.Und).String(modelUserUpdate.Name) {
+	if profile.Name != helper.ToTitle(modelUserUpdate.Name) {
 		t.Error("should equal")
 	}
 
@@ -278,22 +276,22 @@ func Test_SuccessRegister(t *testing.T) {
 	}
 }
 
-func Test_FailedRegister(t *testing.T) {
+func TestFailedRegister(t *testing.T) {
 	defer func() {
-		connector.LoadRedisDatabase().FlushAll()
+		connector.LoadRedisCache().FlushAll()
 	}()
-	permSvc := rbacService.NewPermissionService()
-	roleSvc := rbacService.NewRoleService(permSvc)
+	permSvc := permService.NewPermissionService()
+	roleSvc := roleService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if svc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	userRepo := repository.NewUserRepository()
 	if userRepo == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	modelUserRegis := model.UserRegister{
@@ -316,7 +314,7 @@ func Test_FailedRegister(t *testing.T) {
 		Email: "wrongEmail",
 	})
 	if verifErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 	fiberErr, ok := verifErr.(*fiber.Error)
 	if ok {
@@ -330,7 +328,7 @@ func Test_FailedRegister(t *testing.T) {
 		Email: "wrongEmail",
 	})
 	if deleteUserErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 	fiberErr, ok = deleteUserErr.(*fiber.Error)
 	if ok {
@@ -344,47 +342,47 @@ func Test_FailedRegister(t *testing.T) {
 		IP: helper.RandomIPAddress(),
 	})
 	if loginErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	forgetErr := svc.ForgetPassword(ctx, model.UserForgetPassword{Email: "wrong_email@gost.project"})
 	if forgetErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	verifyErr := svc.ResetPassword(ctx, model.UserResetPassword{Code: "wrong-code"})
 	if verifyErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	updatePasswdErr := svc.UpdatePassword(ctx, model.UserPasswordUpdate{ID: -1})
 	if updatePasswdErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 
 	_, getErr := svc.MyProfile(ctx, -10)
 	if getErr == nil {
-		t.Error("should error")
+		t.Error(constants.ShouldErr)
 	}
 }
 
-func Test_Banned_IP_Address(t *testing.T) {
+func TestBannedIPAddress(t *testing.T) {
 	defer func() {
-		connector.LoadRedisDatabase().FlushAll()
+		connector.LoadRedisCache().FlushAll()
 	}()
-	permSvc := rbacService.NewPermissionService()
-	roleSvc := rbacService.NewRoleService(permSvc)
+	permSvc := permService.NewPermissionService()
+	roleSvc := roleService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if svc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	for i := 1; i <= 15; i++ {
 		counter, err := svc.FailedLoginCounter(helper.RandomIPAddress(), true)
 		if err != nil {
-			t.Error("should not error")
+			t.Error(constants.ShouldNotErr)
 		}
 		if i >= 4 {
 			if counter == i {

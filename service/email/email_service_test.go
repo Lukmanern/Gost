@@ -12,10 +12,10 @@ func init() {
 	env.ReadConfig("./../../.env")
 
 	connector.LoadDatabase()
-	connector.LoadRedisDatabase()
+	connector.LoadRedisCache()
 }
 
-func Test_SendEmail(t *testing.T) {
+func TestSendEmail(t *testing.T) {
 	emailService := NewEmailService()
 	if emailService == nil {
 		t.Error("should not nil")

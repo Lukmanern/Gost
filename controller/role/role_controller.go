@@ -9,16 +9,30 @@ import (
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/response"
-	service "github.com/Lukmanern/gost/service/rbac"
+	service "github.com/Lukmanern/gost/service/role"
 )
 
 type RoleController interface {
+
+	// Create func creates a new role
 	Create(c *fiber.Ctx) error
+
+	// Connect func connects a role with some permissions
+	// and storing data in role_has_permissions table
 	Connect(c *fiber.Ctx) error
+
+	// Get func gets a role
 	Get(c *fiber.Ctx) error
+
+	// GetAll func gets some roles
 	GetAll(c *fiber.Ctx) error
+
+	// Update func updates a role
 	Update(c *fiber.Ctx) error
+
+	// Delete func deletes a role
 	Delete(c *fiber.Ctx) error
 }
 
@@ -40,10 +54,10 @@ func NewRoleController(service service.RoleService) RoleController {
 	return roleControllerImpl
 }
 
-func (ctr RoleControllerImpl) Create(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 	var role model.RoleCreate
 	if err := c.BodyParser(&role); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	// hashmap
 	idCheckers := make(map[int]bool)
@@ -58,7 +72,7 @@ func (ctr RoleControllerImpl) Create(c *fiber.Ctx) error {
 	}
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -68,7 +82,7 @@ func (ctr RoleControllerImpl) Create(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+createErr.Error())
+		return response.Error(c, constants.ServerErr+createErr.Error())
 	}
 	data := map[string]any{
 		"id": id,
@@ -76,10 +90,10 @@ func (ctr RoleControllerImpl) Create(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, data)
 }
 
-func (ctr RoleControllerImpl) Connect(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) Connect(c *fiber.Ctx) error {
 	var role model.RoleConnectToPermissions
 	if err := c.BodyParser(&role); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	// hashmap
 	idCheckers := make(map[int]bool)
@@ -94,7 +108,7 @@ func (ctr RoleControllerImpl) Connect(c *fiber.Ctx) error {
 	}
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -104,15 +118,15 @@ func (ctr RoleControllerImpl) Connect(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+connectErr.Error())
+		return response.Error(c, constants.ServerErr+connectErr.Error())
 	}
 	return response.SuccessCreated(c, "role and permissions success connected")
 }
 
-func (ctr RoleControllerImpl) Get(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, "invalid id")
+		return response.BadRequest(c, constants.InvalidID)
 	}
 
 	ctx := c.Context()
@@ -122,12 +136,12 @@ func (ctr RoleControllerImpl) Get(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+getErr.Error())
+		return response.Error(c, constants.ServerErr+getErr.Error())
 	}
 	return response.SuccessLoaded(c, role)
 }
 
-func (ctr RoleControllerImpl) GetAll(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 	request := base.RequestGetAll{
 		Page:    c.QueryInt("page", 1),
 		Limit:   c.QueryInt("limit", 20),
@@ -141,7 +155,7 @@ func (ctr RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 	ctx := c.Context()
 	roles, total, getErr := ctr.service.GetAll(ctx, request)
 	if getErr != nil {
-		return response.Error(c, "internal server error: "+getErr.Error())
+		return response.Error(c, constants.ServerErr+getErr.Error())
 	}
 
 	data := make([]interface{}, len(roles))
@@ -159,19 +173,19 @@ func (ctr RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, responseData)
 }
 
-func (ctr RoleControllerImpl) Update(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, "invalid id")
+		return response.BadRequest(c, constants.InvalidID)
 	}
 	var role model.RoleUpdate
 	role.ID = id
 	if err := c.BodyParser(&role); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
-		return response.BadRequest(c, "invalid json body: "+err.Error())
+		return response.BadRequest(c, constants.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -181,15 +195,15 @@ func (ctr RoleControllerImpl) Update(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+updateErr.Error())
+		return response.Error(c, constants.ServerErr+updateErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }
 
-func (ctr RoleControllerImpl) Delete(c *fiber.Ctx) error {
+func (ctr *RoleControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, "invalid id")
+		return response.BadRequest(c, constants.InvalidID)
 	}
 
 	ctx := c.Context()
@@ -199,7 +213,7 @@ func (ctr RoleControllerImpl) Delete(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, "internal server error: "+deleteErr.Error())
+		return response.Error(c, constants.ServerErr+deleteErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }

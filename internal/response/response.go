@@ -6,6 +6,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Response struct is standart JSON structure that this project used.
+// You can change if you want. This also prevents developers make
+// common mistake to make messsage to frontend developer.
 type Response struct {
 	Message string      `json:"message"`
 	Success bool        `json:"success"`

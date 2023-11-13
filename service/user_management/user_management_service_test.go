@@ -10,6 +10,7 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/gofiber/fiber/v2"
@@ -20,13 +21,13 @@ func init() {
 	env.ReadConfig("./../../.env")
 
 	connector.LoadDatabase()
-	connector.LoadRedisDatabase()
+	connector.LoadRedisCache()
 }
 
 func TestNewUserManagementService(t *testing.T) {
 	svc := NewUserManagementService()
 	if svc == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 }
 
@@ -39,12 +40,12 @@ func TestNewUserManagementService(t *testing.T) {
 // -> get by id (checking)
 // -> get by email (checking)
 
-func TestSuccessCRUD(t *testing.T) {
+func TestSuccessCrud(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	svc := NewUserManagementService()
 	if svc == nil || ctx == nil {
-		t.Error("should not nil")
+		t.Error(constants.ShouldNotNil)
 	}
 
 	userModel := model.UserCreate{
@@ -61,8 +62,8 @@ func TestSuccessCRUD(t *testing.T) {
 		svc.Delete(ctx, userID)
 	}()
 
-	userByID, getByIdErr := svc.GetByID(ctx, userID)
-	if getByIdErr != nil || userByID == nil {
+	userByID, getByIDErr := svc.GetByID(ctx, userID)
+	if getByIDErr != nil || userByID == nil {
 		t.Error("should not error or user should not nil")
 	}
 	if userByID.Name != userModel.Name || userByID.Email != userModel.Email {
@@ -88,14 +89,14 @@ func TestSuccessCRUD(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updateUserData)
 	if updateErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// reset value
-	getByIdErr = nil
+	getByIDErr = nil
 	userByID = nil
-	userByID, getByIdErr = svc.GetByID(ctx, userID)
-	if getByIdErr != nil || userByID == nil {
+	userByID, getByIDErr = svc.GetByID(ctx, userID)
+	if getByIDErr != nil || userByID == nil {
 		t.Error("should not error or user should not nil")
 	}
 	if userByID.Name != updateUserData.Name || userByID.Email != userModel.Email {
@@ -104,17 +105,17 @@ func TestSuccessCRUD(t *testing.T) {
 
 	deleteErr := svc.Delete(ctx, userID)
 	if deleteErr != nil {
-		t.Error("should not error")
+		t.Error(constants.ShouldNotErr)
 	}
 
 	// reset value
-	getByIdErr = nil
+	getByIDErr = nil
 	userByID = nil
-	userByID, getByIdErr = svc.GetByID(ctx, userID)
-	if getByIdErr == nil || userByID != nil {
+	userByID, getByIDErr = svc.GetByID(ctx, userID)
+	if getByIDErr == nil || userByID != nil {
 		t.Error("should error and user should nil")
 	}
-	fiberErr, ok := getByIdErr.(*fiber.Error)
+	fiberErr, ok := getByIDErr.(*fiber.Error)
 	if ok {
 		if fiberErr.Code != fiber.StatusNotFound {
 			t.Error("should error 404")

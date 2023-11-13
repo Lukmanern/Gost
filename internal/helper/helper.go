@@ -10,10 +10,16 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
+// RandomString func generate random string
+// used for testing and any needs.
 func RandomString(n uint) string {
-	letterBytes := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+	letterBytes := "abcdefghijklmnopqrstuvwxyz"
+	letterBytes += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	letterBytes += "1234567890"
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
@@ -21,12 +27,14 @@ func RandomString(n uint) string {
 	return string(b)
 }
 
+// RandomEmails func return some emails
+// used for testing and any needs.
 func RandomEmails(n uint) []string {
 	emailsMap := make(map[string]int)
 	for uint(len(emailsMap)) < n {
 		body := strings.ToLower(RandomString(7) + RandomString(7) + RandomString(7))
 		randEmail := body + "@gost.project"
-		emailsMap[randEmail] += 1
+		emailsMap[randEmail]++
 	}
 
 	emails := make([]string, 0, len(emailsMap))
@@ -36,18 +44,16 @@ func RandomEmails(n uint) []string {
 	return emails
 }
 
+// RandomEmail func return a email
+// used for testing and any needs.
 func RandomEmail() string {
 	body := strings.ToLower(RandomString(7) + RandomString(7) + RandomString(7))
 	randEmail := body + "@gost.project"
 	return randEmail
 }
 
-// This used for testing handler : controller/ middleware/ any
-func NewFiberCtx() *fiber.Ctx {
-	app := fiber.New()
-	return app.AcquireCtx(&fasthttp.RequestCtx{})
-}
-
+// RandomIPAddress func return a IP Address
+// used for testing and any needs.
 func RandomIPAddress() string {
 	source := rand.NewSource(time.Now().UnixNano())
 	rng := rand.New(source)
@@ -60,6 +66,7 @@ func RandomIPAddress() string {
 	return ip.String()
 }
 
+// ValidateEmails func validates emails
 func ValidateEmails(emails ...string) error {
 	for _, email := range emails {
 		_, err := mail.ParseAddress(email)
@@ -68,4 +75,17 @@ func ValidateEmails(emails ...string) error {
 		}
 	}
 	return nil
+}
+
+// NewFiberCtx func create new fiber.Ctx used for testing
+// handler like controller and middleware.
+func NewFiberCtx() *fiber.Ctx {
+	app := fiber.New()
+	return app.AcquireCtx(&fasthttp.RequestCtx{})
+}
+
+// ToTitle func make string to Title Case
+// Example : Your name => Your Name
+func ToTitle(s string) string {
+	return cases.Title(language.Und).String(s)
 }

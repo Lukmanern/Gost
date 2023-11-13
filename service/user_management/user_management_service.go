@@ -11,23 +11,35 @@ import (
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/hash"
+	"github.com/Lukmanern/gost/internal/helper"
 	repository "github.com/Lukmanern/gost/repository/user"
 )
 
 type UserManagementService interface {
+
+	// Create func create one user.
 	Create(ctx context.Context, user model.UserCreate) (id int, err error)
+
+	// GetByID func get one user by ID.
 	GetByID(ctx context.Context, id int) (user *model.UserResponse, err error)
+
+	// GetByEmail func get one user by Email.
 	GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error)
+
+	// GetAll func get some users
 	GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error)
+
+	// Update func update one user data.
 	Update(ctx context.Context, user model.UserProfileUpdate) (err error)
+
+	// Delete func delete one user.
 	Delete(ctx context.Context, id int) (err error)
 }
 
@@ -50,7 +62,7 @@ func NewUserManagementService() UserManagementService {
 	return userManagementService
 }
 
-func (svc UserManagementServiceImpl) Create(ctx context.Context, user model.UserCreate) (id int, err error) {
+func (svc *UserManagementServiceImpl) Create(ctx context.Context, user model.UserCreate) (id int, err error) {
 	userCheck, getErr := svc.GetByEmail(ctx, user.Email)
 	if getErr == nil || userCheck != nil {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "email has been used")
@@ -63,11 +75,11 @@ func (svc UserManagementServiceImpl) Create(ctx context.Context, user model.User
 	}
 
 	userEntity := entity.User{
-		Name:     cases.Title(language.Und).String(user.Name),
+		Name:     helper.ToTitle(user.Name),
 		Email:    user.Email,
 		Password: passwordHashed,
 	}
-	userEntity.SetCreateTimes()
+	userEntity.SetCreateTime()
 
 	roleID := entity.USER
 	if user.IsAdmin {
@@ -81,11 +93,11 @@ func (svc UserManagementServiceImpl) Create(ctx context.Context, user model.User
 	return id, nil
 }
 
-func (svc UserManagementServiceImpl) GetByID(ctx context.Context, id int) (user *model.UserResponse, err error) {
+func (svc *UserManagementServiceImpl) GetByID(ctx context.Context, id int) (user *model.UserResponse, err error) {
 	userEntity, err := svc.repository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fiber.NewError(fiber.StatusNotFound, "data not found")
+			return nil, fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return nil, err
 	}
@@ -97,12 +109,12 @@ func (svc UserManagementServiceImpl) GetByID(ctx context.Context, id int) (user 
 	return user, nil
 }
 
-func (svc UserManagementServiceImpl) GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error) {
+func (svc *UserManagementServiceImpl) GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error) {
 	email = strings.ToLower(email)
 	userEntity, getErr := svc.repository.GetByEmail(ctx, email)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return nil, fiber.NewError(fiber.StatusNotFound, "data not found")
+			return nil, fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return nil, getErr
 	}
@@ -114,7 +126,7 @@ func (svc UserManagementServiceImpl) GetByEmail(ctx context.Context, email strin
 	return user, nil
 }
 
-func (svc UserManagementServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error) {
+func (svc *UserManagementServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error) {
 	userEntities, total, err := svc.repository.GetAll(ctx, filter)
 	if err != nil {
 		return nil, 0, err
@@ -132,21 +144,21 @@ func (svc UserManagementServiceImpl) GetAll(ctx context.Context, filter base.Req
 	return users, total, nil
 }
 
-func (svc UserManagementServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
+func (svc *UserManagementServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
 	getUser, getErr := svc.repository.GetByID(ctx, user.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return getErr
 	}
 	if getUser == nil {
-		return fiber.NewError(fiber.StatusNotFound, "data not found")
+		return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 	}
 
 	userEntity := entity.User{
 		ID:   user.ID,
-		Name: cases.Title(language.Und).String(user.Name),
+		Name: helper.ToTitle(user.Name),
 		// ...
 		// add more fields
 	}
@@ -159,16 +171,16 @@ func (svc UserManagementServiceImpl) Update(ctx context.Context, user model.User
 	return nil
 }
 
-func (svc UserManagementServiceImpl) Delete(ctx context.Context, id int) (err error) {
+func (svc *UserManagementServiceImpl) Delete(ctx context.Context, id int) (err error) {
 	getUser, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "data not found")
+			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 		}
 		return getErr
 	}
 	if getUser == nil {
-		return fiber.NewError(fiber.StatusNotFound, "data not found")
+		return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
 	}
 
 	err = svc.repository.Delete(ctx, id)

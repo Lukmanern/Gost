@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/gofiber/fiber/v2"
@@ -21,13 +22,18 @@ type FileReponse struct {
 	} `json:"metadata"`
 }
 
-type UploadFile interface {
+type FileService interface {
+	// UploadFile func uploads file to supabase bucket.
 	UploadFile(fileHeader *multipart.FileHeader) (fileURL string, err error)
+
+	// RemoveFile func deletes a file from supabase bucket.
 	RemoveFile(fileName string) (err error)
+
+	// GetFilesList func get list of files from supabase bucket.
 	GetFilesList() (files []map[string]any, err error)
 }
 
-type client struct {
+type FileServiceImpl struct {
 	PublicURL    string
 	ListFilesURL string
 	UploadURL    string
@@ -35,19 +41,27 @@ type client struct {
 	Token        string
 }
 
-func NewFileService() UploadFile {
-	config := env.Configuration()
-	baseURL := config.BucketURL + "/storage/v1/object/"
-	return &client{
-		PublicURL:    baseURL + "public/" + config.BucketName + "/",
-		ListFilesURL: baseURL + "list/" + config.BucketName,
-		UploadURL:    baseURL + config.BucketName + "/",
-		DeleteURL:    baseURL + config.BucketName,
-		Token:        config.BucketToken,
-	}
+var (
+	fileService     *FileServiceImpl
+	fileServiceOnce sync.Once
+)
+
+func NewFileService() FileService {
+	fileServiceOnce.Do(func() {
+		config := env.Configuration()
+		baseURL := config.BucketURL + "/storage/v1/object/"
+		fileService = &FileServiceImpl{
+			PublicURL:    baseURL + "public/" + config.BucketName + "/",
+			ListFilesURL: baseURL + "list/" + config.BucketName,
+			UploadURL:    baseURL + config.BucketName + "/",
+			DeleteURL:    baseURL + config.BucketName,
+			Token:        config.BucketToken,
+		}
+	})
+	return fileService
 }
 
-func (c *client) UploadFile(fileHeader *multipart.FileHeader) (fileURL string, err error) {
+func (c FileServiceImpl) UploadFile(fileHeader *multipart.FileHeader) (fileURL string, err error) {
 	fileName := fileHeader.Filename
 	file, headerErr := fileHeader.Open()
 	if headerErr != nil {
@@ -72,10 +86,10 @@ func (c *client) UploadFile(fileHeader *multipart.FileHeader) (fileURL string, e
 		return "", newReqErr
 	}
 
-	request.Header.Set("Authorization", "Bearer "+c.Token)
-	request.Header.Set("Content-Type", writer.FormDataContentType())
-	client := &http.Client{}
-	respUpload, doErr := client.Do(request)
+	request.Header.Set(fiber.HeaderAuthorization, "Bearer "+c.Token)
+	request.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())
+	FileServiceImpl := &http.Client{}
+	respUpload, doErr := FileServiceImpl.Do(request)
 	if doErr != nil {
 		return "", doErr
 	}
@@ -90,7 +104,7 @@ func (c *client) UploadFile(fileHeader *multipart.FileHeader) (fileURL string, e
 	if reqErr != nil {
 		return "", reqErr
 	}
-	respTestGet, doErr := client.Do(reqTestGet)
+	respTestGet, doErr := FileServiceImpl.Do(reqTestGet)
 	if doErr != nil {
 		return "", doErr
 	}
@@ -101,7 +115,7 @@ func (c *client) UploadFile(fileHeader *multipart.FileHeader) (fileURL string, e
 	return link, nil
 }
 
-func (c *client) RemoveFile(fileName string) (err error) {
+func (c FileServiceImpl) RemoveFile(fileName string) (err error) {
 	body := map[string]interface{}{
 		"prefixes": fileName,
 	}
@@ -114,10 +128,10 @@ func (c *client) RemoveFile(fileName string) (err error) {
 		return err
 	}
 
-	request.Header.Set("Authorization", "Bearer "+c.Token)
-	request.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	response, err := client.Do(request)
+	request.Header.Set(fiber.HeaderAuthorization, "Bearer "+c.Token)
+	request.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+	FileServiceImpl := &http.Client{}
+	response, err := FileServiceImpl.Do(request)
 	if err != nil {
 		return responseErrHandler(response)
 	}
@@ -140,7 +154,7 @@ func (c *client) RemoveFile(fileName string) (err error) {
 	return nil
 }
 
-func (c *client) GetFilesList() (files []map[string]any, err error) {
+func (c FileServiceImpl) GetFilesList() (files []map[string]any, err error) {
 	type sortBy struct {
 		Column string `json:"column"`
 		Order  string `json:"order"`
@@ -171,10 +185,10 @@ func (c *client) GetFilesList() (files []map[string]any, err error) {
 		return nil, err
 	}
 
-	request.Header.Set("Authorization", "Bearer "+c.Token)
-	request.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	response, err := client.Do(request)
+	request.Header.Set(fiber.HeaderAuthorization, "Bearer "+c.Token)
+	request.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+	FileServiceImpl := &http.Client{}
+	response, err := FileServiceImpl.Do(request)
 	if err != nil {
 		return nil, responseErrHandler(response)
 	}
