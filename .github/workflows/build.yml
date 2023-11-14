@@ -30,19 +30,11 @@ jobs:
       - name: Verify dependencies
         run: go mod verify
 
-      - name: Create Keys Directory
-        run: mkdir -p keys
-        working-directory: ${{ github.workspace }}
-
       - name: Generate Self-Signed TLS Certificate
         run: |
+          mkdir -p keys
           openssl req -x509 -newkey rsa:4096 -keyout keys/private.key -out keys/publickey.crt -days 365 -nodes -subj "/CN=localhost"
         working-directory: ${{ github.workspace }}
-
-      - name: Show Certificate
-        run: |
-          cat keys/publickey.crt
-          cat keys/private.key
 
       - name: Create .env file
         run: echo "${{ secrets.ENV }}" > .env
