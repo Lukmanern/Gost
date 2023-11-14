@@ -61,7 +61,7 @@ jobs:
 
       - name: Go Get
         run: |
-          go get ./...
+          go mod download
 
       - name: Run migration
         run: |
