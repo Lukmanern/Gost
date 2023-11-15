@@ -80,13 +80,13 @@ type UserServiceImpl struct {
 }
 
 var (
-	userAuthService     *UserServiceImpl
-	userAuthServiceOnce sync.Once
+	userService     *UserServiceImpl
+	userServiceOnce sync.Once
 )
 
 func NewUserService(roleService roleService.RoleService) UserService {
-	userAuthServiceOnce.Do(func() {
-		userAuthService = &UserServiceImpl{
+	userServiceOnce.Do(func() {
+		userService = &UserServiceImpl{
 			roleService:  roleService,
 			repository:   repository.NewUserRepository(),
 			emailService: emailService.NewEmailService(),
@@ -95,7 +95,7 @@ func NewUserService(roleService roleService.RoleService) UserService {
 		}
 	})
 
-	return userAuthService
+	return userService
 }
 
 func (svc *UserServiceImpl) Register(ctx context.Context, user model.UserRegister) (id int, err error) {

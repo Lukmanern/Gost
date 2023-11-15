@@ -29,6 +29,7 @@ var (
 
 	// Create a new fiber instance with custom config
 	router = fiber.New(fiber.Config{
+		AppName: "Gost Project",
 		// Override default error handler
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			// Status code defaults to 500

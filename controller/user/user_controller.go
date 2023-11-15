@@ -60,18 +60,18 @@ type UserControllerImpl struct {
 }
 
 var (
-	userAuthController     *UserControllerImpl
-	userAuthControllerOnce sync.Once
+	userController     *UserControllerImpl
+	userControllerOnce sync.Once
 )
 
 func NewUserController(service service.UserService) UserController {
-	userAuthControllerOnce.Do(func() {
-		userAuthController = &UserControllerImpl{
+	userControllerOnce.Do(func() {
+		userController = &UserControllerImpl{
 			service: service,
 		}
 	})
 
-	return userAuthController
+	return userController
 }
 
 func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
