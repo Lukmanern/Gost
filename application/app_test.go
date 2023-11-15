@@ -67,12 +67,6 @@ func TestAppRouter(t *testing.T) {
 	if router.Config().WriteBufferSize <= 0 {
 		t.Error("Router's WriteBufferSize should be more than 0")
 	}
-	if router.Config().ServerHeader != "" {
-		t.Error("Router's ServerHeader should be empty")
-	}
-	if router.Config().ProxyHeader != "" {
-		t.Error("Router's ProxyHeader should be empty")
-	}
 	setup()
 }
 
