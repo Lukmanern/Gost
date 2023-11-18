@@ -31,6 +31,7 @@ func getDevopmentRouter(router fiber.Router) {
 	devRouter.Post("upload-file", devController.UploadFile)
 	devRouter.Post("get-files-list", devController.GetFilesList)
 	devRouter.Delete("remove-file", devController.RemoveFile)
+	devRouter.Get("test-new", devController.FakeHandler)
 
 	// you should create new role named new-role-001 and new permission
 	// named new-permission-001 from RBAC-endpoints to test these endpoints

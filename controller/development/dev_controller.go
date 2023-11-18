@@ -52,6 +52,9 @@ type DevController interface {
 	// GetFilesList func gets list file/s from Supabase Bucket
 	// See : https://supabase.com/docs/guides/storage
 	GetFilesList(c *fiber.Ctx) error
+
+	// FakeHandler sends string to client
+	FakeHandler(c *fiber.Ctx) error
 }
 
 type DevControllerImpl struct {
@@ -227,4 +230,9 @@ func (ctr *DevControllerImpl) GetFilesList(c *fiber.Ctx) error {
 		return response.Error(c, constants.ServerErr+getErr.Error())
 	}
 	return response.SuccessLoaded(c, resp)
+}
+
+func (ctr *DevControllerImpl) FakeHandler(c *fiber.Ctx) error {
+	message := "success create one new endpoint"
+	return response.CreateResponse(c, fiber.StatusOK, true, message, nil)
 }
