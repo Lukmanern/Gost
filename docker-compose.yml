@@ -5,13 +5,13 @@ services:
     container_name: redis
     image: redis:alpine
     ports:
-      - 6379:6379
+      - 6479:6379
 
   gost:
     container_name: gost
     image: gost:latest
     ports:
-      - 9009:9009
+      - 7007:7007
     depends_on:
       - redis
     environment:

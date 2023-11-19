@@ -45,8 +45,8 @@ COPY --from=builder /app/.env /root/
 COPY --from=builder /app/keys /root/keys
 COPY --from=builder /app/main /root/
 
-# Expose port 9009 to the outside world
-EXPOSE 9009
+# Expose port 7007 to the outside world
+EXPOSE 7007
 
 #Command to run the executable
 CMD ["./main"]
