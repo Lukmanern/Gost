@@ -177,7 +177,7 @@ func TestJWTHandlerIsAuthenticated(t *testing.T) {
 		defer func() {
 			r := recover()
 			if r != nil {
-				t.Error("should not panic")
+				t.Error("should not panic", r)
 			}
 		}()
 		jwtHandler3 := NewJWTHandler()
