@@ -50,6 +50,7 @@ func init() {
 }
 
 func TestRoleCreate(t *testing.T) {
+	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -193,6 +194,7 @@ func TestRoleCreate(t *testing.T) {
 }
 
 func TestRoleConnect(t *testing.T) {
+	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -324,6 +326,7 @@ func TestRoleConnect(t *testing.T) {
 }
 
 func TestRoleGet(t *testing.T) {
+	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -420,6 +423,7 @@ func TestRoleGet(t *testing.T) {
 }
 
 func TestRoleGetAll(t *testing.T) {
+	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -511,6 +515,7 @@ func TestRoleGetAll(t *testing.T) {
 }
 
 func TestRoleUpdate(t *testing.T) {
+	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -650,6 +655,7 @@ func TestRoleUpdate(t *testing.T) {
 }
 
 func TestRoleDelete(t *testing.T) {
+	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController

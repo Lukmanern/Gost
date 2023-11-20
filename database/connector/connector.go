@@ -55,7 +55,7 @@ func LoadDatabase() *gorm.DB {
 		// config for small-to-medium web applications
 		// read https://www.alexedwards.net/blog/configuring-sqldb
 		database.SetMaxOpenConns(25)
-		database.SetMaxIdleConns(25)
+		database.SetMaxIdleConns(80)
 		database.SetConnMaxLifetime(time.Hour)
 	})
 

@@ -9,6 +9,7 @@ import (
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/helper"
 )
 
 var (
@@ -419,7 +420,7 @@ func TestUserRepositoryImplUpdatePassword(t *testing.T) {
 	// create user
 	user := entity.User{
 		Name:     "validname",
-		Email:    "valid10@email.com",
+		Email:    helper.RandomEmail(),
 		Password: "example-password",
 		TimeFields: base.TimeFields{
 			CreatedAt: &timeNow,
@@ -492,7 +493,7 @@ func TestUserRepositoryImplUpdatePassword(t *testing.T) {
 func TestUserRepositoryImplGetByConditions(t *testing.T) {
 	user := entity.User{
 		Name:     "validname",
-		Email:    "valid10@email.com",
+		Email:    helper.RandomEmail(),
 		Password: "example-password",
 		TimeFields: base.TimeFields{
 			CreatedAt: &timeNow,

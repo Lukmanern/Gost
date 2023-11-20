@@ -10,7 +10,7 @@ test-clear:
 # for unix: change del to rm -rf
 test:
 	go clean -testcache
-	go test -p 1 -timeout 330s -coverprofile=cover.out ./... 
+	go test -coverprofile=cover.out -race ./...
 	go tool cover -html cover.out -o cover.html
 	del cover.out
 
