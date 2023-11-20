@@ -49,30 +49,6 @@ func init() {
 	userRepo = repository.NewUserRepository()
 }
 
-func createUser(ctx context.Context, roleID int) (data *entity.User, id int) {
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	id, err := userSvc.Register(ctx, createdUser)
-	if err != nil || id < 1 {
-		log.Fatal("failed creating user at User Controller Test :: createUser func")
-	}
-
-	data, getErr := userRepo.GetByID(ctx, id)
-	if getErr != nil || data == nil {
-		log.Fatal("failed getting user at User Controller Test :: createUser func")
-	}
-	vCode := data.VerificationCode
-	if vCode == nil || data.ActivatedAt != nil {
-		log.Fatal("user should inactivate at User Controller Test :: createUser func")
-	}
-	data.Password = createdUser.Password
-	return data, id
-}
-
 func TestNewUserController(t *testing.T) {
 	t.Parallel()
 	permService := permService.NewPermissionService()
@@ -80,14 +56,14 @@ func TestNewUserController(t *testing.T) {
 	userService := service.NewUserService(roleService)
 	userController := NewUserController(userService)
 
-	if userController == nil || userService == nil || roleService == nil || permService == nil {
+	if userController == nil || userService == nil ||
+		roleService == nil || permService == nil {
 		t.Error(constants.ShouldNotNil)
 	}
 }
 
 func TestRegister(t *testing.T) {
 	t.Parallel()
-	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -204,19 +180,18 @@ func TestRegister(t *testing.T) {
 	}
 
 	endp := "user/register"
+	url := appURL + endp
 	for _, tc := range testCases {
 		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-
 		app := fiber.New()
 		app.Post(endp, ctr.Register)
 		req.Close = true
@@ -257,7 +232,6 @@ func TestRegister(t *testing.T) {
 
 func TestAccountActivation(t *testing.T) {
 	t.Parallel()
-	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -309,13 +283,13 @@ func TestAccountActivation(t *testing.T) {
 	}
 
 	endp := "user/verification"
+	url := appURL + endp
 	for _, tc := range testCases {
 		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -352,7 +326,6 @@ func TestAccountActivation(t *testing.T) {
 
 func TestDeleteAccountActivation(t *testing.T) {
 	t.Parallel()
-	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -404,13 +377,13 @@ func TestDeleteAccountActivation(t *testing.T) {
 	}
 
 	endp := "user/request-delete"
+	url := appURL + endp
 	for _, tc := range testCases {
 		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -448,7 +421,6 @@ func TestDeleteAccountActivation(t *testing.T) {
 
 func TestForgetPassword(t *testing.T) {
 	t.Parallel()
-	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -471,7 +443,7 @@ func TestForgetPassword(t *testing.T) {
 	createdUser = nil
 	createdUser, getErr := userRepo.GetByID(ctx, userID)
 	if getErr != nil || createdUser == nil {
-		t.Fatal("should success get user by id")
+		t.Fatal("getByID should success")
 	}
 	if createdUser.VerificationCode != nil || createdUser.ActivatedAt == nil {
 		t.Fatal("user should active for now, but its get inactive")
@@ -515,13 +487,13 @@ func TestForgetPassword(t *testing.T) {
 	}
 
 	endp := "user/forget-password"
+	url := appURL + endp
 	for _, tc := range testCases {
 		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -544,7 +516,6 @@ func TestForgetPassword(t *testing.T) {
 
 func TestResetPassword(t *testing.T) {
 	t.Parallel()
-	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -646,13 +617,13 @@ func TestResetPassword(t *testing.T) {
 	}
 
 	endp := "user/reset-password"
+	url := appURL + endp
 	for _, tc := range testCases {
 		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -687,7 +658,6 @@ func TestResetPassword(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	t.Parallel()
-	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -828,13 +798,13 @@ func TestLogin(t *testing.T) {
 	}
 
 	endp := "user/login"
+	url := appURL + endp
 	for _, tc := range testCases {
 		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -907,7 +877,6 @@ func TestLogin(t *testing.T) {
 
 func TestLogout(t *testing.T) {
 	t.Parallel()
-	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -955,7 +924,7 @@ func TestLogout(t *testing.T) {
 			token:    userToken,
 		},
 		{
-			caseName: "failed: fake claims",
+			caseName: "failed logout: fake claims",
 			respCode: http.StatusUnauthorized,
 			token:    "fake-token-123",
 		},
@@ -1066,7 +1035,7 @@ func TestUpdatePassword(t *testing.T) {
 			},
 		},
 		{
-			caseName: "failed: no new password",
+			caseName: "failed update password: no new password",
 			respCode: http.StatusBadRequest,
 			token:    userToken,
 			payload: &model.UserPasswordUpdate{
@@ -1076,17 +1045,17 @@ func TestUpdatePassword(t *testing.T) {
 			},
 		},
 		{
-			caseName: "failed: payload nil",
+			caseName: "failed update password: payload nil",
 			respCode: http.StatusBadRequest,
 			token:    userToken,
 		},
 		{
-			caseName: "failed: fake claims",
+			caseName: "failed update password: fake claims",
 			respCode: http.StatusUnauthorized,
-			token:    "fake-token",
+			token:    "fake token 1234",
 		},
 		{
-			caseName: "failed: payload nil, token nil",
+			caseName: "failed update password: payload nil, token nil",
 			respCode: http.StatusUnauthorized,
 			token:    "",
 		},
@@ -1129,7 +1098,6 @@ func TestUpdatePassword(t *testing.T) {
 
 func TestUpdateProfile(t *testing.T) {
 	t.Parallel()
-	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -1305,10 +1273,12 @@ func TestMyProfile(t *testing.T) {
 		c := helper.NewFiberCtx()
 		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		c.Request().Header.SetMethod(fiber.MethodGet)
 		fakeClaims := jwtHandler.GenerateClaims(tc.token)
 		if fakeClaims != nil {
 			c.Locals("claims", fakeClaims)
 		}
+
 		ctr.MyProfile(c)
 		resp := c.Response()
 		if resp.StatusCode() != tc.respCode {
@@ -1340,4 +1310,28 @@ func TestMyProfile(t *testing.T) {
 			}
 		}
 	}
+}
+
+func createUser(ctx context.Context, roleID int) (data *entity.User, id int) {
+	createdUser := model.UserRegister{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmail(),
+		Password: helper.RandomString(10),
+		RoleID:   1, // admin
+	}
+	id, err := userSvc.Register(ctx, createdUser)
+	if err != nil || id < 1 {
+		log.Fatal("failed creating user at User Controller Test :: createUser func ", err.Error())
+	}
+
+	data, getErr := userRepo.GetByID(ctx, id)
+	if getErr != nil || data == nil {
+		log.Fatal("failed getting user at User Controller Test :: createUser func ", getErr.Error())
+	}
+	vCode := data.VerificationCode
+	if vCode == nil || data.ActivatedAt != nil {
+		log.Fatal("user should inactivate at User Controller Test :: createUser func")
+	}
+	data.Password = createdUser.Password
+	return data, id
 }

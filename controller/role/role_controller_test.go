@@ -1,11 +1,8 @@
-// Don't run test per file without -p 1
-// or simply run test per func or run
-// project test using make test command
-// check Makefile file
 package controller
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,25 +10,24 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/response"
-	"github.com/gofiber/fiber/v2"
-
-	permissionController "github.com/Lukmanern/gost/controller/permission"
 	permSvc "github.com/Lukmanern/gost/service/permission"
 	service "github.com/Lukmanern/gost/service/role"
 )
 
 var (
-	permService    permSvc.PermissionService
-	roleService    service.RoleService
-	roleController RoleController
-	permController permissionController.PermissionController
-	appURL         string
+	permService permSvc.PermissionService
+	roleService service.RoleService
+	roleCtr     RoleController
+	appURL      string
 )
 
 func init() {
@@ -43,58 +39,35 @@ func init() {
 	connector.LoadRedisCache()
 
 	permService = permSvc.NewPermissionService()
-	permController = permissionController.NewPermissionController(permService)
-
 	roleService = service.NewRoleService(permService)
-	roleController = NewRoleController(roleService)
+	roleCtr = NewRoleController(roleService)
 }
 
 func TestRoleCreate(t *testing.T) {
 	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	ctr := permController
-	if ctr == nil || c == nil || ctx == nil {
+	if c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
 
+	totalPermissions := 5
 	permIDs := make([]int, 0)
-	for i := 0; i < 4; i++ {
-		// create 1 permission
-		permID, createErr := permService.Create(ctx, model.PermissionCreate{
-			Name:        helper.RandomString(11),
-			Description: helper.RandomString(30),
-		})
-		if createErr != nil || permID < 1 {
-			t.Fatal("should not error while creating permission")
-		}
+	for i := 0; i < totalPermissions; i++ {
+		perm := createPermission(ctx)
 		defer func() {
-			permService.Delete(ctx, permID)
+			permService.Delete(ctx, perm.ID)
 		}()
-
-		permIDs = append(permIDs, permID)
+		permIDs = append(permIDs, perm.ID)
 	}
 
-	createdRole := model.RoleCreate{
-		Name:          helper.RandomString(9),
-		Description:   helper.RandomString(30),
-		PermissionsID: permIDs,
-	}
-	roleID, createErr := roleService.Create(ctx, createdRole)
-	if createErr != nil || roleID <= 0 {
-		t.Fatal("should not error while creating new Role")
-	}
-	roleByID, getErr := roleService.GetByID(ctx, roleID)
-	if getErr != nil || roleByID == nil {
-		t.Fatal("should not error while getting Role")
-	}
-	if len(roleByID.Permissions) != 4 {
+	role := createRole(ctx, permIDs)
+	if len(role.Permissions) != totalPermissions {
 		t.Error("the length should equal")
 	}
 	defer func() {
-		roleService.Delete(ctx, roleID)
+		roleService.Delete(ctx, role.ID)
 	}()
-
 	testCases := []struct {
 		caseName string
 		respCode int
@@ -145,20 +118,21 @@ func TestRoleCreate(t *testing.T) {
 		},
 	}
 
+	endp := "role"
+	url := appURL + endp
 	for _, tc := range testCases {
-		log.Println(":::::::" + tc.caseName)
+		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appURL + "role"
-		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
-		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
+		if httpReqErr != nil {
+			t.Error(constants.ShouldNotErr, httpReqErr.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Post("/role", roleController.Create)
+		app.Post(endp, roleCtr.Create)
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal(constants.ShouldNotErr)
@@ -197,42 +171,29 @@ func TestRoleConnect(t *testing.T) {
 	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	ctr := permController
-	if ctr == nil || c == nil || ctx == nil {
+	if c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
 
+	totalPermissions := 5
 	permIDs := make([]int, 0)
-	for i := 0; i < 4; i++ {
-		// create 1 permission
-		permID, createErr := permService.Create(ctx, model.PermissionCreate{
-			Name:        helper.RandomString(11),
-			Description: helper.RandomString(30),
-		})
-		if createErr != nil || permID < 1 {
-			t.Fatal("should not error while creating permission")
-		}
+	for i := 0; i < totalPermissions; i++ {
+		perm := createPermission(ctx)
 		defer func() {
-			permService.Delete(ctx, permID)
+			permService.Delete(ctx, perm.ID)
 		}()
-
-		permIDs = append(permIDs, permID)
+		permIDs = append(permIDs, perm.ID)
 	}
 
-	createdRole := model.RoleCreate{
-		Name:          helper.RandomString(9),
-		Description:   helper.RandomString(30),
-		PermissionsID: permIDs,
+	role := createRole(ctx, permIDs)
+	if len(role.Permissions) != totalPermissions {
+		t.Error("the length should equal")
 	}
-	roleID, createErr := roleService.Create(ctx, createdRole)
-	if createErr != nil || roleID <= 0 {
-		t.Fatal("should not error while creating new Role")
-	}
-	roleByID, getErr := roleService.GetByID(ctx, roleID)
-	if getErr != nil || roleByID == nil {
-		t.Fatal("should not error while getting Role")
-	}
-	if len(roleByID.Permissions) != 4 {
+	defer func() {
+		roleService.Delete(ctx, role.ID)
+	}()
+	roleID := role.ID
+	if len(role.Permissions) != totalPermissions {
 		t.Error("the length should equal")
 	}
 	defer func() {
@@ -286,20 +247,21 @@ func TestRoleConnect(t *testing.T) {
 		},
 	}
 
+	endp := "role/connect"
+	url := appURL + endp
 	for _, tc := range testCases {
-		log.Println(":::::::" + tc.caseName)
+		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appURL + "role/connect"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Post("/role/connect", roleController.Connect)
+		app.Post(endp, roleCtr.Connect)
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal(constants.ShouldNotErr)
@@ -329,42 +291,29 @@ func TestRoleGet(t *testing.T) {
 	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	ctr := permController
-	if ctr == nil || c == nil || ctx == nil {
+	if c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
 
+	totalPermissions := 5
 	permIDs := make([]int, 0)
-	for i := 0; i < 4; i++ {
-		// create 1 permission
-		permID, createErr := permService.Create(ctx, model.PermissionCreate{
-			Name:        helper.RandomString(11),
-			Description: helper.RandomString(30),
-		})
-		if createErr != nil || permID < 1 {
-			t.Fatal("should not error while creating permission")
-		}
+	for i := 0; i < totalPermissions; i++ {
+		perm := createPermission(ctx)
 		defer func() {
-			permService.Delete(ctx, permID)
+			permService.Delete(ctx, perm.ID)
 		}()
-
-		permIDs = append(permIDs, permID)
+		permIDs = append(permIDs, perm.ID)
 	}
 
-	createdRole := model.RoleCreate{
-		Name:          helper.RandomString(9),
-		Description:   helper.RandomString(30),
-		PermissionsID: permIDs,
+	role := createRole(ctx, permIDs)
+	if len(role.Permissions) != totalPermissions {
+		t.Error("the length should equal")
 	}
-	roleID, createErr := roleService.Create(ctx, createdRole)
-	if createErr != nil || roleID <= 0 {
-		t.Fatal("should not error while creating new Role")
-	}
-	roleByID, getErr := roleService.GetByID(ctx, roleID)
-	if getErr != nil || roleByID == nil {
-		t.Fatal("should not error while getting Role")
-	}
-	if len(roleByID.Permissions) != 4 {
+	defer func() {
+		roleService.Delete(ctx, role.ID)
+	}()
+	roleID := role.ID
+	if len(role.Permissions) != totalPermissions {
 		t.Error("the length should equal")
 	}
 	defer func() {
@@ -406,7 +355,7 @@ func TestRoleGet(t *testing.T) {
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Get("/role/:id", roleController.Get)
+		app.Get("/role/:id", roleCtr.Get)
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal(constants.ShouldNotErr)
@@ -426,42 +375,29 @@ func TestRoleGetAll(t *testing.T) {
 	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	ctr := permController
-	if ctr == nil || c == nil || ctx == nil {
+	if c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
 
+	totalPermissions := 5
 	permIDs := make([]int, 0)
-	for i := 0; i < 4; i++ {
-		// create 1 permission
-		permID, createErr := permService.Create(ctx, model.PermissionCreate{
-			Name:        helper.RandomString(11),
-			Description: helper.RandomString(30),
-		})
-		if createErr != nil || permID < 1 {
-			t.Fatal("should not error while creating permission")
-		}
+	for i := 0; i < totalPermissions; i++ {
+		perm := createPermission(ctx)
 		defer func() {
-			permService.Delete(ctx, permID)
+			permService.Delete(ctx, perm.ID)
 		}()
-
-		permIDs = append(permIDs, permID)
+		permIDs = append(permIDs, perm.ID)
 	}
 
-	createdRole := model.RoleCreate{
-		Name:          helper.RandomString(9),
-		Description:   helper.RandomString(30),
-		PermissionsID: permIDs,
+	role := createRole(ctx, permIDs)
+	if len(role.Permissions) != totalPermissions {
+		t.Error("the length should equal")
 	}
-	roleID, createErr := roleService.Create(ctx, createdRole)
-	if createErr != nil || roleID <= 0 {
-		t.Fatal("should not error while creating new Role")
-	}
-	roleByID, getErr := roleService.GetByID(ctx, roleID)
-	if getErr != nil || roleByID == nil {
-		t.Fatal("should not error while getting Role")
-	}
-	if len(roleByID.Permissions) != 4 {
+	defer func() {
+		roleService.Delete(ctx, role.ID)
+	}()
+	roleID := role.ID
+	if len(role.Permissions) != totalPermissions {
 		t.Error("the length should equal")
 	}
 	defer func() {
@@ -498,7 +434,7 @@ func TestRoleGetAll(t *testing.T) {
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Get("/role", roleController.GetAll)
+		app.Get("/role", roleCtr.GetAll)
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal(constants.ShouldNotErr)
@@ -518,42 +454,29 @@ func TestRoleUpdate(t *testing.T) {
 	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	ctr := permController
-	if ctr == nil || c == nil || ctx == nil {
+	if c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
 
+	totalPermissions := 5
 	permIDs := make([]int, 0)
-	for i := 0; i < 4; i++ {
-		// create 1 permission
-		permID, createErr := permService.Create(ctx, model.PermissionCreate{
-			Name:        helper.RandomString(11),
-			Description: helper.RandomString(30),
-		})
-		if createErr != nil || permID < 1 {
-			t.Fatal("should not error while creating permission")
-		}
+	for i := 0; i < totalPermissions; i++ {
+		perm := createPermission(ctx)
 		defer func() {
-			permService.Delete(ctx, permID)
+			permService.Delete(ctx, perm.ID)
 		}()
-
-		permIDs = append(permIDs, permID)
+		permIDs = append(permIDs, perm.ID)
 	}
 
-	createdRole := model.RoleCreate{
-		Name:          helper.RandomString(9),
-		Description:   helper.RandomString(30),
-		PermissionsID: permIDs,
+	role := createRole(ctx, permIDs)
+	if len(role.Permissions) != totalPermissions {
+		t.Error("the length should equal")
 	}
-	roleID, createErr := roleService.Create(ctx, createdRole)
-	if createErr != nil || roleID <= 0 {
-		t.Fatal("should not error while creating new Role")
-	}
-	roleByID, getErr := roleService.GetByID(ctx, roleID)
-	if getErr != nil || roleByID == nil {
-		t.Fatal("should not error while getting Role")
-	}
-	if len(roleByID.Permissions) != 4 {
+	defer func() {
+		roleService.Delete(ctx, role.ID)
+	}()
+	roleID := role.ID
+	if len(role.Permissions) != totalPermissions {
 		t.Error("the length should equal")
 	}
 	defer func() {
@@ -614,7 +537,7 @@ func TestRoleUpdate(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		log.Println(":::::::" + tc.caseName)
+		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -626,7 +549,7 @@ func TestRoleUpdate(t *testing.T) {
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Put("/role/:id", roleController.Update)
+		app.Put("/role/:id", roleCtr.Update)
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal(constants.ShouldNotErr)
@@ -658,42 +581,29 @@ func TestRoleDelete(t *testing.T) {
 	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	ctr := permController
-	if ctr == nil || c == nil || ctx == nil {
+	if c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
 
+	totalPermissions := 5
 	permIDs := make([]int, 0)
-	for i := 0; i < 4; i++ {
-		// create 1 permission
-		permID, createErr := permService.Create(ctx, model.PermissionCreate{
-			Name:        helper.RandomString(11),
-			Description: helper.RandomString(30),
-		})
-		if createErr != nil || permID < 1 {
-			t.Fatal("should not error while creating permission")
-		}
+	for i := 0; i < totalPermissions; i++ {
+		perm := createPermission(ctx)
 		defer func() {
-			permService.Delete(ctx, permID)
+			permService.Delete(ctx, perm.ID)
 		}()
-
-		permIDs = append(permIDs, permID)
+		permIDs = append(permIDs, perm.ID)
 	}
 
-	createdRole := model.RoleCreate{
-		Name:          helper.RandomString(9),
-		Description:   helper.RandomString(30),
-		PermissionsID: permIDs,
+	role := createRole(ctx, permIDs)
+	if len(role.Permissions) != totalPermissions {
+		t.Error("the length should equal")
 	}
-	roleID, createErr := roleService.Create(ctx, createdRole)
-	if createErr != nil || roleID <= 0 {
-		t.Fatal("should not error while creating new Role")
-	}
-	roleByID, getErr := roleService.GetByID(ctx, roleID)
-	if getErr != nil || roleByID == nil {
-		t.Fatal("should not error while getting Role")
-	}
-	if len(roleByID.Permissions) != 4 {
+	defer func() {
+		roleService.Delete(ctx, role.ID)
+	}()
+	roleID := role.ID
+	if len(role.Permissions) != totalPermissions {
 		t.Error("the length should equal")
 	}
 	defer func() {
@@ -735,7 +645,7 @@ func TestRoleDelete(t *testing.T) {
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Delete("/role/:id", roleController.Delete)
+		app.Delete("/role/:id", roleCtr.Delete)
 		resp, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal(constants.ShouldNotErr)
@@ -757,4 +667,36 @@ func TestRoleDelete(t *testing.T) {
 			}
 		}
 	}
+}
+
+func createPermission(ctx context.Context) *model.PermissionResponse {
+	permID, createErr := permService.Create(ctx, model.PermissionCreate{
+		Name:        helper.RandomString(11),
+		Description: helper.RandomString(30),
+	})
+	if createErr != nil || permID < 1 {
+		log.Fatal("error while creating permission at Role Controller")
+	}
+	perm, err := permService.GetByID(ctx, permID)
+	if err != nil {
+		log.Fatal("error while getting permission at Role Controller")
+	}
+	return perm
+}
+
+func createRole(ctx context.Context, permIDs []int) *entity.Role {
+	createdRole := model.RoleCreate{
+		Name:          helper.RandomString(9),
+		Description:   helper.RandomString(30),
+		PermissionsID: permIDs,
+	}
+	roleID, createErr := roleService.Create(ctx, createdRole)
+	if createErr != nil || roleID <= 0 {
+		log.Fatal("error while creating new Role at Role Controller")
+	}
+	roleByID, getErr := roleService.GetByID(ctx, roleID)
+	if getErr != nil {
+		log.Fatal("error while getting Role at Role Controller")
+	}
+	return roleByID
 }

@@ -39,8 +39,7 @@ func init() {
 	appURL = config.AppURL
 
 	connector.LoadDatabase()
-	r := connector.LoadRedisCache()
-	r.FlushAll() // clear all key:value in redis
+	connector.LoadRedisCache()
 
 	userDevService = service.NewUserManagementService()
 	userDevController = controller.NewUserManagementController(userDevService)
@@ -363,8 +362,6 @@ func TestUpdate(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
-	c.Method(http.MethodPut)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	createdUser := model.UserCreate{
 		Name:     helper.RandomString(11),
@@ -480,8 +477,6 @@ func TestDelete(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
-	c.Method(http.MethodPut)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	createdUser := model.UserCreate{
 		Name:     helper.RandomString(11),

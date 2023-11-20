@@ -1,7 +1,3 @@
-// Don't run test per file without -p 1
-// or simply run test per func or run
-// project test using make test command
-// check Makefile file
 package controller
 
 import (
