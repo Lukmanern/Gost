@@ -30,6 +30,12 @@ jobs:
       - name: Verify dependencies
         run: go mod verify
 
+      - name: Download all dependencies
+        run: |
+          go mod download
+          go get -d -v ./...
+          go install -v ./...
+
       - name: Generate Self-Signed TLS Certificate
         run: |
           mkdir -p keys

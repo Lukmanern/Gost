@@ -11,7 +11,6 @@ import (
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/gofiber/fiber/v2"
-	"github.com/valyala/fasthttp"
 )
 
 type GenTokenParams struct {
@@ -103,9 +102,7 @@ func TestJWTHandlerInvalidateToken(t *testing.T) {
 	if token == "" {
 		t.Error("error : token void")
 	}
-
-	app := fiber.New()
-	c := app.AcquireCtx(&fasthttp.RequestCtx{})
+	c := helper.NewFiberCtx()
 	invalidErr1 := jwtHandler.InvalidateToken(c)
 	if invalidErr1 != nil {
 		t.Error("Should error: Expected error for no token")
@@ -164,8 +161,7 @@ func TestJWTHandlerIsAuthenticated(t *testing.T) {
 
 	func() {
 		jwtHandler1 := NewJWTHandler()
-		app := fiber.New()
-		c := app.AcquireCtx(&fasthttp.RequestCtx{})
+		c := helper.NewFiberCtx()
 		jwtHandler1.IsAuthenticated(c)
 		c.Status(fiber.StatusUnauthorized)
 		if c.Context().Response.StatusCode() != fiber.StatusUnauthorized {
@@ -181,8 +177,7 @@ func TestJWTHandlerIsAuthenticated(t *testing.T) {
 			}
 		}()
 		jwtHandler3 := NewJWTHandler()
-		app := fiber.New()
-		c := app.AcquireCtx(&fasthttp.RequestCtx{})
+		c := helper.NewFiberCtx()
 		c.Request().Header.Add(fiber.HeaderAuthorization, " "+token)
 		c.Status(fiber.StatusUnauthorized)
 		jwtHandler3.IsAuthenticated(c)
@@ -201,9 +196,7 @@ func TestJWTHandlerHasPermission(t *testing.T) {
 	if token == "" {
 		t.Error("Error: Token is empty")
 	}
-
-	app := fiber.New()
-	c := app.AcquireCtx(&fasthttp.RequestCtx{})
+	c := helper.NewFiberCtx()
 	c.Request().Header.Add(fiber.HeaderAuthorization, "Bearer "+token)
 	jwtHandler.HasPermission(c, 25)
 	if c.Response().Header.StatusCode() != fiber.StatusUnauthorized {
@@ -220,9 +213,7 @@ func TestJWTHandlerHasRole(t *testing.T) {
 	if token == "" {
 		t.Error("Error: Token is empty")
 	}
-
-	app := fiber.New()
-	c := app.AcquireCtx(&fasthttp.RequestCtx{})
+	c := helper.NewFiberCtx()
 	c.Request().Header.Add(fiber.HeaderAuthorization, "Bearer "+token)
 	jwtHandler.HasRole(c, "test-role")
 	if c.Response().Header.StatusCode() != fiber.StatusUnauthorized {

@@ -54,6 +54,8 @@ jobs:
       - name: Download all dependencies
         run: |
           go mod download
+          go get -d -v ./...
+          go install -v ./...
 
       - name: Run migration
         run: |
