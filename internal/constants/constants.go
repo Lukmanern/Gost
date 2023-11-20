@@ -16,4 +16,6 @@ const (
 	ShouldNotNil   = "should not nil"
 	ShouldEqual    = "should equal"
 	ShouldNotEqual = "should not equal"
+
+	LoginShouldSuccess = "login should success"
 )

@@ -49,7 +49,7 @@ func init() {
 	userRepo = repository.NewUserRepository()
 }
 
-func createUser(roleID int, ctx context.Context) (model.UserRegister, int, error) {
+func createUser(ctx context.Context, roleID int) (data *entity.User, id int) {
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
 		Email:    helper.RandomEmail(),
@@ -57,8 +57,20 @@ func createUser(roleID int, ctx context.Context) (model.UserRegister, int, error
 		RoleID:   1, // admin
 	}
 	id, err := userSvc.Register(ctx, createdUser)
+	if err != nil || id < 1 {
+		log.Fatal("failed creating user at User Controller Test :: createUser func")
+	}
 
-	return createdUser, id, err
+	data, getErr := userRepo.GetByID(ctx, id)
+	if getErr != nil || data == nil {
+		log.Fatal("failed getting user at User Controller Test :: createUser func")
+	}
+	vCode := data.VerificationCode
+	if vCode == nil || data.ActivatedAt != nil {
+		log.Fatal("user should inactivate at User Controller Test :: createUser func")
+	}
+	data.Password = createdUser.Password
+	return data, id
 }
 
 func TestNewUserController(t *testing.T) {
@@ -83,16 +95,13 @@ func TestRegister(t *testing.T) {
 		t.Error(constants.ShouldNotNil)
 	}
 
-	createdUser, userID, createErr := createUser(1, ctx)
-	if createErr != nil || userID <= 0 {
-		t.Fatal("should success create user, user failed to create")
-	}
+	createdUser, userID := createUser(ctx, 1)
 	defer func() {
 		userRepo.Delete(ctx, userID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic ::", r)
+			t.Fatal("panic at TestRegister ::", r)
 		}
 	}()
 
@@ -196,7 +205,7 @@ func TestRegister(t *testing.T) {
 
 	endp := "user/register"
 	for _, tc := range testCases {
-		log.Println(":::::::" + tc.caseName)
+		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -217,7 +226,7 @@ func TestRegister(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode)
+			t.Error(constants.ShouldEqual, resp.StatusCode)
 		}
 
 		if tc.payload != nil {
@@ -256,24 +265,15 @@ func TestAccountActivation(t *testing.T) {
 		t.Error(constants.ShouldNotNil)
 	}
 
-	createdUser, userID, createErr := createUser(1, ctx)
-	if createErr != nil || userID <= 0 {
-		t.Fatal("should success create user, user failed to create")
-	}
-	userByID, getErr := userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	vCode := userByID.VerificationCode
-	if vCode == nil || userByID.ActivatedAt != nil {
-		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
-	}
+	createdUser, userID := createUser(ctx, 1)
+	vCode := createdUser.VerificationCode
+
 	defer func() {
 		userRepo.Delete(ctx, userID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic ::", r)
+			t.Fatal("panic at TestAccountActivation ::", r)
 		}
 	}()
 
@@ -310,7 +310,7 @@ func TestAccountActivation(t *testing.T) {
 
 	endp := "user/verification"
 	for _, tc := range testCases {
-		log.Println(":::::::" + tc.caseName)
+		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -331,7 +331,7 @@ func TestAccountActivation(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode)
+			t.Error(constants.ShouldEqual, resp.StatusCode)
 		}
 
 		// if success
@@ -360,24 +360,15 @@ func TestDeleteAccountActivation(t *testing.T) {
 		t.Error(constants.ShouldNotNil)
 	}
 
-	createdUser, userID, createErr := createUser(1, ctx)
-	if createErr != nil || userID <= 0 {
-		t.Fatal("should success create user, user failed to create")
-	}
-	userByID, getErr := userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	vCode := userByID.VerificationCode
-	if vCode == nil || userByID.ActivatedAt != nil {
-		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
-	}
+	createdUser, userID := createUser(ctx, 1)
+	vCode := createdUser.VerificationCode
+
 	defer func() {
 		userRepo.Delete(ctx, userID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic ::", r)
+			t.Fatal("panic at TestDeleteAccountActivation ::", r)
 		}
 	}()
 
@@ -414,7 +405,7 @@ func TestDeleteAccountActivation(t *testing.T) {
 
 	endp := "user/request-delete"
 	for _, tc := range testCases {
-		log.Println(":::::::" + tc.caseName)
+		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -435,7 +426,7 @@ func TestDeleteAccountActivation(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode, "on", tc.caseName)
+			t.Error(constants.ShouldEqual, resp.StatusCode, "on", tc.caseName)
 		}
 
 		// if success
@@ -465,35 +456,24 @@ func TestForgetPassword(t *testing.T) {
 		t.Error(constants.ShouldNotNil)
 	}
 
-	createdUser, userID, createErr := createUser(1, ctx)
-	if createErr != nil || userID <= 0 {
-		t.Fatal("should success create user, user failed to create")
-	}
-	userByID, getErr := userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	vCode := userByID.VerificationCode
-	if vCode == nil || userByID.ActivatedAt != nil {
-		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
-	}
+	createdUser, userID := createUser(ctx, 1)
+	vCode := createdUser.VerificationCode
 
 	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
 		Code:  *vCode,
-		Email: userByID.Email,
+		Email: createdUser.Email,
 	})
 	if verifyErr != nil {
 		t.Fatal("verification should not error")
 	}
 
 	// value reset
-	userByID = nil
-	getErr = nil
-	userByID, getErr = userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
+	createdUser = nil
+	createdUser, getErr := userRepo.GetByID(ctx, userID)
+	if getErr != nil || createdUser == nil {
 		t.Fatal("should success get user by id")
 	}
-	if userByID.VerificationCode != nil || userByID.ActivatedAt == nil {
+	if createdUser.VerificationCode != nil || createdUser.ActivatedAt == nil {
 		t.Fatal("user should active for now, but its get inactive")
 	}
 
@@ -502,7 +482,7 @@ func TestForgetPassword(t *testing.T) {
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic ::", r)
+			t.Fatal("panic at TestForgetPassword ::", r)
 		}
 	}()
 
@@ -536,7 +516,7 @@ func TestForgetPassword(t *testing.T) {
 
 	endp := "user/forget-password"
 	for _, tc := range testCases {
-		log.Println(":::::::" + tc.caseName)
+		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -557,7 +537,7 @@ func TestForgetPassword(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode)
+			t.Error(constants.ShouldEqual, resp.StatusCode)
 		}
 	}
 }
@@ -572,10 +552,7 @@ func TestResetPassword(t *testing.T) {
 		t.Error(constants.ShouldNotNil)
 	}
 
-	_, userID, createErr := createUser(1, ctx)
-	if createErr != nil || userID <= 0 {
-		t.Fatal("should success create user, user failed to create")
-	}
+	_, userID := createUser(ctx, 1)
 	userByID, getErr := userRepo.GetByID(ctx, userID)
 	if getErr != nil || userByID == nil {
 		t.Fatal("should success get user by id")
@@ -627,7 +604,7 @@ func TestResetPassword(t *testing.T) {
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic ::", r)
+			t.Fatal("panic at TestResetPassword ::", r)
 		}
 	}()
 
@@ -670,7 +647,7 @@ func TestResetPassword(t *testing.T) {
 
 	endp := "user/reset-password"
 	for _, tc := range testCases {
-		log.Println(":::::::" + tc.caseName)
+		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -691,7 +668,7 @@ func TestResetPassword(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error(tc.caseName, "should equal, but got", resp.StatusCode, "want", tc.respCode)
+			t.Error(tc.caseName, constants.ShouldEqual, resp.StatusCode, "want", tc.respCode)
 		}
 
 		if resp.StatusCode == http.StatusAccepted {
@@ -719,24 +696,13 @@ func TestLogin(t *testing.T) {
 	}
 
 	// create inactive user
-	createdUser, userID, createErr := createUser(1, ctx)
-	if createErr != nil || userID <= 0 {
-		t.Fatal("should success create user, user failed to create")
-	}
-	userByID, getErr := userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	vCode := userByID.VerificationCode
-	if vCode == nil || userByID.ActivatedAt != nil {
-		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
-	}
+	createdUser, userID := createUser(ctx, 1)
 	defer func() {
 		userRepo.Delete(ctx, userID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic ::", r)
+			t.Fatal("panic at TestLogin ::", r)
 		}
 	}()
 
@@ -863,7 +829,7 @@ func TestLogin(t *testing.T) {
 
 	endp := "user/login"
 	for _, tc := range testCases {
-		log.Println(":::::::" + tc.caseName)
+		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(&tc.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -884,7 +850,7 @@ func TestLogin(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error(tc.caseName, "should equal, but got", resp.StatusCode, "want", tc.respCode)
+			t.Error(tc.caseName, constants.ShouldEqual, resp.StatusCode, "want", tc.respCode)
 		}
 	}
 
@@ -904,7 +870,7 @@ func TestLogin(t *testing.T) {
 		},
 	}
 	for i := 0; i < 7; i++ {
-		log.Println(":::::::" + testCase.caseName)
+		log.Println("case-name: " + testCase.caseName)
 		jsonObject, err := json.Marshal(&testCase.payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
@@ -925,7 +891,7 @@ func TestLogin(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != testCase.respCode {
-			t.Error(testCase.caseName, "should equal, but got", resp.StatusCode, "want", testCase.respCode)
+			t.Error(testCase.caseName, constants.ShouldEqual, resp.StatusCode, "want", testCase.respCode)
 		}
 	}
 
@@ -950,33 +916,15 @@ func TestLogout(t *testing.T) {
 	}
 
 	// create inactive user
-	createdUser, userID, createErr := createUser(1, ctx)
-	if createErr != nil || userID <= 0 {
-		t.Fatal("should success create user, user failed to create")
-	}
-	userByID, getErr := userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	vCode := userByID.VerificationCode
-	if vCode == nil || userByID.ActivatedAt != nil {
-		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
-	}
+	createdUser, userID := createUser(ctx, 1)
+	vCode := createdUser.VerificationCode
 
 	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
 		Code:  *vCode,
-		Email: userByID.Email,
+		Email: createdUser.Email,
 	})
 	if verifyErr != nil {
 		t.Error(constants.ShouldNotErr)
-	}
-	userByID = nil
-	userByID, getErr = userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	if userByID.VerificationCode != nil || userByID.ActivatedAt == nil {
-		t.Fatal("user should active for now, verification code should nil")
 	}
 
 	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
@@ -985,14 +933,14 @@ func TestLogout(t *testing.T) {
 		IP:       helper.RandomIPAddress(),
 	})
 	if userToken == "" || loginErr != nil {
-		t.Error("login should success")
+		t.Fatal(constants.LoginShouldSuccess)
 	}
 	defer func() {
 		userRepo.Delete(ctx, userID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic ::", r)
+			t.Fatal("panic at TestLogout ::", r)
 		}
 	}()
 
@@ -1009,10 +957,10 @@ func TestLogout(t *testing.T) {
 		{
 			caseName: "failed: fake claims",
 			respCode: http.StatusUnauthorized,
-			token:    "fake-token",
+			token:    "fake-token-123",
 		},
 		{
-			caseName: "failed: payload nil, token nil",
+			caseName: "failed: payload and token nil",
 			respCode: http.StatusUnauthorized,
 			token:    "",
 		},
@@ -1030,7 +978,7 @@ func TestLogout(t *testing.T) {
 		ctr.Logout(c)
 		resp := c.Response()
 		if resp.StatusCode() != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode())
+			t.Error(constants.ShouldEqual, resp.StatusCode())
 		}
 
 		if resp.StatusCode() == http.StatusOK {
@@ -1063,33 +1011,15 @@ func TestUpdatePassword(t *testing.T) {
 	}
 
 	// create inactive user
-	createdUser, userID, createErr := createUser(1, ctx)
-	if createErr != nil || userID <= 0 {
-		t.Fatal("should success create user, user failed to create")
-	}
-	userByID, getErr := userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	vCode := userByID.VerificationCode
-	if vCode == nil || userByID.ActivatedAt != nil {
-		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
-	}
+	createdUser, userID := createUser(ctx, 1)
+	vCode := createdUser.VerificationCode
 
 	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
 		Code:  *vCode,
-		Email: userByID.Email,
+		Email: createdUser.Email,
 	})
 	if verifyErr != nil {
 		t.Error(constants.ShouldNotErr)
-	}
-	userByID = nil
-	userByID, getErr = userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	if userByID.VerificationCode != nil || userByID.ActivatedAt == nil {
-		t.Fatal("user should active for now, verification code should nil")
 	}
 
 	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
@@ -1098,14 +1028,14 @@ func TestUpdatePassword(t *testing.T) {
 		IP:       helper.RandomIPAddress(),
 	})
 	if userToken == "" || loginErr != nil {
-		t.Error("login should success")
+		t.Fatal(constants.LoginShouldSuccess)
 	}
 	defer func() {
 		userRepo.Delete(ctx, userID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic ::", r)
+			t.Fatal("panic at TestUpdatePassword ::", r)
 		}
 	}()
 
@@ -1181,12 +1111,12 @@ func TestUpdatePassword(t *testing.T) {
 		ctr.UpdatePassword(c)
 		resp := c.Response()
 		if resp.StatusCode() != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode(), "want", tc.respCode)
+			t.Error(constants.ShouldEqual, resp.StatusCode(), "want", tc.respCode)
 		}
 
 		if resp.StatusCode() == http.StatusNoContent {
 			token, loginErr := userSvc.Login(ctx, model.UserLogin{
-				Email:    userByID.Email,
+				Email:    createdUser.Email,
 				Password: tc.payload.NewPassword,
 				IP:       helper.RandomIPAddress(),
 			})
@@ -1208,33 +1138,15 @@ func TestUpdateProfile(t *testing.T) {
 	}
 
 	// create inactive user
-	createdUser, userID, createErr := createUser(1, ctx)
-	if createErr != nil || userID <= 0 {
-		t.Fatal("should success create user, user failed to create")
-	}
-	userByID, getErr := userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	vCode := userByID.VerificationCode
-	if vCode == nil || userByID.ActivatedAt != nil {
-		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
-	}
+	createdUser, userID := createUser(ctx, 1)
+	vCode := createdUser.VerificationCode
 
 	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
 		Code:  *vCode,
-		Email: userByID.Email,
+		Email: createdUser.Email,
 	})
 	if verifyErr != nil {
 		t.Error(constants.ShouldNotErr)
-	}
-	userByID = nil
-	userByID, getErr = userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	if userByID.VerificationCode != nil || userByID.ActivatedAt == nil {
-		t.Fatal("user should active for now, verification code should nil")
 	}
 
 	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
@@ -1243,14 +1155,14 @@ func TestUpdateProfile(t *testing.T) {
 		IP:       helper.RandomIPAddress(),
 	})
 	if userToken == "" || loginErr != nil {
-		t.Error("login should success")
+		t.Fatal(constants.LoginShouldSuccess)
 	}
 	defer func() {
 		userRepo.Delete(ctx, userID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic ::", r)
+			t.Fatal("panic at TestUpdateProfile ::", r)
 		}
 	}()
 
@@ -1312,7 +1224,7 @@ func TestUpdateProfile(t *testing.T) {
 		ctr.UpdateProfile(c)
 		resp := c.Response()
 		if resp.StatusCode() != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode(), "want", tc.respCode)
+			t.Error(constants.ShouldEqual, resp.StatusCode(), "want", tc.respCode)
 		}
 
 		if resp.StatusCode() == http.StatusNoContent {
@@ -1338,33 +1250,15 @@ func TestMyProfile(t *testing.T) {
 	}
 
 	// create inactive user
-	createdUser, userID, createErr := createUser(1, ctx)
-	if createErr != nil || userID <= 0 {
-		t.Fatal("should success create user, user failed to create")
-	}
-	userByID, getErr := userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	vCode := userByID.VerificationCode
-	if vCode == nil || userByID.ActivatedAt != nil {
-		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
-	}
+	createdUser, userID := createUser(ctx, 1)
+	vCode := createdUser.VerificationCode
 
 	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
 		Code:  *vCode,
-		Email: userByID.Email,
+		Email: createdUser.Email,
 	})
 	if verifyErr != nil {
 		t.Error(constants.ShouldNotErr)
-	}
-	userByID = nil
-	userByID, getErr = userRepo.GetByID(ctx, userID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	if userByID.VerificationCode != nil || userByID.ActivatedAt == nil {
-		t.Fatal("user should active for now, verification code should nil")
 	}
 
 	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
@@ -1373,14 +1267,14 @@ func TestMyProfile(t *testing.T) {
 		IP:       helper.RandomIPAddress(),
 	})
 	if userToken == "" || loginErr != nil {
-		t.Error("login should success")
+		t.Fatal(constants.LoginShouldSuccess)
 	}
 	defer func() {
 		userRepo.Delete(ctx, userID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic ::", r)
+			t.Fatal("panic at TestMyProfile ::", r)
 		}
 	}()
 
@@ -1418,7 +1312,7 @@ func TestMyProfile(t *testing.T) {
 		ctr.MyProfile(c)
 		resp := c.Response()
 		if resp.StatusCode() != tc.respCode {
-			t.Error("should equal, but got", resp.StatusCode())
+			t.Error(constants.ShouldEqual, resp.StatusCode())
 		}
 
 		if resp.StatusCode() == http.StatusOK {
@@ -1441,7 +1335,7 @@ func TestMyProfile(t *testing.T) {
 			if respStruct.Message != response.MessageSuccessLoaded {
 				t.Error("Expected message to be equal")
 			}
-			if respStruct.Data.Email != createdUser.Email || respStruct.Data.Role.ID != createdUser.RoleID {
+			if respStruct.Data.Email != createdUser.Email || respStruct.Data.Role.ID != createdUser.Roles[0].ID {
 				t.Error("email and other should equal")
 			}
 		}
