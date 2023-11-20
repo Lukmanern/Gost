@@ -54,7 +54,6 @@ func init() {
 }
 
 func TestPermNewPermissionController(t *testing.T) {
-	t.Parallel()
 	permSvc := service.NewPermissionService()
 	permCtr := NewPermissionController(permSvc)
 
@@ -64,7 +63,6 @@ func TestPermNewPermissionController(t *testing.T) {
 }
 
 func TestPermCreate(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -171,7 +169,6 @@ func TestPermCreate(t *testing.T) {
 }
 
 func TestPermGet(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -239,7 +236,6 @@ func TestPermGet(t *testing.T) {
 }
 
 func TestPermGetAll(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -314,7 +310,6 @@ func TestPermGetAll(t *testing.T) {
 }
 
 func TestPermUpdate(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
@@ -430,7 +425,6 @@ func TestPermUpdate(t *testing.T) {
 }
 
 func TestPermDelete(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
