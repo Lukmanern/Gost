@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -48,6 +49,18 @@ func init() {
 	userRepo = repository.NewUserRepository()
 }
 
+func createUser(roleID int, ctx context.Context) (model.UserRegister, int, error) {
+	createdUser := model.UserRegister{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmail(),
+		Password: helper.RandomString(10),
+		RoleID:   1, // admin
+	}
+	id, err := userSvc.Register(ctx, createdUser)
+
+	return createdUser, id, err
+}
+
 func TestNewUserController(t *testing.T) {
 	t.Parallel()
 	permService := permService.NewPermissionService()
@@ -69,16 +82,8 @@ func TestRegister(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	userID, createErr := userSvc.Register(ctx, createdUser)
+	createdUser, userID, createErr := createUser(1, ctx)
 	if createErr != nil || userID <= 0 {
 		t.Fatal("should success create user, user failed to create")
 	}
@@ -250,16 +255,8 @@ func TestAccountActivation(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	userID, createErr := userSvc.Register(ctx, createdUser)
+	createdUser, userID, createErr := createUser(1, ctx)
 	if createErr != nil || userID <= 0 {
 		t.Fatal("should success create user, user failed to create")
 	}
@@ -362,16 +359,8 @@ func TestDeleteAccountActivation(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	userID, createErr := userSvc.Register(ctx, createdUser)
+	createdUser, userID, createErr := createUser(1, ctx)
 	if createErr != nil || userID <= 0 {
 		t.Fatal("should success create user, user failed to create")
 	}
@@ -475,16 +464,8 @@ func TestForgetPassword(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	userID, createErr := userSvc.Register(ctx, createdUser)
+	createdUser, userID, createErr := createUser(1, ctx)
 	if createErr != nil || userID <= 0 {
 		t.Fatal("should success create user, user failed to create")
 	}
@@ -590,16 +571,8 @@ func TestResetPassword(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	userID, createErr := userSvc.Register(ctx, createdUser)
+	_, userID, createErr := createUser(1, ctx)
 	if createErr != nil || userID <= 0 {
 		t.Fatal("should success create user, user failed to create")
 	}
@@ -635,7 +608,7 @@ func TestResetPassword(t *testing.T) {
 	}
 	forgetPassErr := userSvc.ForgetPassword(ctx, userForgetPasswd)
 	if forgetPassErr != nil {
-		t.Error(constants.ShouldNotErr)
+		t.Error(constants.ShouldNotErr, "but go err:", forgetPassErr.Error())
 	}
 
 	// value reset
@@ -744,17 +717,9 @@ func TestLogin(t *testing.T) {
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	// create inactive user
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	userID, createErr := userSvc.Register(ctx, createdUser)
+	createdUser, userID, createErr := createUser(1, ctx)
 	if createErr != nil || userID <= 0 {
 		t.Fatal("should success create user, user failed to create")
 	}
@@ -985,13 +950,7 @@ func TestLogout(t *testing.T) {
 	}
 
 	// create inactive user
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	userID, createErr := userSvc.Register(ctx, createdUser)
+	createdUser, userID, createErr := createUser(1, ctx)
 	if createErr != nil || userID <= 0 {
 		t.Fatal("should success create user, user failed to create")
 	}
@@ -1104,13 +1063,7 @@ func TestUpdatePassword(t *testing.T) {
 	}
 
 	// create inactive user
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	userID, createErr := userSvc.Register(ctx, createdUser)
+	createdUser, userID, createErr := createUser(1, ctx)
 	if createErr != nil || userID <= 0 {
 		t.Fatal("should success create user, user failed to create")
 	}
@@ -1255,13 +1208,7 @@ func TestUpdateProfile(t *testing.T) {
 	}
 
 	// create inactive user
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	userID, createErr := userSvc.Register(ctx, createdUser)
+	createdUser, userID, createErr := createUser(1, ctx)
 	if createErr != nil || userID <= 0 {
 		t.Fatal("should success create user, user failed to create")
 	}
@@ -1391,13 +1338,7 @@ func TestMyProfile(t *testing.T) {
 	}
 
 	// create inactive user
-	createdUser := model.UserRegister{
-		Name:     helper.RandomString(10),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(10),
-		RoleID:   1, // admin
-	}
-	userID, createErr := userSvc.Register(ctx, createdUser)
+	createdUser, userID, createErr := createUser(1, ctx)
 	if createErr != nil || userID <= 0 {
 		t.Fatal("should success create user, user failed to create")
 	}
