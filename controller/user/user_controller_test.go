@@ -49,6 +49,7 @@ func init() {
 }
 
 func TestNewUserController(t *testing.T) {
+	t.Parallel()
 	permService := permService.NewPermissionService()
 	roleService := roleService.NewRoleService(permService)
 	userService := service.NewUserService(roleService)
@@ -60,6 +61,7 @@ func TestNewUserController(t *testing.T) {
 }
 
 func TestRegister(t *testing.T) {
+	t.Parallel()
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -240,6 +242,7 @@ func TestRegister(t *testing.T) {
 }
 
 func TestAccountActivation(t *testing.T) {
+	t.Parallel()
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -351,6 +354,7 @@ func TestAccountActivation(t *testing.T) {
 }
 
 func TestDeleteAccountActivation(t *testing.T) {
+	t.Parallel()
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -463,6 +467,7 @@ func TestDeleteAccountActivation(t *testing.T) {
 }
 
 func TestForgetPassword(t *testing.T) {
+	t.Parallel()
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -577,6 +582,7 @@ func TestForgetPassword(t *testing.T) {
 }
 
 func TestResetPassword(t *testing.T) {
+	t.Parallel()
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -730,6 +736,7 @@ func TestResetPassword(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
+	t.Parallel()
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -968,6 +975,7 @@ func TestLogin(t *testing.T) {
 }
 
 func TestLogout(t *testing.T) {
+	t.Parallel()
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -1087,6 +1095,7 @@ func TestLogout(t *testing.T) {
 }
 
 func TestUpdatePassword(t *testing.T) {
+	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
@@ -1236,6 +1245,7 @@ func TestUpdatePassword(t *testing.T) {
 }
 
 func TestUpdateProfile(t *testing.T) {
+	t.Parallel()
 	// unaudit
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
@@ -1372,6 +1382,7 @@ func TestUpdateProfile(t *testing.T) {
 }
 
 func TestMyProfile(t *testing.T) {
+	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
