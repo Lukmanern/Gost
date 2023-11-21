@@ -14,10 +14,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type testCase struct {
+	Name             string
+	Handler          func(*fiber.Ctx) error
+	AdditionalAction func()
+	ResponseCode     int
+	ResponseBody     response.Response
+}
+
 const (
-	TestName    = "Development Controller Test"
-	FilePath    = "./controller/development"
-	AddTestName = ", at " + TestName + " in " + FilePath
+	testName    = "Development Controller Test"
+	filePath    = "./controller/development"
+	addTestName = ", at " + testName + " in " + filePath
 )
 
 func init() {
@@ -32,29 +40,20 @@ func TestNewDevControllerImpl(t *testing.T) {
 	assert := assert.New(t)
 	ctr := NewDevControllerImpl()
 	c := helper.NewFiberCtx()
-	assert.NotNil(ctr, "Expected NewDevControllerImpl to not be nil"+AddTestName)
-	assert.NotNil(c, "Expected FiberCtx to not be nil"+AddTestName)
-}
-
-type TestCase struct {
-	Name             string
-	Handler          func(*fiber.Ctx) error
-	AdditionalAction func()
-	Payload          map[string]any
-	ResponseCode     int
-	ResponseBody     response.Response
+	assert.NotNil(ctr, "Expected NewDevControllerImpl to not be nil"+addTestName)
+	assert.NotNil(c, "Expected FiberCtx to not be nil"+addTestName)
 }
 
 func TestAllControllers(t *testing.T) {
 	assert := assert.New(t)
 	ctr := NewDevControllerImpl()
 	c := helper.NewFiberCtx()
-	assert.NotNil(ctr, "Expected NewDevControllerImpl to not be nil"+AddTestName)
-	assert.NotNil(c, "Expected FiberCtx to not be nil"+AddTestName)
+	assert.NotNil(ctr, "Expected NewDevControllerImpl to not be nil"+addTestName)
+	assert.NotNil(c, "Expected FiberCtx to not be nil"+addTestName)
 
-	testCases := []TestCase{
+	testCases := []testCase{
 		{
-			Name:             "PingDB" + AddTestName,
+			Name:             "PingDB" + addTestName,
 			Handler:          ctr.PingDatabase,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusOK,
@@ -63,7 +62,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:             "PingRedis" + AddTestName,
+			Name:             "PingRedis" + addTestName,
 			Handler:          ctr.PingRedis,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusOK,
@@ -72,7 +71,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:             "Panic" + AddTestName,
+			Name:             "Panic" + addTestName,
 			Handler:          ctr.Panic,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusInternalServerError,
@@ -81,7 +80,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:    "GetFromRedis-1" + AddTestName,
+			Name:    "GetFromRedis-1" + addTestName,
 			Handler: ctr.GetFromRedis,
 			AdditionalAction: func() {
 				connector.LoadRedisCache().FlushAll()
@@ -92,7 +91,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:             "StoringToRedis" + AddTestName,
+			Name:             "StoringToRedis" + addTestName,
 			Handler:          ctr.StoringToRedis,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusCreated,
@@ -101,7 +100,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:             "GetFromRedis-2" + AddTestName,
+			Name:             "GetFromRedis-2" + addTestName,
 			Handler:          ctr.GetFromRedis,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusOK,
@@ -110,7 +109,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:    "GetFromRedis-3" + AddTestName,
+			Name:    "GetFromRedis-3" + addTestName,
 			Handler: ctr.GetFromRedis,
 			AdditionalAction: func() {
 				connector.LoadRedisCache().FlushAll()
@@ -121,7 +120,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:             "CheckNewRole" + AddTestName,
+			Name:             "CheckNewRole" + addTestName,
 			Handler:          ctr.CheckNewRole,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusOK,
@@ -130,7 +129,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:             "CheckNewPermission" + AddTestName,
+			Name:             "CheckNewPermission" + addTestName,
 			Handler:          ctr.CheckNewPermission,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusOK,
@@ -139,7 +138,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:             "UploadFile" + AddTestName,
+			Name:             "UploadFile" + addTestName,
 			Handler:          ctr.UploadFile,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusBadRequest,
@@ -148,7 +147,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:             "RemoveFile" + AddTestName,
+			Name:             "RemoveFile" + addTestName,
 			Handler:          ctr.RemoveFile,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusBadRequest,
@@ -157,7 +156,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:             "GetFilesList" + AddTestName,
+			Name:             "GetFilesList" + addTestName,
 			Handler:          ctr.GetFilesList,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusOK,
@@ -166,7 +165,7 @@ func TestAllControllers(t *testing.T) {
 			},
 		},
 		{
-			Name:             "FakeHandler" + AddTestName,
+			Name:             "FakeHandler" + addTestName,
 			Handler:          ctr.FakeHandler,
 			AdditionalAction: nil,
 			ResponseCode:     fiber.StatusOK,
