@@ -365,17 +365,13 @@ func TestForgetPassword(t *testing.T) {
 		Code:  *vCode,
 		Email: createdUser.Email,
 	})
-	if verifyErr != nil {
-		t.Fatal("verification should not error")
-	}
+	assert.Nil(t, verifyErr, "verification should not error")
 
 	createdUser, getErr := userRepo.GetByID(ctx, createdUser.ID)
-	if getErr != nil || createdUser == nil {
-		t.Fatal("getByID should success")
-	}
-	if createdUser.VerificationCode != nil || createdUser.ActivatedAt == nil {
-		t.Fatal("user should active for now, but its get inactive")
-	}
+	assert.Nil(t, getErr, "getByID should succeed")
+	assert.NotNil(t, createdUser, "getByID should return a non-nil user")
+	assert.Nil(t, createdUser.VerificationCode, "VerificationCode should be nil")
+	assert.NotNil(t, createdUser.ActivatedAt, "ActivatedAt should be not nil")
 
 	defer func() {
 		userRepo.Delete(ctx, createdUser.ID)
@@ -447,50 +443,40 @@ func TestResetPassword(t *testing.T) {
 
 	createdUser := createUser(ctx, 1)
 	userByID, getErr := userRepo.GetByID(ctx, createdUser.ID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
+	assert.Nil(t, getErr, "Getting user by ID should succeed")
+	assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
 	vCode := userByID.VerificationCode
-	if vCode == nil || userByID.ActivatedAt != nil {
-		t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
-	}
+	assert.NotNil(t, vCode, "VerificationCode should be not nil")
+	assert.Nil(t, userByID.ActivatedAt, "ActivatedAt should be nil")
+
 	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
 		Code:  *vCode,
 		Email: userByID.Email,
 	})
-	if verifyErr != nil {
-		t.Error(constants.ShouldNotErr)
-	}
+	assert.Nil(t, verifyErr, constants.ShouldNotErr)
 
 	// value reset
 	userByID = nil
 	getErr = nil
 	userByID, getErr = userRepo.GetByID(ctx, createdUser.ID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	if userByID.VerificationCode != nil || userByID.ActivatedAt == nil {
-		t.Fatal("user should active for now, but its get inactive")
-	}
+	assert.Nil(t, getErr, "Getting user by ID should succeed")
+	assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
+	assert.Nil(t, userByID.VerificationCode, "VerificationCode should be nil")
+	assert.NotNil(t, userByID.ActivatedAt, "ActivatedAt should be nil")
 
-	userForgetPasswd := model.UserForgetPassword{
+	forgetPassErr := userSvc.ForgetPassword(ctx, model.UserForgetPassword{
 		Email: userByID.Email,
-	}
-	forgetPassErr := userSvc.ForgetPassword(ctx, userForgetPasswd)
-	if forgetPassErr != nil {
-		t.Error(constants.ShouldNotErr, "but go err:", forgetPassErr.Error())
-	}
+	})
+	assert.Nil(t, forgetPassErr, constants.ShouldNotErr)
 
 	// value reset
 	userByID = nil
 	getErr = nil
 	userByID, getErr = userRepo.GetByID(ctx, createdUser.ID)
-	if getErr != nil || userByID == nil {
-		t.Fatal("should success get user by id")
-	}
-	if userByID.VerificationCode == nil || userByID.ActivatedAt == nil {
-		t.Fatal("user should active for now, and verification code should not nil")
-	}
+	assert.Nil(t, getErr, "Getting user by ID should succeed")
+	assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
+	assert.NotNil(t, userByID.VerificationCode, "VerificationCode should not be nil")
+	assert.NotNil(t, userByID.ActivatedAt, "ActivatedAt should not be nil")
 
 	defer func() {
 		userRepo.Delete(ctx, createdUser.ID)
@@ -585,26 +571,25 @@ func TestLogin(t *testing.T) {
 	func() {
 		createdUser2 := createUser(ctx, 1)
 		userByID, getErr := userRepo.GetByID(ctx, createdUser2.ID)
-		if getErr != nil || userByID == nil {
-			t.Fatal("should success get user by id")
-		}
+		assert.Nil(t, getErr, "Getting user by ID should succeed")
+		assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
 		vCode := userByID.VerificationCode
-		if vCode == nil || userByID.ActivatedAt != nil {
-			t.Fatal("user should inactivate for now, but its get activated/ nulling vCode")
-		}
+		assert.NotNil(t, vCode, "VerificationCode should be not nil")
+		assert.Nil(t, userByID.ActivatedAt, "ActivatedAt should be nil")
 
 		verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
 			Code:  *vCode,
 			Email: userByID.Email,
 		})
-		if verifyErr != nil {
-			t.Error(constants.ShouldNotErr)
-		}
+		assert.Nil(t, verifyErr, constants.ShouldNotErr)
+
+		// reset value
 		userByID = nil
 		userByID, getErr = userRepo.GetByID(ctx, createdUser2.ID)
-		if getErr != nil || userByID == nil {
-			t.Fatal("should success get user by id")
-		}
+		assert.Nil(t, getErr, "Getting user by ID should succeed")
+		assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
+		assert.Nil(t, userByID.VerificationCode, "VerificationCode should not be nil")
+		assert.NotNil(t, userByID.ActivatedAt, "ActivatedAt should not be nil")
 
 		createdActiveUser = *userByID
 		createdActiveUser.Password = createdUser2.Password
@@ -735,22 +720,18 @@ func TestLogin(t *testing.T) {
 		}
 		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
-		if httpReqErr != nil {
-			t.Fatal(constants.ShouldNotNil)
-		}
+		assert.Nil(t, httpReqErr, constants.ShouldNil)
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 		app := fiber.New()
 		app.Post(endp, ctr.Login)
 		req.Close = true
-		resp, err := app.Test(req, -1)
+		res, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal(constants.ShouldNotErr)
 		}
-		defer resp.Body.Close()
-		if resp.StatusCode != testCase.ResponseCode {
-			t.Error(testCase.Name, constants.ShouldEqual, resp.StatusCode, "want", testCase.ResponseCode)
-		}
+		defer res.Body.Close()
+		assert.Equal(t, res.StatusCode, testCase.ResponseCode, constants.ShouldEqual, res.StatusCode, "want", testCase.ResponseCode)
 	}
 
 	redis := connector.LoadRedisCache()
@@ -972,6 +953,8 @@ func createUser(ctx context.Context, roleID int) (data *entity.User) {
 	data.Password = createdUser.Password
 	return data
 }
+
+// Todo : create func createActiveUser
 
 // TestNewUserController
 // TestRegister
