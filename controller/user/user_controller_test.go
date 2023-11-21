@@ -28,11 +28,10 @@ import (
 )
 
 type testCase struct {
-	Name             string
-	Handler          func(*fiber.Ctx) error
-	AdditionalAction func()
-	ResponseCode     int
-	Payload          any
+	Name         string
+	Handler      func(*fiber.Ctx) error
+	ResponseCode int
+	Payload      any
 }
 
 const (
@@ -86,9 +85,9 @@ func TestRegister(t *testing.T) {
 	assert.NotNil(t, c, constants.ShouldNotNil)
 	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
-	createdUser, userID := createUser(ctx, 1)
+	createdUser := createUser(ctx, 1)
 	defer func() {
-		userRepo.Delete(ctx, userID)
+		userRepo.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -206,11 +205,11 @@ func TestAccountActivation(t *testing.T) {
 	assert.NotNil(t, c, constants.ShouldNotNil)
 	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
-	createdUser, userID := createUser(ctx, 1)
+	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
 
 	defer func() {
-		userRepo.Delete(ctx, userID)
+		userRepo.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -285,11 +284,11 @@ func TestDeleteAccountActivation(t *testing.T) {
 	assert.NotNil(t, c, constants.ShouldNotNil)
 	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
-	createdUser, userID := createUser(ctx, 1)
+	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
 
 	defer func() {
-		userRepo.Delete(ctx, userID)
+		userRepo.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -359,7 +358,7 @@ func TestForgetPassword(t *testing.T) {
 	assert.NotNil(t, c, constants.ShouldNotNil)
 	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
-	createdUser, userID := createUser(ctx, 1)
+	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
 
 	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
@@ -370,9 +369,7 @@ func TestForgetPassword(t *testing.T) {
 		t.Fatal("verification should not error")
 	}
 
-	// value reset
-	createdUser = nil
-	createdUser, getErr := userRepo.GetByID(ctx, userID)
+	createdUser, getErr := userRepo.GetByID(ctx, createdUser.ID)
 	if getErr != nil || createdUser == nil {
 		t.Fatal("getByID should success")
 	}
@@ -381,7 +378,7 @@ func TestForgetPassword(t *testing.T) {
 	}
 
 	defer func() {
-		userRepo.Delete(ctx, userID)
+		userRepo.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -448,8 +445,8 @@ func TestResetPassword(t *testing.T) {
 	assert.NotNil(t, c, constants.ShouldNotNil)
 	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
-	_, userID := createUser(ctx, 1)
-	userByID, getErr := userRepo.GetByID(ctx, userID)
+	createdUser := createUser(ctx, 1)
+	userByID, getErr := userRepo.GetByID(ctx, createdUser.ID)
 	if getErr != nil || userByID == nil {
 		t.Fatal("should success get user by id")
 	}
@@ -468,7 +465,7 @@ func TestResetPassword(t *testing.T) {
 	// value reset
 	userByID = nil
 	getErr = nil
-	userByID, getErr = userRepo.GetByID(ctx, userID)
+	userByID, getErr = userRepo.GetByID(ctx, createdUser.ID)
 	if getErr != nil || userByID == nil {
 		t.Fatal("should success get user by id")
 	}
@@ -487,7 +484,7 @@ func TestResetPassword(t *testing.T) {
 	// value reset
 	userByID = nil
 	getErr = nil
-	userByID, getErr = userRepo.GetByID(ctx, userID)
+	userByID, getErr = userRepo.GetByID(ctx, createdUser.ID)
 	if getErr != nil || userByID == nil {
 		t.Fatal("should success get user by id")
 	}
@@ -496,7 +493,7 @@ func TestResetPassword(t *testing.T) {
 	}
 
 	defer func() {
-		userRepo.Delete(ctx, userID)
+		userRepo.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -573,9 +570,9 @@ func TestLogin(t *testing.T) {
 	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
 	// create inactive user
-	createdUser, userID := createUser(ctx, 1)
+	createdUser := createUser(ctx, 1)
 	defer func() {
-		userRepo.Delete(ctx, userID)
+		userRepo.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -586,18 +583,8 @@ func TestLogin(t *testing.T) {
 	// create active user
 	createdActiveUser := entity.User{}
 	func() {
-		createdUser2 := model.UserRegister{
-			Name:     helper.RandomString(10),
-			Email:    helper.RandomEmail(),
-			Password: helper.RandomString(10),
-			RoleID:   1, // admin
-		}
-		userID, createErr := userSvc.Register(ctx, createdUser2)
-		if createErr != nil || userID <= 0 {
-			t.Fatal("should success create user, user failed to create")
-		}
-
-		userByID, getErr := userRepo.GetByID(ctx, userID)
+		createdUser2 := createUser(ctx, 1)
+		userByID, getErr := userRepo.GetByID(ctx, createdUser2.ID)
 		if getErr != nil || userByID == nil {
 			t.Fatal("should success get user by id")
 		}
@@ -614,7 +601,7 @@ func TestLogin(t *testing.T) {
 			t.Error(constants.ShouldNotErr)
 		}
 		userByID = nil
-		userByID, getErr = userRepo.GetByID(ctx, userID)
+		userByID, getErr = userRepo.GetByID(ctx, createdUser2.ID)
 		if getErr != nil || userByID == nil {
 			t.Fatal("should success get user by id")
 		}
@@ -781,12 +768,83 @@ func TestLogout(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
+	assert.NotNil(t, ctr, constants.ShouldNotNil)
+	assert.NotNil(t, c, constants.ShouldNotNil)
+	assert.NotNil(t, ctx, constants.ShouldNotNil)
+
+	// create inactive user
+	createdUser := createUser(ctx, 1)
+	vCode := createdUser.VerificationCode
+
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: createdUser.Email,
+	})
+	if verifyErr != nil {
+		t.Error(constants.ShouldNotErr)
+	}
+
+	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
+		Email:    createdUser.Email,
+		Password: createdUser.Password,
+		IP:       helper.RandomIPAddress(),
+	})
+	if userToken == "" || loginErr != nil {
+		t.Fatal("failed login"+addTestName, constants.LoginShouldSuccess)
+	}
+	defer func() {
+		userRepo.Delete(ctx, createdUser.ID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic at TestLogout "+addTestName, r)
+		}
+	}()
+
+	testCases := []testCase{
+		{
+			Name:         "success",
+			ResponseCode: http.StatusOK,
+			Payload:      userToken,
+		},
+		{
+			Name:         "failed logout: fake claims",
+			ResponseCode: http.StatusUnauthorized,
+			Payload:      "fake-Token-123",
+		},
+		{
+			Name:         "failed: Payload and Token nil",
+			ResponseCode: http.StatusUnauthorized,
+			Payload:      "",
+		},
+	}
+
+	jwtHandler := middleware.NewJWTHandler()
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		fakeClaims := jwtHandler.GenerateClaims(tc.Payload.(string))
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
+		}
+		ctr.Logout(c)
+		res := c.Response()
+		assert.Equal(t, res.StatusCode(), tc.ResponseCode)
+	}
+}
+
+func TestUpdatePassword(t *testing.T) {
+	t.Parallel()
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
 		t.Error(constants.ShouldNotNil)
 	}
 
 	// create inactive user
-	createdUser, userID := createUser(ctx, 1)
+	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
 
 	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
@@ -806,29 +864,64 @@ func TestLogout(t *testing.T) {
 		t.Fatal(constants.LoginShouldSuccess)
 	}
 	defer func() {
-		userRepo.Delete(ctx, userID)
+		userRepo.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic at TestLogout ::", r)
+			t.Fatal("panic at TestUpdatePassword ::", r)
 		}
 	}()
 
-	testCases := []testCase{
+	testCases := []struct {
+		Name         string
+		ResponseCode int
+		Token        string
+		Payload      *model.UserPasswordUpdate
+	}{
 		{
 			Name:         "success",
-			ResponseCode: http.StatusOK,
-			Payload:      userToken,
+			ResponseCode: http.StatusNoContent,
+			Token:        userToken,
+			Payload: &model.UserPasswordUpdate{
+				OldPassword:        createdUser.Password,
+				NewPassword:        "passwordNew123",
+				NewPasswordConfirm: "passwordNew123",
+			},
 		},
 		{
-			Name:         "failed logout: fake claims",
-			ResponseCode: http.StatusUnauthorized,
-			Payload:      "fake-token-123",
+			Name:         "success",
+			ResponseCode: http.StatusNoContent,
+			Token:        userToken,
+			Payload: &model.UserPasswordUpdate{
+				OldPassword:        "passwordNew123",
+				NewPassword:        "passwordNew12345",
+				NewPasswordConfirm: "passwordNew12345",
+			},
 		},
 		{
-			Name:         "failed: payload and token nil",
+			Name:         "failed update password: no new password",
+			ResponseCode: http.StatusBadRequest,
+			Token:        userToken,
+			Payload: &model.UserPasswordUpdate{
+				OldPassword:        "noNewPassword",
+				NewPassword:        "noNewPassword",
+				NewPasswordConfirm: "noNewPassword",
+			},
+		},
+		{
+			Name:         "failed update password: Payload nil",
+			ResponseCode: http.StatusBadRequest,
+			Token:        userToken,
+		},
+		{
+			Name:         "failed update password: fake claims",
 			ResponseCode: http.StatusUnauthorized,
-			Payload:      "",
+			Token:        "fake Token 1234",
+		},
+		{
+			Name:         "failed update password: Payload nil, Token nil",
+			ResponseCode: http.StatusUnauthorized,
+			Token:        "",
 		},
 	}
 
@@ -837,19 +930,26 @@ func TestLogout(t *testing.T) {
 		c := helper.NewFiberCtx()
 		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-		fakeClaims := jwtHandler.GenerateClaims(tc.Payload.(string))
+		if tc.Payload != nil {
+			requestBody, err := json.Marshal(tc.Payload)
+			if err != nil {
+				t.Fatal("Error while serializing Payload to request body")
+			}
+			c.Request().SetBody(requestBody)
+		}
+		fakeClaims := jwtHandler.GenerateClaims(tc.Token)
 		if fakeClaims != nil {
 			c.Locals("claims", fakeClaims)
 		}
-		ctr.Logout(c)
+		ctr.UpdatePassword(c)
 		resp := c.Response()
 		if resp.StatusCode() != tc.ResponseCode {
-			t.Error(constants.ShouldEqual, resp.StatusCode())
+			t.Error(constants.ShouldEqual, resp.StatusCode(), "want", tc.ResponseCode)
 		}
 	}
 }
 
-func createUser(ctx context.Context, roleID int) (data *entity.User, id int) {
+func createUser(ctx context.Context, roleID int) (data *entity.User) {
 	createdUser := model.UserRegister{
 		Name:     helper.RandomString(10),
 		Email:    helper.RandomEmail(),
@@ -870,13 +970,18 @@ func createUser(ctx context.Context, roleID int) (data *entity.User, id int) {
 		log.Fatal("user should inactivate at User Controller Test :: createUser func")
 	}
 	data.Password = createdUser.Password
-	return data, id
+	return data
 }
 
-// ForgetPassword(c *fiber.Ctx) error
-// ResetPassword(c *fiber.Ctx) error
-// Login(c *fiber.Ctx) error
-// Logout(c *fiber.Ctx) error
-// UpdatePassword(c *fiber.Ctx) error
+// TestNewUserController
+// TestRegister
+// TestAccountActivation
+// TestDeleteAccountActivation
+// TestForgetPassword
+// TestResetPassword
+// TestLogin
+// TestLogout
+// TestUpdatePassword
+
 // UpdateProfile(c *fiber.Ctx) error
 // MyProfile(c *fiber.Ctx) error
