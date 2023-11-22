@@ -378,7 +378,7 @@ func TestForgetPassword(t *testing.T) {
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic at TestForgetPassword ::", r)
+			t.Fatal("panic at TestForgetPassword", addTestName, r)
 		}
 	}()
 
@@ -483,7 +483,7 @@ func TestResetPassword(t *testing.T) {
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic at TestResetPassword ::", r)
+			t.Fatal("panic at TestResetPassword", addTestName, r)
 		}
 	}()
 
@@ -555,47 +555,18 @@ func TestLogin(t *testing.T) {
 	assert.NotNil(t, c, constants.ShouldNotNil)
 	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
-	// create inactive user
+	// create users
 	createdUser := createUser(ctx, 1)
+	createdActiveUser := createActiveUser(ctx, 1)
 	defer func() {
 		userRepo.Delete(ctx, createdUser.ID)
+		userRepo.Delete(ctx, createdActiveUser.ID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic at TestLogin ::", r)
+			t.Fatal("panic at TestLogin", addTestName, r)
 		}
 	}()
-
-	// create active user
-	createdActiveUser := entity.User{}
-	func() {
-		createdUser2 := createUser(ctx, 1)
-		userByID, getErr := userRepo.GetByID(ctx, createdUser2.ID)
-		assert.Nil(t, getErr, "Getting user by ID should succeed")
-		assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
-		vCode := userByID.VerificationCode
-		assert.NotNil(t, vCode, "VerificationCode should be not nil")
-		assert.Nil(t, userByID.ActivatedAt, "ActivatedAt should be nil")
-
-		verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
-			Code:  *vCode,
-			Email: userByID.Email,
-		})
-		assert.Nil(t, verifyErr, constants.ShouldNotErr)
-
-		// reset value
-		userByID = nil
-		userByID, getErr = userRepo.GetByID(ctx, createdUser2.ID)
-		assert.Nil(t, getErr, "Getting user by ID should succeed")
-		assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
-		assert.Nil(t, userByID.VerificationCode, "VerificationCode should not be nil")
-		assert.NotNil(t, userByID.ActivatedAt, "ActivatedAt should not be nil")
-
-		createdActiveUser = *userByID
-		createdActiveUser.Password = createdUser2.Password
-	}()
-
-	defer userRepo.Delete(ctx, createdActiveUser.ID)
 
 	testCases := []testCase{
 		{
@@ -712,36 +683,29 @@ func TestLogin(t *testing.T) {
 			IP:       clientIP, // keep the ip same
 		},
 	}
-	for i := 0; i < 7; i++ {
-		log.Println("case-name: " + testCase.Name)
-		jsonObject, err := json.Marshal(&testCase.Payload)
-		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
-		}
+	for i := 0; i < 10; i++ {
+		log.Println(testCase.Name, addTestName)
+		jsonObject, marshalErr := json.Marshal(&testCase.Payload)
+		assert.Nil(t, marshalErr, constants.ShouldNotErr, addTestName)
 		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
-		assert.Nil(t, httpReqErr, constants.ShouldNil)
+		assert.Nil(t, httpReqErr, constants.ShouldNotErr)
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 		app := fiber.New()
 		app.Post(endp, ctr.Login)
 		req.Close = true
-		res, err := app.Test(req, -1)
-		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
-		}
+		res, testErr := app.Test(req, -1)
+		assert.Nil(t, testErr, constants.ShouldNotErr, addTestName)
 		defer res.Body.Close()
 		assert.Equal(t, res.StatusCode, testCase.ResponseCode, constants.ShouldEqual, res.StatusCode, "want", testCase.ResponseCode)
 	}
 
+	// check value
 	redis := connector.LoadRedisCache()
-	if redis == nil {
-		t.Fatal(constants.ShouldNotNil)
-	}
+	assert.NotNil(t, redis, constants.ShouldNotNil)
 	value := redis.Get("failed-login-" + clientIP).Val()
-	if value != "5" {
-		t.Error("should 5, get", value)
-	}
+	assert.Equal(t, value, "5", "value should be 5", addTestName)
 }
 
 func TestLogout(t *testing.T) {
@@ -761,24 +725,21 @@ func TestLogout(t *testing.T) {
 		Code:  *vCode,
 		Email: createdUser.Email,
 	})
-	if verifyErr != nil {
-		t.Error(constants.ShouldNotErr)
-	}
+	assert.NoError(t, verifyErr, "error at user verification TestLogout func", addTestName)
 
 	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
 		Email:    createdUser.Email,
 		Password: createdUser.Password,
 		IP:       helper.RandomIPAddress(),
 	})
-	if userToken == "" || loginErr != nil {
-		t.Fatal("failed login"+addTestName, constants.LoginShouldSuccess)
-	}
+	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
 	defer func() {
 		userRepo.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic at TestLogout "+addTestName, r)
+			t.Fatal("panic at TestLogout", addTestName, r)
 		}
 	}()
 
@@ -820,36 +781,25 @@ func TestUpdatePassword(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	if ctr == nil || c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
-	}
+	assert.NotNil(t, ctr, constants.ShouldNotNil)
+	assert.NotNil(t, c, constants.ShouldNotNil)
+	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
 	// create inactive user
-	createdUser := createUser(ctx, 1)
-	vCode := createdUser.VerificationCode
-
-	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
-		Code:  *vCode,
-		Email: createdUser.Email,
-	})
-	if verifyErr != nil {
-		t.Error(constants.ShouldNotErr)
-	}
-
+	createdUser := createActiveUser(ctx, 1)
 	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
 		Email:    createdUser.Email,
 		Password: createdUser.Password,
 		IP:       helper.RandomIPAddress(),
 	})
-	if userToken == "" || loginErr != nil {
-		t.Fatal(constants.LoginShouldSuccess)
-	}
+	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
 	defer func() {
 		userRepo.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic at TestUpdatePassword ::", r)
+			t.Fatal("panic at TestUpdatePassword", addTestName, r)
 		}
 	}()
 
@@ -912,6 +862,92 @@ func TestUpdatePassword(t *testing.T) {
 		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
 		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		if tc.Payload != nil {
+			requestBody, marshalErr := json.Marshal(tc.Payload)
+			assert.NoError(t, marshalErr, "Error while serializing Payload to request body", addTestName)
+			c.Request().SetBody(requestBody)
+		}
+		fakeClaims := jwtHandler.GenerateClaims(tc.Token)
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
+		}
+		ctr.UpdatePassword(c)
+		res := c.Response()
+		assert.Equal(t, res.StatusCode(), tc.ResponseCode, "want", tc.ResponseCode, addTestName)
+	}
+}
+
+func TestUpdateProfile(t *testing.T) {
+	t.Parallel()
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	ctr := userCtr
+	assert.NotNil(t, ctr, constants.ShouldNotNil)
+	assert.NotNil(t, c, constants.ShouldNotNil)
+	assert.NotNil(t, ctx, constants.ShouldNotNil)
+
+	// create inactive user
+	createdUser := createActiveUser(ctx, 1)
+	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
+		Email:    createdUser.Email,
+		Password: createdUser.Password,
+		IP:       helper.RandomIPAddress(),
+	})
+	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
+	defer func() {
+		userRepo.Delete(ctx, createdUser.ID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic at TestUpdateProfile", addTestName, r)
+		}
+	}()
+
+	testCases := []struct {
+		Name    string
+		ResCode int
+		Token   string
+		Payload *model.UserProfileUpdate
+	}{
+		{
+			Name:    "success",
+			ResCode: http.StatusNoContent,
+			Token:   userToken,
+			Payload: &model.UserProfileUpdate{
+				Name: helper.RandomString(11),
+			},
+		},
+		{
+			Name:    "success",
+			ResCode: http.StatusNoContent,
+			Token:   userToken,
+			Payload: &model.UserProfileUpdate{
+				Name: helper.RandomString(11),
+			},
+		},
+		{
+			Name:    "failed: Payload nil",
+			ResCode: http.StatusBadRequest,
+			Token:   userToken,
+		},
+		{
+			Name:    "failed: fake claims",
+			ResCode: http.StatusUnauthorized,
+			Token:   "fake-Token",
+		},
+		{
+			Name:    "failed: Payload nil, Token nil",
+			ResCode: http.StatusUnauthorized,
+			Token:   "",
+		},
+	}
+
+	jwtHandler := middleware.NewJWTHandler()
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		if tc.Payload != nil {
 			requestBody, err := json.Marshal(tc.Payload)
 			if err != nil {
 				t.Fatal("Error while serializing Payload to request body")
@@ -922,10 +958,10 @@ func TestUpdatePassword(t *testing.T) {
 		if fakeClaims != nil {
 			c.Locals("claims", fakeClaims)
 		}
-		ctr.UpdatePassword(c)
+		ctr.UpdateProfile(c)
 		resp := c.Response()
-		if resp.StatusCode() != tc.ResponseCode {
-			t.Error(constants.ShouldEqual, resp.StatusCode(), "want", tc.ResponseCode)
+		if resp.StatusCode() != tc.ResCode {
+			t.Error(constants.ShouldEqual, resp.StatusCode(), "want", tc.ResCode)
 		}
 	}
 }
@@ -952,6 +988,38 @@ func createUser(ctx context.Context, roleID int) (data *entity.User) {
 	}
 	data.Password = createdUser.Password
 	return data
+}
+
+func createActiveUser(ctx context.Context, roleID int) (data *entity.User) {
+	createdUser := model.UserRegister{
+		Name:     helper.RandomString(10),
+		Email:    helper.RandomEmail(),
+		Password: helper.RandomString(10),
+		RoleID:   1, // admin
+	}
+	id, err := userSvc.Register(ctx, createdUser)
+	if err != nil || id < 1 {
+		log.Fatal("failed creating user createActiveUser func", err.Error())
+	}
+
+	userByID, getErr := userRepo.GetByID(ctx, id)
+	if getErr != nil || userByID == nil {
+		log.Fatal("failed getting user createActiveUser func", getErr.Error())
+	}
+	vCode := userByID.VerificationCode
+	if vCode == nil || userByID.ActivatedAt != nil {
+		log.Fatal("user should inactivate createActiveUser func"+addTestName, err.Error())
+	}
+	userByID.Password = createdUser.Password
+	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
+		Code:  *vCode,
+		Email: createdUser.Email,
+	})
+	if verifyErr != nil {
+		log.Fatal("error while user verification createActiveUser func"+addTestName, err.Error())
+	}
+
+	return userByID
 }
 
 // Todo : create func createActiveUser
