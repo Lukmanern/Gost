@@ -189,6 +189,16 @@ func TestRegister(t *testing.T) {
 		assert.Nil(t, testErr, constants.ShouldNil, testErr)
 		defer res.Body.Close()
 		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+		if res.StatusCode == fiber.StatusCreated {
+			payload, ok := tc.Payload.(*model.UserRegister)
+			if !ok {
+				t.Fatal("should ok")
+			}
+			defer func() {
+				u, _ := userRepo.GetByEmail(ctx, payload.Email)
+				userRepo.Delete(ctx, u.ID)
+			}()
+		}
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
@@ -207,7 +217,6 @@ func TestAccountActivation(t *testing.T) {
 
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
-
 	defer func() {
 		userRepo.Delete(ctx, createdUser.ID)
 
@@ -286,7 +295,6 @@ func TestDeleteAccountActivation(t *testing.T) {
 
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
-
 	defer func() {
 		userRepo.Delete(ctx, createdUser.ID)
 
@@ -360,6 +368,14 @@ func TestForgetPassword(t *testing.T) {
 
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
+	defer func() {
+		userRepo.Delete(ctx, createdUser.ID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic at TestForgetPassword", addTestName, r)
+		}
+	}()
 
 	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
 		Code:  *vCode,
@@ -372,15 +388,6 @@ func TestForgetPassword(t *testing.T) {
 	assert.NotNil(t, createdUser, "getByID should return a non-nil user")
 	assert.Nil(t, createdUser.VerificationCode, "VerificationCode should be nil")
 	assert.NotNil(t, createdUser.ActivatedAt, "ActivatedAt should be not nil")
-
-	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
-
-		r := recover()
-		if r != nil {
-			t.Fatal("panic at TestForgetPassword", addTestName, r)
-		}
-	}()
 
 	testCases := []testCase{
 		{
@@ -442,6 +449,15 @@ func TestResetPassword(t *testing.T) {
 	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
 	createdUser := createUser(ctx, 1)
+	defer func() {
+		userRepo.Delete(ctx, createdUser.ID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic at TestResetPassword", addTestName, r)
+		}
+	}()
+
 	userByID, getErr := userRepo.GetByID(ctx, createdUser.ID)
 	assert.Nil(t, getErr, "Getting user by ID should succeed")
 	assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
@@ -477,15 +493,6 @@ func TestResetPassword(t *testing.T) {
 	assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
 	assert.NotNil(t, userByID.VerificationCode, "VerificationCode should not be nil")
 	assert.NotNil(t, userByID.ActivatedAt, "ActivatedAt should not be nil")
-
-	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
-
-		r := recover()
-		if r != nil {
-			t.Fatal("panic at TestResetPassword", addTestName, r)
-		}
-	}()
 
 	testCases := []testCase{
 		{
@@ -720,6 +727,14 @@ func TestLogout(t *testing.T) {
 	// create inactive user
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
+	defer func() {
+		userRepo.Delete(ctx, createdUser.ID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic at TestLogout", addTestName, r)
+		}
+	}()
 
 	verifyErr := userSvc.Verification(ctx, model.UserVerificationCode{
 		Code:  *vCode,
@@ -734,14 +749,6 @@ func TestLogout(t *testing.T) {
 	})
 	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
 	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
-	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
-
-		r := recover()
-		if r != nil {
-			t.Fatal("panic at TestLogout", addTestName, r)
-		}
-	}()
 
 	testCases := []testCase{
 		{
@@ -787,13 +794,6 @@ func TestUpdatePassword(t *testing.T) {
 
 	// create inactive user
 	createdUser := createActiveUser(ctx, 1)
-	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
-		Email:    createdUser.Email,
-		Password: createdUser.Password,
-		IP:       helper.RandomIPAddress(),
-	})
-	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
-	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
 	defer func() {
 		userRepo.Delete(ctx, createdUser.ID)
 
@@ -802,6 +802,14 @@ func TestUpdatePassword(t *testing.T) {
 			t.Fatal("panic at TestUpdatePassword", addTestName, r)
 		}
 	}()
+
+	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
+		Email:    createdUser.Email,
+		Password: createdUser.Password,
+		IP:       helper.RandomIPAddress(),
+	})
+	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
 
 	testCases := []struct {
 		Name    string
@@ -887,13 +895,6 @@ func TestUpdateProfile(t *testing.T) {
 
 	// create inactive user
 	createdUser := createActiveUser(ctx, 1)
-	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
-		Email:    createdUser.Email,
-		Password: createdUser.Password,
-		IP:       helper.RandomIPAddress(),
-	})
-	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
-	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
 	defer func() {
 		userRepo.Delete(ctx, createdUser.ID)
 
@@ -902,6 +903,14 @@ func TestUpdateProfile(t *testing.T) {
 			t.Fatal("panic at TestUpdateProfile"+addTestName, r)
 		}
 	}()
+
+	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
+		Email:    createdUser.Email,
+		Password: createdUser.Password,
+		IP:       helper.RandomIPAddress(),
+	})
+	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
 
 	testCases := []struct {
 		Name    string
@@ -975,13 +984,6 @@ func TestMyProfile(t *testing.T) {
 
 	// create inactive user
 	createdUser := createActiveUser(ctx, 1)
-	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
-		Email:    createdUser.Email,
-		Password: createdUser.Password,
-		IP:       helper.RandomIPAddress(),
-	})
-	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
-	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
 	defer func() {
 		userRepo.Delete(ctx, createdUser.ID)
 
@@ -990,6 +992,14 @@ func TestMyProfile(t *testing.T) {
 			t.Fatal("panic at TestMyProfile"+addTestName, r)
 		}
 	}()
+
+	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
+		Email:    createdUser.Email,
+		Password: createdUser.Password,
+		IP:       helper.RandomIPAddress(),
+	})
+	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
 
 	testCases := []struct {
 		Name    string
