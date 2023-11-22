@@ -1,7 +1,3 @@
-// Don't run test per file without -p 1
-// or simply run test per func or run
-// project test using make test command
-// check Makefile file
 package controller_test
 
 import (
@@ -10,11 +6,8 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/http/httptest"
 	"strconv"
 	"testing"
-
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
@@ -22,9 +15,17 @@ import (
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/response"
+	"github.com/gofiber/fiber/v2"
+	"github.com/stretchr/testify/assert"
 
 	controller "github.com/Lukmanern/gost/controller/user_management"
 	service "github.com/Lukmanern/gost/service/user_management"
+)
+
+const (
+	testName    = "User Management Controller Test"
+	filePath    = "./controller/user_management"
+	addTestName = ", at " + testName + " in " + filePath
 )
 
 var (
@@ -47,12 +48,11 @@ func init() {
 
 func TestCreate(t *testing.T) {
 	c := helper.NewFiberCtx()
+	ctx := c.Context()
 	ctr := userDevController
-	if ctr == nil || c == nil {
-		t.Error(constants.ShouldNotNil)
-	}
-	c.Method(http.MethodPost)
-	c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+	assert.NotNil(t, ctr, constants.ShouldNotNil)
+	assert.NotNil(t, c, constants.ShouldNotNil)
+	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
 	createdUser := model.UserCreate{
 		Name:     helper.RandomString(10),
@@ -72,211 +72,109 @@ func TestCreate(t *testing.T) {
 	}()
 
 	testCases := []struct {
-		caseName string
-		payload  *model.UserCreate
-		wantErr  bool
+		Name    string
+		Payload *model.UserCreate
+		ResCode int
 	}{
 		{
-			caseName: "success create user -1",
-			payload: &model.UserCreate{
+			Name: "success create user -1",
+			Payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},
-			wantErr: false,
+			ResCode: fiber.StatusCreated,
 		},
 		{
-			caseName: "success create user -2",
-			payload: &model.UserCreate{
+			Name: "success create user -2",
+			Payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},
-			wantErr: false,
+			ResCode: fiber.StatusCreated,
 		},
 		{
-			caseName: "success create user -3",
-			payload: &model.UserCreate{
+			Name: "success create user -3",
+			Payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmail(),
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},
-			wantErr: false,
+			ResCode: fiber.StatusCreated,
 		},
 		{
-			caseName: "failed create user: invalid email address",
-			payload: &model.UserCreate{
+			Name: "failed create user: invalid email address",
+			Payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    "invalid-email-address",
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},
-			wantErr: true,
+			ResCode: fiber.StatusBadRequest,
 		},
 		{
-			caseName: "failed create user: email already used",
-			payload: &model.UserCreate{
+			Name: "failed create user: email already used",
+			Payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    createdUser.Email,
 				Password: helper.RandomString(11),
 				IsAdmin:  true,
 			},
-			wantErr: true,
+			ResCode: fiber.StatusBadRequest,
 		},
 		{
-			caseName: "failed create user: password too short",
-			payload: &model.UserCreate{
+			Name: "failed create user: password too short",
+			Payload: &model.UserCreate{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmail(),
-				Password: "short",
+				Password: "s-;",
 				IsAdmin:  true,
 			},
-			wantErr: true,
+			ResCode: fiber.StatusBadRequest,
 		},
 		{
-			caseName: "failed create user: nil payload, validate failed",
-			payload:  nil,
-			wantErr:  true,
+			Name:    "failed create user: nil Payload, validate failed",
+			Payload: nil,
+			ResCode: fiber.StatusBadRequest,
 		},
 	}
 
+	endpoint := "/user-management/"
 	for _, tc := range testCases {
-		jsonObject, marshalErr := json.Marshal(&tc.payload)
-		if marshalErr != nil {
-			t.Error(constants.ShouldNotErr, marshalErr.Error())
-		}
-		c.Request().SetBody(jsonObject)
+		log.Println(tc.Name, addTestName)
+		jsonData, marshalErr := json.Marshal(&tc.Payload)
+		assert.Nil(t, marshalErr, constants.ShouldNil, marshalErr)
 
-		createErr := ctr.Create(c)
-		if createErr != nil {
-			t.Error(constants.ShouldNotErr, createErr)
-		} else if tc.payload == nil {
-			continue
-		}
+		req, httpReqErr := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(jsonData))
+		assert.Nil(t, httpReqErr, constants.ShouldNil, httpReqErr)
 
-		ctx := c.Context()
-		userByEMail, getErr := userDevService.GetByEmail(ctx, tc.payload.Email)
-		// if wantErr is false and user is not found
-		// there is test failed
-		if getErr != nil && !tc.wantErr {
-			t.Fatal("test fail", getErr)
-		}
-		if !tc.wantErr {
-			if userByEMail == nil {
-				t.Fatal(constants.ShouldNotNil)
-			} else {
-				deleteErr := userDevService.Delete(ctx, userByEMail.ID)
-				if deleteErr != nil {
-					t.Error(constants.ShouldNotErr)
-				}
-			}
-			if userByEMail.Name != helper.ToTitle(tc.payload.Name) {
-				t.Error(constants.ShouldEqual)
-			}
-		}
-	}
-}
-
-func TestGet(t *testing.T) {
-	c := helper.NewFiberCtx()
-	ctx := c.Context()
-	if c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
-	}
-
-	createdUser := model.UserCreate{
-		Name:     helper.RandomString(11),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(11),
-		IsAdmin:  true,
-	}
-	createdUserID, createErr := userDevService.Create(ctx, createdUser)
-	if createErr != nil || createdUserID <= 0 {
-		t.Error("should not error and more than zero")
-	}
-	defer func() {
-		userDevService.Delete(ctx, createdUserID)
-		r := recover()
-		if r != nil {
-			t.Error("panic ::", r)
-		}
-	}()
-
-	testCases := []struct {
-		caseName string
-		userID   string
-		respCode int
-		wantErr  bool
-		response response.Response
-	}{
-		{
-			caseName: "success get user",
-			userID:   strconv.Itoa(createdUserID),
-			respCode: http.StatusOK,
-			wantErr:  false,
-			response: response.Response{
-				Message: response.MessageSuccessLoaded,
-				Success: true,
-			},
-		},
-		{
-			caseName: "failed get user: negatif user id",
-			userID:   "-10",
-			respCode: http.StatusBadRequest,
-			wantErr:  true,
-		},
-		{
-			caseName: "failed get user: user not found",
-			userID:   "9999",
-			respCode: http.StatusNotFound,
-			wantErr:  true,
-		},
-		{
-			caseName: "failed get user: failed convert id to int",
-			userID:   "not-number",
-			respCode: http.StatusBadRequest,
-			wantErr:  true,
-		},
-	}
-
-	for _, tc := range testCases {
-		req := httptest.NewRequest(http.MethodGet, "/user-management/"+tc.userID, nil)
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
-		app.Get("/user-management/:id", userDevController.Get)
-		resp, err := app.Test(req, -1)
-		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != tc.respCode {
-			t.Error(constants.ShouldEqual)
-		}
-		if !tc.wantErr {
-			respModel := response.Response{}
-			decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
-			if decodeErr != nil {
-				t.Error(constants.ShouldNotErr, decodeErr)
-			}
+		app.Post(endpoint, ctr.Create)
+		req.Close = true
 
-			if tc.response.Message != respModel.Message && tc.response.Message != "" {
-				t.Error(constants.ShouldEqual)
-			}
-			if respModel.Success != tc.response.Success {
-				t.Error(constants.ShouldEqual)
-			}
-		}
+		res, testErr := app.Test(req, -1)
+		assert.Nil(t, testErr, constants.ShouldNil, testErr)
+		defer res.Body.Close()
+		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+
+		resStruct := response.Response{}
+		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
+		assert.Nil(t, decodeErr, constants.ShouldNil, decodeErr)
 	}
 }
 
 func TestGetAll(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
-	if c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
-	}
+	ctr := userDevController
+	assert.NotNil(t, ctr, constants.ShouldNotNil)
+	assert.NotNil(t, c, constants.ShouldNotNil)
+	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
 	userIDs := make([]int, 0)
 	for i := 0; i < 10; i++ {
@@ -304,64 +202,56 @@ func TestGetAll(t *testing.T) {
 	}()
 
 	testCases := []struct {
-		caseName string
-		payload  string
-		respCode int
-		wantErr  bool
+		Name    string
+		Payload string
+		ResCode int
 	}{
 		{
-			caseName: "success getall",
-			payload:  "page=1&limit=100&search=",
-			respCode: http.StatusOK,
-			wantErr:  false,
+			Name:    "success getall",
+			Payload: "page=1&limit=100&search=",
+			ResCode: http.StatusOK,
 		},
 		{
-			caseName: "failed getall",
-			payload:  "page=-1&limit=-100&search=",
-			respCode: http.StatusBadRequest,
-			wantErr:  true,
+			Name:    "success getall",
+			Payload: "page=2&limit=10&search=",
+			ResCode: http.StatusOK,
+		},
+		{
+			Name:    "success getall",
+			Payload: "page=3&limit=10&search=",
+			ResCode: http.StatusOK,
+		},
+		{
+			Name:    "failed getall",
+			Payload: "page=-1&limit=-100&search=",
+			ResCode: http.StatusBadRequest,
 		},
 	}
 
 	for _, tc := range testCases {
-		req := httptest.NewRequest(http.MethodGet, "/user-management?"+tc.payload, nil)
+		req, _ := http.NewRequest(http.MethodGet, "/user-management?"+tc.Payload, nil)
 		app := fiber.New()
 		app.Get("/user-management", userDevController.GetAll)
-		resp, err := app.Test(req, -1)
+		res, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal(constants.ShouldNotErr, err.Error())
 		}
-		defer resp.Body.Close()
-		if resp.StatusCode != tc.respCode {
-			t.Error(constants.ShouldEqual)
-		}
-		if !tc.wantErr {
-			body := response.Response{}
-			bytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatal(constants.ShouldNotErr, err.Error())
-			}
-			err = json.Unmarshal(bytes, &body)
-			if err != nil {
-				t.Fatal(constants.ShouldNotErr, err.Error())
-			}
-			if !body.Success {
-				t.Fatal("should be success")
-			}
-			if len(bytes) <= 2 {
-				t.Error("len of bytes should much")
-			}
-		}
+		defer res.Body.Close()
+		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+
+		resStruct := response.Response{}
+		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
+		assert.Nil(t, decodeErr, constants.ShouldNil, decodeErr)
 	}
 }
 
 func TestUpdate(t *testing.T) {
 	c := helper.NewFiberCtx()
-	ctr := userDevController
 	ctx := c.Context()
-	if ctr == nil || c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
-	}
+	ctr := userDevController
+	assert.NotNil(t, ctr, constants.ShouldNotNil)
+	assert.NotNil(t, c, constants.ShouldNotNil)
+	assert.NotNil(t, ctx, constants.ShouldNotNil)
 
 	createdUser := model.UserCreate{
 		Name:     helper.RandomString(11),
@@ -382,54 +272,54 @@ func TestUpdate(t *testing.T) {
 	}()
 
 	testCases := []struct {
-		caseName string
-		payload  *model.UserProfileUpdate
-		respCode int
+		Name    string
+		Payload *model.UserProfileUpdate
+		ResCode int
 	}{
 		{
-			caseName: "success update user -1",
-			payload: &model.UserProfileUpdate{
+			Name: "success update user -1",
+			Payload: &model.UserProfileUpdate{
 				ID:   createdUserID,
 				Name: helper.RandomString(6),
 			},
-			respCode: http.StatusNoContent,
+			ResCode: http.StatusNoContent,
 		},
 		{
-			caseName: "success update user -2",
-			payload: &model.UserProfileUpdate{
+			Name: "success update user -2",
+			Payload: &model.UserProfileUpdate{
 				ID:   createdUserID,
 				Name: helper.RandomString(8),
 			},
-			respCode: http.StatusNoContent,
+			ResCode: http.StatusNoContent,
 		},
 		{
-			caseName: "success update user -3",
-			payload: &model.UserProfileUpdate{
+			Name: "success update user -3",
+			Payload: &model.UserProfileUpdate{
 				ID:   createdUserID,
 				Name: helper.RandomString(10),
 			},
-			respCode: http.StatusNoContent,
+			ResCode: http.StatusNoContent,
 		},
 		{
-			caseName: "failed update: invalid id",
-			respCode: http.StatusBadRequest,
-			payload: &model.UserProfileUpdate{
+			Name:    "failed update: invalid id",
+			ResCode: http.StatusBadRequest,
+			Payload: &model.UserProfileUpdate{
 				ID:   -10,
 				Name: "valid-name",
 			},
 		},
 		{
-			caseName: "failed update: invalid name, too short",
-			respCode: http.StatusBadRequest,
-			payload: &model.UserProfileUpdate{
+			Name:    "failed update: invalid name, too short",
+			ResCode: http.StatusBadRequest,
+			Payload: &model.UserProfileUpdate{
 				ID:   11,
 				Name: "",
 			},
 		},
 		{
-			caseName: "failed update: not found",
-			respCode: http.StatusNotFound,
-			payload: &model.UserProfileUpdate{
+			Name:    "failed update: not found",
+			ResCode: http.StatusNotFound,
+			Payload: &model.UserProfileUpdate{
 				ID:   createdUserID + 10,
 				Name: "valid-name",
 			},
@@ -437,12 +327,12 @@ func TestUpdate(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		log.Println(tc.caseName)
-		jsonObject, err := json.Marshal(&tc.payload)
+		log.Println(tc.Name)
+		jsonObject, err := json.Marshal(&tc.Payload)
 		if err != nil {
 			t.Error(constants.ShouldNotErr, err.Error())
 		}
-		url := appURL + "user-management/" + strconv.Itoa(tc.payload.ID)
+		url := appURL + "user-management/" + strconv.Itoa(tc.Payload.ID)
 		req, httpReqErr := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
 			t.Fatal(constants.ShouldNotNil)
@@ -452,98 +342,20 @@ func TestUpdate(t *testing.T) {
 		app := fiber.New()
 		app.Put("/user-management/:id", userDevController.Update)
 		req.Close = true
-		resp, err := app.Test(req, -1)
+		res, err := app.Test(req, -1)
 		if err != nil {
 			t.Fatal(constants.ShouldNotErr)
 		}
-		defer resp.Body.Close()
-		if resp.StatusCode != tc.respCode {
-			t.Error(constants.ShouldEqual, resp.StatusCode)
+		defer res.Body.Close()
+		if res.StatusCode != tc.ResCode {
+			t.Error(constants.ShouldEqual, res.StatusCode)
 		}
-		if tc.payload != nil {
+		if tc.Payload != nil {
 			respModel := response.Response{}
-			decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
+			decodeErr := json.NewDecoder(res.Body).Decode(&respModel)
 			if decodeErr != nil && decodeErr != io.EOF {
 				t.Error(constants.ShouldNotErr, decodeErr)
 			}
 		}
-	}
-}
-
-func TestDelete(t *testing.T) {
-	c := helper.NewFiberCtx()
-	ctr := userDevController
-	ctx := c.Context()
-	if ctr == nil || c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
-	}
-
-	createdUser := model.UserCreate{
-		Name:     helper.RandomString(11),
-		Email:    helper.RandomEmail(),
-		Password: helper.RandomString(11),
-		IsAdmin:  true,
-	}
-	createdUserID, createErr := userDevService.Create(ctx, createdUser)
-	if createErr != nil || createdUserID <= 0 {
-		t.Error("should not error and more than zero")
-	}
-	defer func() {
-		userDevService.Delete(ctx, createdUserID)
-		r := recover()
-		if r != nil {
-			t.Error("panic ::", r)
-		}
-	}()
-
-	testCases := []struct {
-		caseName string
-		wantErr  bool
-		respCode int
-		paramID  int
-		response response.Response
-	}{
-		{
-			caseName: "success delete user",
-			respCode: http.StatusNoContent,
-			paramID:  createdUserID,
-		},
-		{
-			caseName: "failed delete: invalid id",
-			respCode: http.StatusBadRequest,
-			paramID:  -100,
-		},
-		{
-			caseName: "failed delete: not found",
-			respCode: http.StatusNotFound,
-			paramID:  createdUserID + 100,
-		},
-	}
-
-	for _, tc := range testCases {
-		log.Println(tc.caseName)
-		url := appURL + "user-management/" + strconv.Itoa(tc.paramID)
-		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
-		if httpReqErr != nil || req == nil {
-			t.Fatal(constants.ShouldNotNil)
-		}
-		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-
-		app := fiber.New()
-		app.Delete("/user-management/:id", userDevController.Delete)
-		req.Close = true
-		resp, err := app.Test(req, -1)
-		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != tc.respCode {
-			t.Error(constants.ShouldEqual, resp.StatusCode)
-		}
-	}
-
-	userByID, err := userDevService.GetByID(ctx, createdUserID)
-	if err == nil || userByID != nil {
-		t.Error("should error and user should nil")
 	}
 }

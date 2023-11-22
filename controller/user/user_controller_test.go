@@ -28,10 +28,10 @@ import (
 )
 
 type testCase struct {
-	Name         string
-	Handler      func(*fiber.Ctx) error
-	ResponseCode int
-	Payload      any
+	Name    string
+	Handler func(*fiber.Ctx) error
+	ResCode int
+	Payload any
 }
 
 const (
@@ -97,8 +97,8 @@ func TestRegister(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			Name:         "success register -1" + addTestName,
-			ResponseCode: http.StatusCreated,
+			Name:    "success register -1" + addTestName,
+			ResCode: http.StatusCreated,
 			Payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmail(),
@@ -107,8 +107,8 @@ func TestRegister(t *testing.T) {
 			},
 		},
 		{
-			Name:         "success register -2" + addTestName,
-			ResponseCode: http.StatusCreated,
+			Name:    "success register -2" + addTestName,
+			ResCode: http.StatusCreated,
 			Payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmail(),
@@ -117,8 +117,8 @@ func TestRegister(t *testing.T) {
 			},
 		},
 		{
-			Name:         "success register -3" + addTestName,
-			ResponseCode: http.StatusCreated,
+			Name:    "success register -3" + addTestName,
+			ResCode: http.StatusCreated,
 			Payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmail(),
@@ -127,8 +127,8 @@ func TestRegister(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed register: email already used" + addTestName,
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed register: email already used" + addTestName,
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
 				Email:    createdUser.Email,
@@ -137,8 +137,8 @@ func TestRegister(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed register: name too short" + addTestName,
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed register: name too short" + addTestName,
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserRegister{
 				Name:     "",
 				Email:    helper.RandomEmail(),
@@ -147,8 +147,8 @@ func TestRegister(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed register: password too short" + addTestName,
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed register: password too short" + addTestName,
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserRegister{
 				Name:     helper.RandomString(10),
 				Email:    helper.RandomEmail(),
@@ -157,16 +157,16 @@ func TestRegister(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed register-1: invalid json body" + addTestName,
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed register-1: invalid json body" + addTestName,
+			ResCode: http.StatusBadRequest,
 			Payload: fiber.Map{
 				"body": "false",
 			},
 		},
 		{
-			Name:         "failed register-2: invalid json body" + addTestName,
-			ResponseCode: http.StatusBadRequest,
-			Payload:      nil,
+			Name:    "failed register-2: invalid json body" + addTestName,
+			ResCode: http.StatusBadRequest,
+			Payload: nil,
 		},
 	}
 
@@ -188,7 +188,7 @@ func TestRegister(t *testing.T) {
 		res, testErr := app.Test(req, -1)
 		assert.Nil(t, testErr, constants.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResponseCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
@@ -219,33 +219,33 @@ func TestAccountActivation(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			Name:         "success verify" + addTestName,
-			ResponseCode: http.StatusOK,
+			Name:    "success verify" + addTestName,
+			ResCode: http.StatusOK,
 			Payload: &model.UserVerificationCode{
 				Code:  *vCode,
 				Email: createdUser.Email,
 			},
 		},
 		{
-			Name:         "failed verify: code not found" + addTestName,
-			ResponseCode: http.StatusNotFound,
+			Name:    "failed verify: code not found" + addTestName,
+			ResCode: http.StatusNotFound,
 			Payload: &model.UserVerificationCode{
 				Code:  *vCode,
 				Email: createdUser.Email,
 			},
 		},
 		{
-			Name:         "failed verify: code/email too short" + addTestName,
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed verify: code/email too short" + addTestName,
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserVerificationCode{
 				Code:  "",
 				Email: "",
 			},
 		},
 		{
-			Name:         "failed verify: invalid json body" + addTestName,
-			ResponseCode: http.StatusBadRequest,
-			Payload:      nil,
+			Name:    "failed verify: invalid json body" + addTestName,
+			ResCode: http.StatusBadRequest,
+			Payload: nil,
 		},
 	}
 
@@ -267,7 +267,7 @@ func TestAccountActivation(t *testing.T) {
 		res, testErr := app.Test(req, -1)
 		assert.Nil(t, testErr, constants.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResponseCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
@@ -298,24 +298,24 @@ func TestDeleteAccountActivation(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			Name:         "success delete account" + addTestName,
-			ResponseCode: http.StatusOK,
+			Name:    "success delete account" + addTestName,
+			ResCode: http.StatusOK,
 			Payload: &model.UserVerificationCode{
 				Code:  *vCode,
 				Email: createdUser.Email,
 			},
 		},
 		{
-			Name:         "failed delete account: code not found" + addTestName,
-			ResponseCode: http.StatusNotFound,
+			Name:    "failed delete account: code not found" + addTestName,
+			ResCode: http.StatusNotFound,
 			Payload: &model.UserVerificationCode{
 				Code:  *vCode,
 				Email: createdUser.Email,
 			},
 		},
 		{
-			Name:         "failed delete account: code/email too short" + addTestName,
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed delete account: code/email too short" + addTestName,
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserVerificationCode{
 				Code:  "",
 				Email: "",
@@ -341,7 +341,7 @@ func TestDeleteAccountActivation(t *testing.T) {
 		res, testErr := app.Test(req, -1)
 		assert.Nil(t, testErr, constants.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResponseCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
@@ -384,22 +384,22 @@ func TestForgetPassword(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			Name:         "success forget password",
-			ResponseCode: http.StatusAccepted,
+			Name:    "success forget password",
+			ResCode: http.StatusAccepted,
 			Payload: &model.UserForgetPassword{
 				Email: createdUser.Email,
 			},
 		},
 		{
-			Name:         "faield forget password: email not found",
-			ResponseCode: http.StatusNotFound,
+			Name:    "faield forget password: email not found",
+			ResCode: http.StatusNotFound,
 			Payload: &model.UserForgetPassword{
 				Email: helper.RandomEmail(),
 			},
 		},
 		{
-			Name:         "faield forget password: invalid email",
-			ResponseCode: http.StatusBadRequest,
+			Name:    "faield forget password: invalid email",
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserForgetPassword{
 				Email: "invalid-email",
 			},
@@ -424,7 +424,7 @@ func TestForgetPassword(t *testing.T) {
 		res, testErr := app.Test(req, -1)
 		assert.Nil(t, testErr, constants.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResponseCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
@@ -489,8 +489,8 @@ func TestResetPassword(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			Name:         "success reset password",
-			ResponseCode: http.StatusAccepted,
+			Name:    "success reset password",
+			ResCode: http.StatusAccepted,
 			Payload: &model.UserResetPassword{
 				Email:              userByID.Email,
 				Code:               *userByID.VerificationCode,
@@ -499,8 +499,8 @@ func TestResetPassword(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed reset password: password not match",
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed reset password: password not match",
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserResetPassword{
 				Email:              userByID.Email,
 				Code:               *userByID.VerificationCode,
@@ -509,8 +509,8 @@ func TestResetPassword(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed reset password: verification code too short",
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed reset password: verification code too short",
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserResetPassword{
 				Email:              helper.RandomEmail(),
 				Code:               "short",
@@ -538,7 +538,7 @@ func TestResetPassword(t *testing.T) {
 		res, testErr := app.Test(req, -1)
 		assert.Nil(t, testErr, constants.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResponseCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
@@ -570,8 +570,8 @@ func TestLogin(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			Name:         "success login",
-			ResponseCode: http.StatusOK,
+			Name:    "success login",
+			ResCode: http.StatusOK,
 			Payload: &model.UserLogin{
 				Email:    createdActiveUser.Email,
 				Password: createdActiveUser.Password,
@@ -579,8 +579,8 @@ func TestLogin(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed login -1: account is inactive",
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed login -1: account is inactive",
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserLogin{
 				Email:    strings.ToLower(createdUser.Email),
 				Password: createdUser.Password,
@@ -588,8 +588,8 @@ func TestLogin(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed login -2: account is inactive",
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed login -2: account is inactive",
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserLogin{
 				Email:    strings.ToLower(createdUser.Email),
 				Password: createdUser.Password,
@@ -597,8 +597,8 @@ func TestLogin(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed login: wrong passwd",
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed login: wrong passwd",
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserLogin{
 				Password: "wrongPass11",
 				Email:    createdUser.Email,
@@ -606,8 +606,8 @@ func TestLogin(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed login: invalid ip",
-			ResponseCode: http.StatusBadRequest,
+			Name:    "failed login: invalid ip",
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserLogin{
 				Password: "wrongPass11",
 				Email:    createdUser.Email,
@@ -615,8 +615,8 @@ func TestLogin(t *testing.T) {
 			},
 		},
 		{
-			Name:         "faield login: email not found",
-			ResponseCode: http.StatusNotFound,
+			Name:    "faield login: email not found",
+			ResCode: http.StatusNotFound,
 			Payload: &model.UserLogin{
 				Password: "secret123",
 				Email:    helper.RandomEmail(),
@@ -624,8 +624,8 @@ func TestLogin(t *testing.T) {
 			},
 		},
 		{
-			Name:         "faield login: invalid email",
-			ResponseCode: http.StatusBadRequest,
+			Name:    "faield login: invalid email",
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserLogin{
 				Password: "secret",
 				Email:    "invalid-email",
@@ -633,8 +633,8 @@ func TestLogin(t *testing.T) {
 			},
 		},
 		{
-			Name:         "faield login: Payload too short",
-			ResponseCode: http.StatusBadRequest,
+			Name:    "faield login: Payload too short",
+			ResCode: http.StatusBadRequest,
 			Payload: &model.UserLogin{
 				Password: "",
 				Email:    "",
@@ -661,7 +661,7 @@ func TestLogin(t *testing.T) {
 		res, testErr := app.Test(req, -1)
 		assert.Nil(t, testErr, constants.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResponseCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
@@ -671,12 +671,12 @@ func TestLogin(t *testing.T) {
 	// try blocking IP feature
 	clientIP := helper.RandomIPAddress()
 	testCase := struct {
-		Name         string
-		ResponseCode int
-		Payload      *model.UserLogin
+		Name    string
+		ResCode int
+		Payload *model.UserLogin
 	}{
-		Name:         "failed login: stacking redis",
-		ResponseCode: http.StatusBadRequest,
+		Name:    "failed login: stacking redis",
+		ResCode: http.StatusBadRequest,
 		Payload: &model.UserLogin{
 			Email:    createdActiveUser.Email,
 			Password: "validpassword",
@@ -698,7 +698,7 @@ func TestLogin(t *testing.T) {
 		res, testErr := app.Test(req, -1)
 		assert.Nil(t, testErr, constants.ShouldNotErr, addTestName)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, testCase.ResponseCode, constants.ShouldEqual, res.StatusCode, "want", testCase.ResponseCode)
+		assert.Equal(t, res.StatusCode, testCase.ResCode, constants.ShouldEqual, res.StatusCode, "want", testCase.ResCode)
 	}
 
 	// check value
@@ -745,19 +745,19 @@ func TestLogout(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			Name:         "success",
-			ResponseCode: http.StatusOK,
-			Payload:      userToken,
+			Name:    "success",
+			ResCode: http.StatusOK,
+			Payload: userToken,
 		},
 		{
-			Name:         "failed logout: fake claims",
-			ResponseCode: http.StatusUnauthorized,
-			Payload:      "fake-Token-123",
+			Name:    "failed logout: fake claims",
+			ResCode: http.StatusUnauthorized,
+			Payload: "fake-Token-123",
 		},
 		{
-			Name:         "failed: Payload and Token nil",
-			ResponseCode: http.StatusUnauthorized,
-			Payload:      "",
+			Name:    "failed: Payload and Token nil",
+			ResCode: http.StatusUnauthorized,
+			Payload: "",
 		},
 	}
 
@@ -772,7 +772,7 @@ func TestLogout(t *testing.T) {
 		}
 		ctr.Logout(c)
 		res := c.Response()
-		assert.Equal(t, res.StatusCode(), tc.ResponseCode)
+		assert.Equal(t, res.StatusCode(), tc.ResCode)
 	}
 }
 
@@ -804,15 +804,15 @@ func TestUpdatePassword(t *testing.T) {
 	}()
 
 	testCases := []struct {
-		Name         string
-		ResponseCode int
-		Token        string
-		Payload      *model.UserPasswordUpdate
+		Name    string
+		ResCode int
+		Token   string
+		Payload *model.UserPasswordUpdate
 	}{
 		{
-			Name:         "success",
-			ResponseCode: http.StatusNoContent,
-			Token:        userToken,
+			Name:    "success",
+			ResCode: http.StatusNoContent,
+			Token:   userToken,
 			Payload: &model.UserPasswordUpdate{
 				OldPassword:        createdUser.Password,
 				NewPassword:        "passwordNew123",
@@ -820,9 +820,9 @@ func TestUpdatePassword(t *testing.T) {
 			},
 		},
 		{
-			Name:         "success",
-			ResponseCode: http.StatusNoContent,
-			Token:        userToken,
+			Name:    "success",
+			ResCode: http.StatusNoContent,
+			Token:   userToken,
 			Payload: &model.UserPasswordUpdate{
 				OldPassword:        "passwordNew123",
 				NewPassword:        "passwordNew12345",
@@ -830,9 +830,9 @@ func TestUpdatePassword(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed update password: no new password",
-			ResponseCode: http.StatusBadRequest,
-			Token:        userToken,
+			Name:    "failed update password: no new password",
+			ResCode: http.StatusBadRequest,
+			Token:   userToken,
 			Payload: &model.UserPasswordUpdate{
 				OldPassword:        "noNewPassword",
 				NewPassword:        "noNewPassword",
@@ -840,19 +840,19 @@ func TestUpdatePassword(t *testing.T) {
 			},
 		},
 		{
-			Name:         "failed update password: Payload nil",
-			ResponseCode: http.StatusBadRequest,
-			Token:        userToken,
+			Name:    "failed update password: Payload nil",
+			ResCode: http.StatusBadRequest,
+			Token:   userToken,
 		},
 		{
-			Name:         "failed update password: fake claims",
-			ResponseCode: http.StatusUnauthorized,
-			Token:        "fake Token 1234",
+			Name:    "failed update password: fake claims",
+			ResCode: http.StatusUnauthorized,
+			Token:   "fake Token 1234",
 		},
 		{
-			Name:         "failed update password: Payload nil, Token nil",
-			ResponseCode: http.StatusUnauthorized,
-			Token:        "",
+			Name:    "failed update password: Payload nil, Token nil",
+			ResCode: http.StatusUnauthorized,
+			Token:   "",
 		},
 	}
 
@@ -872,7 +872,7 @@ func TestUpdatePassword(t *testing.T) {
 		}
 		ctr.UpdatePassword(c)
 		res := c.Response()
-		assert.Equal(t, res.StatusCode(), tc.ResponseCode, "want", tc.ResponseCode, addTestName)
+		assert.Equal(t, res.StatusCode(), tc.ResCode, "want", tc.ResCode, addTestName)
 	}
 }
 
@@ -899,7 +899,7 @@ func TestUpdateProfile(t *testing.T) {
 
 		r := recover()
 		if r != nil {
-			t.Fatal("panic at TestUpdateProfile", addTestName, r)
+			t.Fatal("panic at TestUpdateProfile"+addTestName, r)
 		}
 	}()
 
@@ -959,9 +959,81 @@ func TestUpdateProfile(t *testing.T) {
 			c.Locals("claims", fakeClaims)
 		}
 		ctr.UpdateProfile(c)
-		resp := c.Response()
-		if resp.StatusCode() != tc.ResCode {
-			t.Error(constants.ShouldEqual, resp.StatusCode(), "want", tc.ResCode)
+		res := c.Response()
+		assert.Equal(t, res.StatusCode(), tc.ResCode, "want", tc.ResCode, addTestName)
+	}
+}
+
+func TestMyProfile(t *testing.T) {
+	t.Parallel()
+	c := helper.NewFiberCtx()
+	ctx := c.Context()
+	ctr := userCtr
+	assert.NotNil(t, ctr, constants.ShouldNotNil)
+	assert.NotNil(t, c, constants.ShouldNotNil)
+	assert.NotNil(t, ctx, constants.ShouldNotNil)
+
+	// create inactive user
+	createdUser := createActiveUser(ctx, 1)
+	userToken, loginErr := userSvc.Login(ctx, model.UserLogin{
+		Email:    createdUser.Email,
+		Password: createdUser.Password,
+		IP:       helper.RandomIPAddress(),
+	})
+	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
+	defer func() {
+		userRepo.Delete(ctx, createdUser.ID)
+
+		r := recover()
+		if r != nil {
+			t.Fatal("panic at TestMyProfile"+addTestName, r)
+		}
+	}()
+
+	testCases := []struct {
+		Name    string
+		ResCode int
+		Token   string
+	}{
+		{
+			Name:    "success",
+			ResCode: http.StatusOK,
+			Token:   userToken,
+		},
+		{
+			Name:    "failed: fake claims",
+			ResCode: http.StatusUnauthorized,
+			Token:   "fake-Token",
+		},
+		{
+			Name:    "failed: payload nil, Token nil",
+			ResCode: http.StatusUnauthorized,
+			Token:   "",
+		},
+	}
+
+	jwtHandler := middleware.NewJWTHandler()
+	for _, tc := range testCases {
+		c := helper.NewFiberCtx()
+		c.Request().Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", userToken))
+		c.Request().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		c.Request().Header.SetMethod(fiber.MethodGet)
+		fakeClaims := jwtHandler.GenerateClaims(tc.Token)
+		if fakeClaims != nil {
+			c.Locals("claims", fakeClaims)
+		}
+
+		ctr.MyProfile(c)
+		res := c.Response()
+		assert.Equal(t, res.StatusCode(), tc.ResCode, "want", tc.ResCode, addTestName)
+
+		if res.StatusCode() == http.StatusOK {
+			resBody := c.Response().Body()
+			resString := string(resBody)
+			resStruct := response.Response{}
+			err := json.Unmarshal([]byte(resString), &resStruct)
+			assert.NoErrorf(t, err, "Failed to parse response JSON: %v", err)
 		}
 	}
 }
@@ -1021,18 +1093,3 @@ func createActiveUser(ctx context.Context, roleID int) (data *entity.User) {
 
 	return userByID
 }
-
-// Todo : create func createActiveUser
-
-// TestNewUserController
-// TestRegister
-// TestAccountActivation
-// TestDeleteAccountActivation
-// TestForgetPassword
-// TestResetPassword
-// TestLogin
-// TestLogout
-// TestUpdatePassword
-
-// UpdateProfile(c *fiber.Ctx) error
-// MyProfile(c *fiber.Ctx) error
