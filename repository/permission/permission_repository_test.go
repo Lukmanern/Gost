@@ -56,11 +56,9 @@ func TestNewPermissionRepository(t *testing.T) {
 func TestPermissionRepositoryImplCreate(t *testing.T) {
 	permission := createOnePermission(t, "create-same-name")
 	if permission == nil {
-		t.Error("failed creating permission : permission is nil")
+		t.Fatal("failed creating permission : permission is nil")
 	}
-	defer func() {
-		permissionRepoImpl.Delete(ctx, permission.ID)
-	}()
+	defer permissionRepoImpl.Delete(ctx, permission.ID)
 
 	type args struct {
 		ctx        context.Context
@@ -112,11 +110,9 @@ func TestPermissionRepositoryImplCreate(t *testing.T) {
 func TestPermissionRepositoryImplGetByID(t *testing.T) {
 	permission := createOnePermission(t, "TestGetByID")
 	if permission == nil {
-		t.Error("failed creating permission : permission is nil")
+		t.Fatal("failed creating permission : permission is nil")
 	}
-	defer func() {
-		permissionRepoImpl.Delete(ctx, permission.ID)
-	}()
+	defer permissionRepoImpl.Delete(ctx, permission.ID)
 
 	type args struct {
 		ctx context.Context
@@ -164,11 +160,9 @@ func TestPermissionRepositoryImplGetByID(t *testing.T) {
 func TestPermissionRepositoryImplGetByName(t *testing.T) {
 	permission := createOnePermission(t, "TestGetByName")
 	if permission == nil {
-		t.Error("failed creating permission : permission is nil")
+		t.Fatal("failed creating permission : permission is nil")
 	}
-	defer func() {
-		permissionRepoImpl.Delete(ctx, permission.ID)
-	}()
+	defer permissionRepoImpl.Delete(ctx, permission.ID)
 
 	type args struct {
 		ctx  context.Context
@@ -287,11 +281,9 @@ func TestPermissionRepositoryImplGetAll(t *testing.T) {
 func TestPermissionRepositoryImplUpdate(t *testing.T) {
 	permission := createOnePermission(t, "TestUpdateByID")
 	if permission == nil {
-		t.Error("failed creating permission : permission is nil")
+		t.Fatal("failed creating permission : permission is nil")
 	}
-	defer func() {
-		permissionRepoImpl.Delete(ctx, permission.ID)
-	}()
+	defer permissionRepoImpl.Delete(ctx, permission.ID)
 
 	type args struct {
 		ctx        context.Context
@@ -351,11 +343,9 @@ func TestPermissionRepositoryImplUpdate(t *testing.T) {
 func TestPermissionRepositoryImplDelete(t *testing.T) {
 	permission := createOnePermission(t, "TestDeleteByID")
 	if permission == nil {
-		t.Error("failed creating permission : permission is nil")
+		t.Fatal("failed creating permission : permission is nil")
 	}
-	defer func() {
-		permissionRepoImpl.Delete(ctx, permission.ID)
-	}()
+	defer permissionRepoImpl.Delete(ctx, permission.ID)
 
 	type args struct {
 		ctx context.Context

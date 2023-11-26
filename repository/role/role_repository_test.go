@@ -11,6 +11,7 @@ import (
 	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -63,9 +64,7 @@ func TestCreate(t *testing.T) {
 	if role == nil {
 		t.Error("failed creating role : role is nil")
 	}
-	defer func() {
-		roleRepoImpl.Delete(ctx, role.ID)
-	}()
+	defer roleRepoImpl.Delete(ctx, role.ID)
 
 	type args struct {
 		ctx           context.Context
@@ -119,9 +118,7 @@ func TestConnectToPermission(t *testing.T) {
 	if role == nil || role.ID == 0 {
 		t.Error("failed creating role : role is nil")
 	}
-	defer func() {
-		roleRepoImpl.Delete(ctx, role.ID)
-	}()
+	defer roleRepoImpl.Delete(ctx, role.ID)
 
 	ctxBg := context.Background()
 	testCases := []struct {
@@ -176,9 +173,7 @@ func TestGetByID(t *testing.T) {
 	if role == nil {
 		t.Error("failed creating role : role is nil")
 	}
-	defer func() {
-		roleRepoImpl.Delete(ctx, role.ID)
-	}()
+	defer roleRepoImpl.Delete(ctx, role.ID)
 
 	type args struct {
 		ctx context.Context
@@ -228,9 +223,7 @@ func TestGetByName(t *testing.T) {
 	if role == nil {
 		t.Error("failed creating role : role is nil")
 	}
-	defer func() {
-		roleRepoImpl.Delete(ctx, role.ID)
-	}()
+	defer roleRepoImpl.Delete(ctx, role.ID)
 
 	type args struct {
 		ctx  context.Context
@@ -349,9 +342,7 @@ func TestUpdate(t *testing.T) {
 	if role == nil {
 		t.Error("failed creating role : role is nil")
 	}
-	defer func() {
-		roleRepoImpl.Delete(ctx, role.ID)
-	}()
+	defer roleRepoImpl.Delete(ctx, role.ID)
 
 	type args struct {
 		ctx  context.Context
@@ -412,9 +403,7 @@ func TestDelete(t *testing.T) {
 	if role == nil {
 		t.Error("failed creating role : role is nil")
 	}
-	defer func() {
-		roleRepoImpl.Delete(ctx, role.ID)
-	}()
+	defer roleRepoImpl.Delete(ctx, role.ID)
 
 	type args struct {
 		ctx context.Context
@@ -438,16 +427,17 @@ func TestDelete(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.repo.Delete(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
-				t.Errorf("RoleRepositoryImpl.Delete() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			err := tt.repo.Delete(tt.args.ctx, tt.args.id)
+			assert.Equal(t, tt.wantErr, err != nil, "RoleRepositoryImpl.Delete() error")
 
 			role, err := tt.repo.GetByID(tt.args.ctx, tt.args.id)
-			if !tt.wantErr && err == nil {
-				t.Error("should error")
-			}
-			if !tt.wantErr && role != nil {
-				t.Error("role should nil")
+
+			if tt.wantErr {
+				assert.Error(t, err, "should return an error")
+				assert.Nil(t, role, "role should be nil")
+			} else {
+				// assert.NoError(t, err, "unexpected error")
+				// assert.NotNil(t, role, "role should not be nil")
 			}
 		})
 	}

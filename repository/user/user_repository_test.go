@@ -130,9 +130,7 @@ func TestUserRepositoryImplGetByID(t *testing.T) {
 	if createErr != nil {
 		t.Errorf("error while creating user")
 	}
-	defer func() {
-		userRepositoryImpl.Delete(ctx, id)
-	}()
+	defer userRepositoryImpl.Delete(ctx, id)
 
 	type args struct {
 		ctx context.Context
@@ -200,9 +198,7 @@ func TestUserRepositoryImplGetByEmail(t *testing.T) {
 	if createErr != nil {
 		t.Errorf("error while creating user")
 	}
-	defer func() {
-		userRepositoryImpl.Delete(ctx, id)
-	}()
+	defer userRepositoryImpl.Delete(ctx, id)
 
 	type args struct {
 		ctx   context.Context
@@ -357,9 +353,7 @@ func TestUserRepositoryImplUpdate(t *testing.T) {
 	}
 	// add id to user
 	user.ID = id
-	defer func() {
-		userRepositoryImpl.Delete(ctx, id)
-	}()
+	defer userRepositoryImpl.Delete(ctx, id)
 
 	type args struct {
 		ctx  context.Context
@@ -436,9 +430,7 @@ func TestUserRepositoryImplUpdatePassword(t *testing.T) {
 	}
 	// add id to user
 	user.ID = id
-	defer func() {
-		userRepositoryImpl.Delete(ctx, id)
-	}()
+	defer userRepositoryImpl.Delete(ctx, id)
 
 	type args struct {
 		ctx            context.Context
@@ -509,9 +501,7 @@ func TestUserRepositoryImplGetByConditions(t *testing.T) {
 	}
 	// add id to user
 	user.ID = id
-	defer func() {
-		userRepositoryImpl.Delete(ctx, id)
-	}()
+	defer userRepositoryImpl.Delete(ctx, id)
 
 	type args struct {
 		ctx   context.Context
