@@ -95,7 +95,11 @@ func (repo *PermissionRepositoryImpl) GetAll(ctx context.Context, filter model.R
 	permissions = []entity.Permission{}
 	skip := int64(filter.Limit * (filter.Page - 1))
 	limit := int64(filter.Limit)
-	result = repo.db.Where(cond, args...).Limit(int(limit)).Offset(int(skip)).Find(&permissions)
+	result = repo.db.Where(cond, args...).Limit(int(limit)).Offset(int(skip))
+	if filter.Sort != "" {
+		result = result.Order(filter.Sort + " ASC")
+	}
+	result = result.Find(&permissions)
 	if result.Error != nil {
 		return nil, 0, result.Error
 	}

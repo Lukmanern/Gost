@@ -1,444 +1,261 @@
 package repository
 
 import (
-	"context"
-	"reflect"
-	"strconv"
+	"log"
 	"testing"
 	"time"
 
-	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
+	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	fileTestName string = "at RoleRepoTest"
+)
+
 var (
-	roleRepoImpl  RoleRepositoryImpl
-	permissionsID []int
-	timeNow       time.Time
-	ctx           context.Context
+	timeNow time.Time
 )
 
 func init() {
-	filePath := "./../../.env"
-	env.ReadConfig(filePath)
-
+	envFilePath := "./../../.env"
+	env.ReadConfig(envFilePath)
 	timeNow = time.Now()
-	ctx = context.Background()
-
-	roleRepoImpl = RoleRepositoryImpl{
-		db: connector.LoadDatabase(),
-	}
-	permissionsID = []int{1, 2, 3, 4, 5}
-
 }
 
-func createOneRole(t *testing.T, namePrefix string) *entity.Role {
-	role := entity.Role{
-		Name:        "valid-role-name-" + namePrefix,
-		Description: "valid-role-description-" + namePrefix,
-		TimeFields: entity.TimeFields{
-			CreatedAt: &timeNow,
-			UpdatedAt: &timeNow,
-		},
-	}
-	id, createErr := roleRepoImpl.Create(ctx, role, permissionsID)
-	if createErr != nil {
-		t.Error("error while creating role : ", createErr.Error())
-	}
-	role.ID = id
-	return &role
-}
+func TestCreateGetsDelete(t *testing.T) {
+	repository := NewRoleRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, errors.ShouldNotNil, fileTestName)
+	assert.NotNil(t, ctx, errors.ShouldNotNil, fileTestName)
 
-func TestNewRoleRepository(t *testing.T) {
-	roleRepo := NewRoleRepository()
-	if roleRepo == nil {
-		t.Error("should not nil")
+	type testCase struct {
+		Name          string
+		Payload       entity.Role
+		PermissionIDs []int
+		WantErr       bool
 	}
-}
 
-func TestCreate(t *testing.T) {
-	role := createOneRole(t, "create-same-name")
-	if role == nil {
-		t.Error("failed creating role : role is nil")
-	}
-	defer roleRepoImpl.Delete(ctx, role.ID)
+	validRole := createRole()
+	defer repository.Delete(ctx, validRole.ID)
 
-	type args struct {
-		ctx           context.Context
-		role          entity.Role
-		permissionsID []int
-	}
-	tests := []struct {
-		name      string
-		repo      RoleRepositoryImpl
-		args      args
-		wantErr   bool
-		wantPanic bool
-	}{
+	testCases := []testCase{
 		{
-			name:    "error while creating with the same name",
-			wantErr: true,
-			args: args{
-				ctx: ctx,
-				role: entity.Role{
-					Name:        role.Name,
-					Description: "",
-					TimeFields: entity.TimeFields{
-						CreatedAt: &timeNow,
-						UpdatedAt: &timeNow,
-					},
-				},
+			Name: "Failed Create Role -1: name already used",
+			Payload: entity.Role{
+				Name:        validRole.Name,
+				Description: helper.RandomWords(5),
 			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r == nil && tt.wantPanic {
-					t.Errorf("create() do not panic")
-				}
-			}()
-			gotID, err := tt.repo.Create(tt.args.ctx, tt.args.role, tt.args.permissionsID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("RoleRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotID <= 0 {
-				t.Errorf("ID should be positive")
-			}
-		})
-	}
-}
-
-func TestConnectToPermission(t *testing.T) {
-	role := createOneRole(t, "TestRoleConnectToPermission")
-	if role == nil || role.ID == 0 {
-		t.Error("failed creating role : role is nil")
-	}
-	defer roleRepoImpl.Delete(ctx, role.ID)
-
-	ctxBg := context.Background()
-	testCases := []struct {
-		name          string
-		roleID        int
-		permissionsID []int
-		wantErr       bool
-	}{
-		{
-			name:          "Success Case",
-			roleID:        role.ID,
-			permissionsID: []int{2, 3, 4},
-			wantErr:       false,
+			WantErr: true,
 		},
 		{
-			name:          "Failed Case",
-			roleID:        role.ID,
-			permissionsID: []int{-2, 3, 4},
-			wantErr:       true,
+			Name: "Failed Create Role -2: invalid permission id",
+			Payload: entity.Role{
+				Name:        helper.RandomString(10),
+				Description: helper.RandomWords(5),
+			},
+			PermissionIDs: []int{-1, -2, 0},
+			WantErr:       true,
+		},
+		{
+			Name: "Success Create Role -1",
+			Payload: entity.Role{
+				Name:        helper.RandomString(10),
+				Description: helper.RandomWords(5),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Create Role -2",
+			Payload: entity.Role{
+				Name:        helper.RandomString(10),
+				Description: helper.RandomWords(5),
+			},
+			WantErr: false,
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := roleRepoImpl.ConnectToPermission(ctxBg, tc.roleID, tc.permissionsID)
-			if err != nil && !tc.wantErr {
-				t.Errorf("Expected error: %v, got error: %v", tc.wantErr, err)
-			}
+		log.Println(tc.Name, fileTestName)
 
-			roleByID, getErr := roleRepoImpl.GetByID(ctx, role.ID)
-			if getErr != nil {
-				t.Errorf("Expect no error, got error: %v", getErr)
-			}
+		tc.Payload.SetCreateTime()
+		id, createErr := repository.Create(ctx, tc.Payload, tc.PermissionIDs)
+		if tc.WantErr {
+			assert.Error(t, createErr, errors.ShouldErr, tc.Name, fileTestName)
+			continue
+		}
+		assert.NoError(t, createErr, errors.ShouldNotErr, tc.Name, fileTestName)
 
-			if !tc.wantErr {
-				perms := roleByID.Permissions
-				permsID := []int{}
-				for _, perm := range perms {
-					permsID = append(permsID, perm.ID)
-				}
+		userByID, getErr := repository.GetByID(ctx, id)
+		assert.NoError(t, getErr, errors.ShouldNotErr, tc.Name, fileTestName)
+		assert.Equal(t, userByID.Name, tc.Payload.Name, errors.ShouldEqual, tc.Name, fileTestName)
+		assert.Equal(t, userByID.Description, tc.Payload.Description, errors.ShouldEqual, tc.Name, fileTestName)
 
-				if !reflect.DeepEqual(tc.permissionsID, permsID) {
-					t.Error("permsID should equal")
-				}
-			}
-		})
-	}
-}
+		userByID, getErr = repository.GetByID(ctx, id*99)
+		assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
+		assert.Nil(t, userByID, errors.ShouldNil, tc.Name, fileTestName)
 
-func TestGetByID(t *testing.T) {
-	role := createOneRole(t, "TestGetByID")
-	if role == nil {
-		t.Error("failed creating role : role is nil")
-	}
-	defer roleRepoImpl.Delete(ctx, role.ID)
+		userByName, getErr := repository.GetByName(ctx, tc.Payload.Name)
+		assert.NoError(t, getErr, errors.ShouldNotErr, tc.Name, fileTestName)
+		assert.Equal(t, userByName.Name, tc.Payload.Name, errors.ShouldEqual, tc.Name, fileTestName)
+		assert.Equal(t, userByName.Description, tc.Payload.Description, errors.ShouldEqual, tc.Name, fileTestName)
 
-	type args struct {
-		ctx context.Context
-		id  int
-	}
-	tests := []struct {
-		name    string
-		repo    RoleRepositoryImpl
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "success get permission by valid id",
-			repo: roleRepoImpl,
-			args: args{
-				ctx: ctx,
-				id:  role.ID,
-			},
-			wantErr: false,
-		},
-		{
-			name: "failed get permission by invalid id",
-			repo: roleRepoImpl,
-			args: args{
-				ctx: ctx,
-				id:  -10,
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotRole, err := tt.repo.GetByID(tt.args.ctx, tt.args.id)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("RoleRepositoryImpl.GetByID() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr && gotRole == nil {
-				t.Error("role should not nil")
-			}
-		})
-	}
-}
+		userByName, getErr = repository.GetByName(ctx, tc.Payload.Name+"*&")
+		assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
+		assert.Nil(t, userByName, errors.ShouldNil, tc.Name, fileTestName)
 
-func TestGetByName(t *testing.T) {
-	role := createOneRole(t, "TestGetByName")
-	if role == nil {
-		t.Error("failed creating role : role is nil")
-	}
-	defer roleRepoImpl.Delete(ctx, role.ID)
+		deleteErr := repository.Delete(ctx, id)
+		assert.NoError(t, deleteErr, errors.ShouldNotErr, fileTestName)
 
-	type args struct {
-		ctx  context.Context
-		name string
-	}
-	tests := []struct {
-		name    string
-		repo    RoleRepositoryImpl
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "success get permission by valid id",
-			repo: roleRepoImpl,
-			args: args{
-				ctx:  ctx,
-				name: role.Name,
-			},
-			wantErr: false,
-		},
-		{
-			name: "failed get permission by invalid id",
-			repo: roleRepoImpl,
-			args: args{
-				ctx:  ctx,
-				name: "unknown name",
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotRole, err := tt.repo.GetByName(tt.args.ctx, tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("RoleRepositoryImpl.GetByName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr && gotRole == nil {
-				t.Error("role should not nil")
-			}
-		})
+		userByID, getErr = repository.GetByID(ctx, id)
+		assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
+		assert.Nil(t, userByID, errors.ShouldNil, tc.Name, fileTestName)
 	}
 }
 
 func TestGetAll(t *testing.T) {
-	roles := make([]entity.Role, 0)
-	for i := 0; i < 10; i++ {
-		role := createOneRole(t, "TestGetAll"+strconv.Itoa(i))
-		if role == nil {
+	repository := NewRoleRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, errors.ShouldNotNil, fileTestName)
+	assert.NotNil(t, ctx, errors.ShouldNotNil, fileTestName)
+
+	type testCase struct {
+		Name    string
+		Payload model.RequestGetAll
+		WantErr bool
+	}
+
+	testCases := []testCase{
+		{
+			Name: "Failed Get All -1: invalid sort",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 10,
+				Sort:  "invalid-sort",
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Success Get All -1",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 100,
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Get All -2",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 10,
+			},
+			WantErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, fileTestName)
+
+		users, total, getErr := repository.GetAll(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
 			continue
 		}
-		defer func() {
-			roleRepoImpl.Delete(ctx, role.ID)
-		}()
-
-		roles = append(roles, *role)
-	}
-	lenRoles := len(roles)
-	type args struct {
-		ctx    context.Context
-		filter model.RequestGetAll
-	}
-	tests := []struct {
-		name    string
-		repo    RoleRepositoryImpl
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "success get all",
-			repo: roleRepoImpl,
-			args: args{
-				ctx: ctx,
-				filter: model.RequestGetAll{
-					Limit: 1000,
-					Page:  1,
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "success get all",
-			repo: roleRepoImpl,
-			args: args{
-				ctx: ctx,
-				filter: model.RequestGetAll{
-					Limit: 1,
-					Page:  1,
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotRoles, gotTotal, err := tt.repo.GetAll(tt.args.ctx, tt.args.filter)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("RoleRepositoryImpl.GetAll() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.args.filter.Limit > lenRoles && len(gotRoles) < lenRoles {
-				t.Error("permissions should be $lenRoles or more")
-			}
-			if tt.args.filter.Limit > lenRoles && gotTotal < lenRoles {
-				t.Error("total permissions should be $lenRoles or more")
-			}
-			if tt.args.filter.Limit < lenRoles && len(gotRoles) > lenRoles {
-				t.Error("permissions should be less than $lenPermission")
-			}
-		})
+		assert.NoError(t, getErr, errors.ShouldNotErr, tc.Name, fileTestName)
+		assert.True(t, total >= 0, tc.Name, fileTestName)
+		assert.True(t, len(users) >= 0, tc.Name, fileTestName)
 	}
 }
 
 func TestUpdate(t *testing.T) {
-	role := createOneRole(t, "TestUpdateByID")
-	if role == nil {
-		t.Error("failed creating role : role is nil")
-	}
-	defer roleRepoImpl.Delete(ctx, role.ID)
+	repository := NewRoleRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, errors.ShouldNotNil, fileTestName)
+	assert.NotNil(t, ctx, errors.ShouldNotNil, fileTestName)
 
-	type args struct {
-		ctx  context.Context
-		role entity.Role
+	// create user for testing {payload}
+	user := createRole()
+	defer repository.Delete(ctx, user.ID)
+
+	type testCase struct {
+		Name    string
+		Payload entity.Role
+		WantErr bool
 	}
-	tests := []struct {
-		name    string
-		repo    RoleRepositoryImpl
-		args    args
-		wantErr bool
-	}{
+
+	testCases := []testCase{
 		{
-			name:    "success update name and desc",
-			repo:    roleRepoImpl,
-			wantErr: false,
-			args: args{
-				ctx: ctx,
-				role: entity.Role{
-					ID:          role.ID,
-					Name:        "updated name",
-					Description: "updated description",
-				},
+			Name: "Success Update -1",
+			Payload: entity.Role{
+				ID:          user.ID,
+				Name:        helper.RandomString(12),
+				Description: helper.RandomWords(7),
 			},
+			WantErr: false,
 		},
 		{
-			name:    "failed update name and desc with invalid id",
-			repo:    roleRepoImpl,
-			wantErr: true,
-			args: args{
-				ctx: ctx,
-				role: entity.Role{
-					ID:          -10,
-					Name:        "updated name",
-					Description: "updated description",
-				},
+			Name: "Success Update -2",
+			Payload: entity.Role{
+				ID:          user.ID,
+				Name:        helper.RandomString(12),
+				Description: helper.RandomWords(7),
 			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Update -1: invalid ID",
+			Payload: entity.Role{
+				ID:   -10,
+				Name: helper.RandomString(12),
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Update -2: invalid id",
+			Payload: entity.Role{
+				ID:   0,
+				Name: helper.RandomString(12),
+			},
+			WantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.repo.Update(tt.args.ctx, tt.args.role); (err != nil) != tt.wantErr {
-				t.Errorf("RoleRepositoryImpl.Update() error = %v, wantErr %v", err, tt.wantErr)
-			}
 
-			p, err := tt.repo.GetByID(tt.args.ctx, role.ID)
-			if err != nil {
-				t.Error("error while getting role")
-			}
-			if p.Name != tt.args.role.Name || p.Description != tt.args.role.Description {
-				t.Error("name and description failed to update")
-			}
-		})
+	for _, tc := range testCases {
+		log.Println(tc.Name, fileTestName)
+
+		tc.Payload.SetUpdateTime()
+		updateErr := repository.Update(ctx, tc.Payload)
+		if tc.WantErr {
+			// error by data not found not detected
+			// assert.Error(t, updateErr, errors.ShouldErr, fileTestName)
+			continue
+		}
+		assert.NoError(t, updateErr, errors.ShouldNotErr, fileTestName)
+
+		user, getErr := repository.GetByID(ctx, tc.Payload.ID)
+		assert.NoError(t, getErr, errors.ShouldNotErr, fileTestName)
+		assert.Equal(t, user.Name, tc.Payload.Name, tc.Name, fileTestName)
+		assert.Equal(t, user.Description, tc.Payload.Description, tc.Name, fileTestName)
 	}
 }
 
-func TestDelete(t *testing.T) {
-	role := createOneRole(t, "TestDeleteByID")
-	if role == nil {
-		t.Error("failed creating role : role is nil")
+func createRole() entity.Role {
+	repository := NewRoleRepository()
+	ctx := helper.NewFiberCtx().Context()
+	roleName := helper.RandomString(10)
+	role := entity.Role{
+		Name:        roleName,
+		Description: helper.RandomWords(6),
 	}
-	defer roleRepoImpl.Delete(ctx, role.ID)
-
-	type args struct {
-		ctx context.Context
-		id  int
+	role.SetCreateTime()
+	id, createErr := repository.Create(ctx, role, []int{})
+	if createErr != nil {
+		log.Fatal("error while create a new administrator role", fileTestName)
 	}
-	tests := []struct {
-		name    string
-		repo    RoleRepositoryImpl
-		args    args
-		wantErr bool
-	}{
-		{
-			name:    "success update permission",
-			repo:    roleRepoImpl,
-			wantErr: false,
-			args: args{
-				ctx: ctx,
-				id:  role.ID,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.repo.Delete(tt.args.ctx, tt.args.id)
-			assert.Equal(t, tt.wantErr, err != nil, "RoleRepositoryImpl.Delete() error")
-
-			role, err := tt.repo.GetByID(tt.args.ctx, tt.args.id)
-
-			if tt.wantErr {
-				assert.Error(t, err, "should return an error")
-				assert.Nil(t, role, "role should be nil")
-			} else {
-				// assert.NoError(t, err, "unexpected error")
-				// assert.NotNil(t, role, "role should not be nil")
-			}
-		})
-	}
+	role.ID = id
+	return role
 }

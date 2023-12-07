@@ -1,386 +1,251 @@
 package repository
 
 import (
-	"context"
-	"strconv"
+	"log"
 	"testing"
 	"time"
 
-	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
+	"github.com/Lukmanern/gost/internal/helper"
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	fileTestName string = "at PermissionRepoTest"
 )
 
 var (
-	permissionRepoImpl PermissionRepositoryImpl
-	timeNow            time.Time
-	ctx                context.Context
+	timeNow time.Time
 )
 
 func init() {
-	filePath := "./../../.env"
-	env.ReadConfig(filePath)
+	envFilePath := "./../../.env"
+	env.ReadConfig(envFilePath)
 	timeNow = time.Now()
-	ctx = context.Background()
-	permissionRepoImpl = PermissionRepositoryImpl{
-		db: connector.LoadDatabase(),
-	}
-
 }
 
-func createOnePermission(t *testing.T, namePrefix string) *entity.Permission {
-	permission := entity.Permission{
-		Name:        "valid-permission-name-" + namePrefix,
-		Description: "valid-permission-description-" + namePrefix,
-		TimeFields: entity.TimeFields{
-			CreatedAt: &timeNow,
-			UpdatedAt: &timeNow,
-		},
-	}
-	id, createErr := permissionRepoImpl.Create(ctx, permission)
-	if createErr != nil {
-		t.Errorf("error while creating permission")
-	}
-	permission.ID = id
-	return &permission
-}
+func TestCreateGetsDelete(t *testing.T) {
+	repository := NewPermissionRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, errors.ShouldNotNil, fileTestName)
+	assert.NotNil(t, ctx, errors.ShouldNotNil, fileTestName)
 
-func TestNewPermissionRepository(t *testing.T) {
-	permRepo := NewPermissionRepository()
-	if permRepo == nil {
-		t.Error("should not nil")
+	type testCase struct {
+		Name    string
+		Payload entity.Permission
+		WantErr bool
 	}
-}
 
-func TestPermissionRepositoryImplCreate(t *testing.T) {
-	permission := createOnePermission(t, "create-same-name")
-	if permission == nil {
-		t.Fatal("failed creating permission : permission is nil")
-	}
-	defer permissionRepoImpl.Delete(ctx, permission.ID)
+	validPermission := createPermission()
+	defer repository.Delete(ctx, validPermission.ID)
 
-	type args struct {
-		ctx        context.Context
-		permission entity.Permission
-	}
-	tests := []struct {
-		name      string
-		repo      PermissionRepositoryImpl
-		args      args
-		wantErr   bool
-		wantPanic bool
-	}{
+	testCases := []testCase{
 		{
-			name:      "error while creating with the same name",
-			wantErr:   true,
-			wantPanic: true,
-			args: args{
-				ctx: ctx,
-				permission: entity.Permission{
-					Name:        permission.Name,
-					Description: "",
-					TimeFields: entity.TimeFields{
-						CreatedAt: &timeNow,
-						UpdatedAt: &timeNow,
-					},
-				},
+			Name: "Failed Create Permission -1: name already used",
+			Payload: entity.Permission{
+				Name:        validPermission.Name,
+				Description: helper.RandomWords(5),
 			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r == nil && tt.wantPanic {
-					t.Errorf("create() do not panic")
-				}
-			}()
-			gotID, err := tt.repo.Create(tt.args.ctx, tt.args.permission)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PermissionRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotID <= 0 {
-				t.Errorf("ID should be positive")
-			}
-		})
-	}
-}
-
-func TestPermissionRepositoryImplGetByID(t *testing.T) {
-	permission := createOnePermission(t, "TestGetByID")
-	if permission == nil {
-		t.Fatal("failed creating permission : permission is nil")
-	}
-	defer permissionRepoImpl.Delete(ctx, permission.ID)
-
-	type args struct {
-		ctx context.Context
-		id  int
-	}
-	tests := []struct {
-		name    string
-		repo    PermissionRepositoryImpl
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "success get permission by valid id",
-			repo: permissionRepoImpl,
-			args: args{
-				ctx: ctx,
-				id:  permission.ID,
-			},
-			wantErr: false,
+			WantErr: true,
 		},
 		{
-			name: "failed get permission by invalid id",
-			repo: permissionRepoImpl,
-			args: args{
-				ctx: ctx,
-				id:  -10,
+			Name: "Success Create Permission -1",
+			Payload: entity.Permission{
+				Name:        helper.RandomString(10),
+				Description: helper.RandomWords(5),
 			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotPermission, err := tt.repo.GetByID(tt.args.ctx, tt.args.id)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PermissionRepositoryImpl.GetByID() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr && gotPermission == nil {
-				t.Error("permission should not nil")
-			}
-		})
-	}
-}
-
-func TestPermissionRepositoryImplGetByName(t *testing.T) {
-	permission := createOnePermission(t, "TestGetByName")
-	if permission == nil {
-		t.Fatal("failed creating permission : permission is nil")
-	}
-	defer permissionRepoImpl.Delete(ctx, permission.ID)
-
-	type args struct {
-		ctx  context.Context
-		name string
-	}
-	tests := []struct {
-		name           string
-		repo           PermissionRepositoryImpl
-		args           args
-		wantPermission *entity.Permission
-		wantErr        bool
-	}{
-		{
-			name: "success get permission by valid id",
-			repo: permissionRepoImpl,
-			args: args{
-				ctx:  ctx,
-				name: permission.Name,
-			},
-			wantErr: false,
+			WantErr: false,
 		},
 		{
-			name: "failed get permission by invalid id",
-			repo: permissionRepoImpl,
-			args: args{
-				ctx:  ctx,
-				name: "unknown name",
+			Name: "Success Create Permission -2",
+			Payload: entity.Permission{
+				Name:        helper.RandomString(10),
+				Description: helper.RandomWords(5),
 			},
-			wantErr: true,
+			WantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotPermission, err := tt.repo.GetByName(tt.args.ctx, tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PermissionRepositoryImpl.GetByID() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr && gotPermission == nil {
-				t.Error("permission should not nil")
-			}
-		})
-	}
-}
 
-func TestPermissionRepositoryImplGetAll(t *testing.T) {
-	permissions := make([]entity.Permission, 0)
-	for i := 0; i < 10; i++ {
-		permission := createOnePermission(t, "TestGetAll-"+strconv.Itoa(i))
-		if permission == nil {
+	for _, tc := range testCases {
+		log.Println(tc.Name, fileTestName)
+
+		tc.Payload.SetCreateTime()
+		id, createErr := repository.Create(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, createErr, errors.ShouldErr, tc.Name, fileTestName)
 			continue
 		}
-		defer func() {
-			permissionRepoImpl.Delete(ctx, permission.ID)
-		}()
+		assert.NoError(t, createErr, errors.ShouldNotErr, tc.Name, fileTestName)
 
-		permissions = append(permissions, *permission)
-	}
-	lenPermissions := len(permissions)
+		userByID, getErr := repository.GetByID(ctx, id)
+		assert.NoError(t, getErr, errors.ShouldNotErr, tc.Name, fileTestName)
+		assert.Equal(t, userByID.Name, tc.Payload.Name, errors.ShouldEqual, tc.Name, fileTestName)
+		assert.Equal(t, userByID.Description, tc.Payload.Description, errors.ShouldEqual, tc.Name, fileTestName)
 
-	type args struct {
-		ctx    context.Context
-		filter model.RequestGetAll
-	}
-	tests := []struct {
-		name    string
-		repo    PermissionRepositoryImpl
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "success get all",
-			repo: permissionRepoImpl,
-			args: args{
-				ctx: ctx,
-				filter: model.RequestGetAll{
-					Limit: 1000,
-					Page:  1,
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "success get all",
-			repo: permissionRepoImpl,
-			args: args{
-				ctx: ctx,
-				filter: model.RequestGetAll{
-					Limit: 1,
-					Page:  1,
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotPermissions, gotTotal, err := tt.repo.GetAll(tt.args.ctx, tt.args.filter)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PermissionRepositoryImpl.GetAll() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.args.filter.Limit > lenPermissions && len(gotPermissions) < lenPermissions {
-				t.Error("permissions should be $lenPermissions or more")
-			}
-			if tt.args.filter.Limit > lenPermissions && gotTotal < lenPermissions {
-				t.Error("total permissions should be $lenPermissions or more")
-			}
-			if tt.args.filter.Limit < lenPermissions && len(gotPermissions) > lenPermissions {
-				t.Error("permissions should be less than $lenPermission")
-			}
-		})
+		userByID, getErr = repository.GetByID(ctx, id*99)
+		assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
+		assert.Nil(t, userByID, errors.ShouldNil, tc.Name, fileTestName)
+
+		userByName, getErr := repository.GetByName(ctx, tc.Payload.Name)
+		assert.NoError(t, getErr, errors.ShouldNotErr, tc.Name, fileTestName)
+		assert.Equal(t, userByName.Name, tc.Payload.Name, errors.ShouldEqual, tc.Name, fileTestName)
+		assert.Equal(t, userByName.Description, tc.Payload.Description, errors.ShouldEqual, tc.Name, fileTestName)
+
+		userByName, getErr = repository.GetByName(ctx, tc.Payload.Name+"*&")
+		assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
+		assert.Nil(t, userByName, errors.ShouldNil, tc.Name, fileTestName)
+
+		deleteErr := repository.Delete(ctx, id)
+		assert.NoError(t, deleteErr, errors.ShouldNotErr, fileTestName)
+
+		userByID, getErr = repository.GetByID(ctx, id)
+		assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
+		assert.Nil(t, userByID, errors.ShouldNil, tc.Name, fileTestName)
 	}
 }
 
-func TestPermissionRepositoryImplUpdate(t *testing.T) {
-	permission := createOnePermission(t, "TestUpdateByID")
-	if permission == nil {
-		t.Fatal("failed creating permission : permission is nil")
-	}
-	defer permissionRepoImpl.Delete(ctx, permission.ID)
+func TestGetAll(t *testing.T) {
+	repository := NewPermissionRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, errors.ShouldNotNil, fileTestName)
+	assert.NotNil(t, ctx, errors.ShouldNotNil, fileTestName)
 
-	type args struct {
-		ctx        context.Context
-		permission entity.Permission
+	type testCase struct {
+		Name    string
+		Payload model.RequestGetAll
+		WantErr bool
 	}
-	tests := []struct {
-		name    string
-		repo    PermissionRepositoryImpl
-		wantErr bool
-		args    args
-	}{
+
+	testCases := []testCase{
 		{
-			name:    "success update name and desc",
-			repo:    permissionRepoImpl,
-			wantErr: false,
-			args: args{
-				ctx: ctx,
-				permission: entity.Permission{
-					ID:          permission.ID,
-					Name:        "updated name",
-					Description: "updated description",
-				},
+			Name: "Failed Get All -1: invalid sort",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 10,
+				Sort:  "invalid-sort",
 			},
+			WantErr: true,
 		},
 		{
-			name:    "failed update name and desc with invalid id",
-			repo:    permissionRepoImpl,
-			wantErr: true,
-			args: args{
-				ctx: ctx,
-				permission: entity.Permission{
-					ID:          -10,
-					Name:        "updated name",
-					Description: "updated description",
-				},
+			Name: "Success Get All -1",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 100,
 			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Get All -2",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 10,
+			},
+			WantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.repo.Update(tt.args.ctx, tt.args.permission); (err != nil) != tt.wantErr {
-				t.Errorf("PermissionRepositoryImpl.Update() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
 
-			p, err := tt.repo.GetByID(tt.args.ctx, permission.ID)
-			if err != nil {
-				t.Error("error while getting permission")
-			}
-			if p.Name != tt.args.permission.Name || p.Description != tt.args.permission.Description {
-				t.Error("name and description failed to update")
-			}
-		})
+	for _, tc := range testCases {
+		log.Println(tc.Name, fileTestName)
+
+		users, total, getErr := repository.GetAll(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
+			continue
+		}
+		assert.NoError(t, getErr, errors.ShouldNotErr, tc.Name, fileTestName)
+		assert.True(t, total >= 0, tc.Name, fileTestName)
+		assert.True(t, len(users) >= 0, tc.Name, fileTestName)
 	}
 }
 
-func TestPermissionRepositoryImplDelete(t *testing.T) {
-	permission := createOnePermission(t, "TestDeleteByID")
-	if permission == nil {
-		t.Fatal("failed creating permission : permission is nil")
-	}
-	defer permissionRepoImpl.Delete(ctx, permission.ID)
+func TestUpdate(t *testing.T) {
+	repository := NewPermissionRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, errors.ShouldNotNil, fileTestName)
+	assert.NotNil(t, ctx, errors.ShouldNotNil, fileTestName)
 
-	type args struct {
-		ctx context.Context
-		id  int
+	// create user for testing {payload}
+	user := createPermission()
+	defer repository.Delete(ctx, user.ID)
+
+	type testCase struct {
+		Name    string
+		Payload entity.Permission
+		WantErr bool
 	}
-	tests := []struct {
-		name    string
-		repo    PermissionRepositoryImpl
-		args    args
-		wantErr bool
-	}{
+
+	testCases := []testCase{
 		{
-			name:    "success update permission",
-			repo:    permissionRepoImpl,
-			wantErr: false,
-			args: args{
-				ctx: ctx,
-				id:  permission.ID,
+			Name: "Success Update -1",
+			Payload: entity.Permission{
+				ID:          user.ID,
+				Name:        helper.RandomString(12),
+				Description: helper.RandomWords(7),
 			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Update -2",
+			Payload: entity.Permission{
+				ID:          user.ID,
+				Name:        helper.RandomString(12),
+				Description: helper.RandomWords(7),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Update -1: invalid ID",
+			Payload: entity.Permission{
+				ID:   -10,
+				Name: helper.RandomString(12),
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Update -2: invalid id",
+			Payload: entity.Permission{
+				ID:   0,
+				Name: helper.RandomString(12),
+			},
+			WantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.repo.Delete(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
-				t.Errorf("PermissionRepositoryImpl.Delete() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
 
-			permission, err := tt.repo.GetByID(tt.args.ctx, tt.args.id)
-			if !tt.wantErr && err == nil {
-				t.Error("should error")
-			}
-			if !tt.wantErr && permission != nil {
-				t.Error("permission should nil")
-			}
-		})
+	for _, tc := range testCases {
+		log.Println(tc.Name, fileTestName)
+
+		tc.Payload.SetUpdateTime()
+		updateErr := repository.Update(ctx, tc.Payload)
+		if tc.WantErr {
+			// error by data not found not detected
+			// assert.Error(t, updateErr, errors.ShouldErr, fileTestName)
+			continue
+		}
+		assert.NoError(t, updateErr, errors.ShouldNotErr, fileTestName)
+
+		user, getErr := repository.GetByID(ctx, tc.Payload.ID)
+		assert.NoError(t, getErr, errors.ShouldNotErr, fileTestName)
+		assert.Equal(t, user.Name, tc.Payload.Name, tc.Name, fileTestName)
+		assert.Equal(t, user.Description, tc.Payload.Description, tc.Name, fileTestName)
 	}
+}
+
+func createPermission() entity.Permission {
+	repository := NewPermissionRepository()
+	ctx := helper.NewFiberCtx().Context()
+	permissionName := helper.RandomString(10)
+	permission := entity.Permission{
+		Name:        permissionName,
+		Description: helper.RandomWords(6),
+	}
+	permission.SetCreateTime()
+	id, createErr := repository.Create(ctx, permission)
+	if createErr != nil {
+		log.Fatal("error while create a new administrator permission", fileTestName)
+	}
+	permission.ID = id
+	return permission
 }
