@@ -77,9 +77,6 @@ func (svc *PermissionServiceImpl) GetByID(ctx context.Context, id int) (permissi
 		}
 		return nil, getErr
 	}
-	if permissionEntity == nil {
-		return nil, fiber.NewError(fiber.StatusNotFound, permNotFound)
-	}
 
 	permission = &model.PermissionResponse{
 		ID:          permissionEntity.ID,
@@ -118,15 +115,12 @@ func (svc *PermissionServiceImpl) Update(ctx context.Context, data model.Permiss
 		return fiber.NewError(fiber.StatusBadRequest, "permission name has been used")
 	}
 
-	permissionByID, getErr := svc.repository.GetByID(ctx, data.ID)
+	_, getErr = svc.repository.GetByID(ctx, data.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, permNotFound)
 		}
 		return getErr
-	}
-	if permissionByID == nil {
-		return fiber.NewError(fiber.StatusNotFound, permNotFound)
 	}
 
 	entityRole := entity.Permission{
@@ -143,15 +137,12 @@ func (svc *PermissionServiceImpl) Update(ctx context.Context, data model.Permiss
 }
 
 func (svc *PermissionServiceImpl) Delete(ctx context.Context, id int) (err error) {
-	permission, getErr := svc.repository.GetByID(ctx, id)
+	_, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, permNotFound)
 		}
 		return getErr
-	}
-	if permission == nil {
-		return fiber.NewError(fiber.StatusNotFound, permNotFound)
 	}
 	err = svc.repository.Delete(ctx, id)
 	if err != nil {

@@ -33,14 +33,14 @@ func TestCreateGetsDelete(t *testing.T) {
 	assert.NotNil(t, repository, errors.ShouldNotNil, fileTestName)
 	assert.NotNil(t, ctx, errors.ShouldNotNil, fileTestName)
 
+	validPermission := createPermission()
+	defer repository.Delete(ctx, validPermission.ID)
+
 	type testCase struct {
 		Name    string
 		Payload entity.Permission
 		WantErr bool
 	}
-
-	validPermission := createPermission()
-	defer repository.Delete(ctx, validPermission.ID)
 
 	testCases := []testCase{
 		{

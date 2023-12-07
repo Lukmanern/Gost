@@ -3,6 +3,7 @@ module github.com/Lukmanern/gost
 go 1.20
 
 require (
+	github.com/XANi/loremipsum v1.1.0
 	github.com/go-playground/validator/v10 v10.15.5
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gofiber/fiber/v2 v2.50.0
@@ -18,7 +19,6 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
-	github.com/XANi/loremipsum v1.1.0 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect

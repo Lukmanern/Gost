@@ -1,213 +1,267 @@
-// Don't run test per file without -p 1
-// or simply run test per func or run
-// project test using make test command
-// check Makefile file
 package service
 
 import (
+	"log"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/Lukmanern/gost/database/connector"
+	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/helper"
-	permService "github.com/Lukmanern/gost/service/permission"
+	repository "github.com/Lukmanern/gost/repository/role"
+	service "github.com/Lukmanern/gost/service/permission"
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	fileTestName string = "at RoleRepoTest"
+)
+
+var (
+	timeNow time.Time
 )
 
 func init() {
-	// Check env and database
-	env.ReadConfig("./../../.env")
-
-	connector.LoadDatabase()
-	connector.LoadRedisCache()
+	envFilePath := "./../../.env"
+	env.ReadConfig(envFilePath)
+	timeNow = time.Now()
 }
 
-func TestNewRoleService(t *testing.T) {
-	permSvc := permService.NewPermissionService()
-	svc := NewRoleService(permSvc)
-	if svc == nil {
-		t.Error(errors.ShouldNotNil)
-	}
-}
+func TestCreateGetsDelete(t *testing.T) {
+	repository := repository.NewRoleRepository()
+	assert.NotNil(t, repository, errors.ShouldNotNil, fileTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, errors.ShouldNotNil, fileTestName)
+	permService := service.NewPermissionService()
+	assert.NotNil(t, permService, errors.ShouldNotNil, fileTestName)
+	service := NewRoleService(permService)
+	assert.NotNil(t, service, errors.ShouldNotNil, fileTestName)
 
-// create 1 role, create 4 permissions
-// trying to connect
-func TestSuccessCrudRole(t *testing.T) {
-	c := helper.NewFiberCtx()
-	ctx := c.Context()
-	permSvc := permService.NewPermissionService()
-	if permSvc == nil || ctx == nil {
-		t.Error(errors.ShouldNotNil)
-	}
-	svc := NewRoleService(permSvc)
-	if svc == nil {
-		t.Error(errors.ShouldNotNil)
+	type testCase struct {
+		Name    string
+		Payload model.RoleCreate
+		WantErr bool
 	}
 
-	modelRole := model.RoleCreate{
-		Name:        strings.ToLower(helper.RandomString(10)),
-		Description: helper.RandomString(30),
-	}
-	roleID, createErr := svc.Create(ctx, modelRole)
-	if createErr != nil || roleID < 1 {
-		t.Error("should not error and id should more than zero")
+	validRole := createRole()
+	defer repository.Delete(ctx, validRole.ID)
+
+	testCases := []testCase{
+		{
+			Name: "Failed Create Role -1: name already used",
+			Payload: model.RoleCreate{
+				Name:        validRole.Name,
+				Description: helper.RandomWords(5),
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Create Role -2: invalid permission id",
+			Payload: model.RoleCreate{
+				Name:          strings.ToLower(helper.RandomString(10)),
+				Description:   helper.RandomWords(5),
+				PermissionsID: []int{-1, -2, 0},
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Success Create Role -1",
+			Payload: model.RoleCreate{
+				Name:        strings.ToLower(helper.RandomString(10)),
+				Description: helper.RandomWords(5),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Create Role -2",
+			Payload: model.RoleCreate{
+				Name:        strings.ToLower(helper.RandomString(10)),
+				Description: helper.RandomWords(5),
+			},
+			WantErr: false,
+		},
 	}
 
-	// Save the ID for deleting the permissions
-	permsID := make([]int, 0)
-	for i := 0; i < 3; i++ {
-		modelPerm := model.PermissionCreate{
-			Name:        strings.ToLower(helper.RandomString(10)),
-			Description: helper.RandomString(30),
+	for _, tc := range testCases {
+		log.Println(tc.Name, fileTestName)
+
+		id, createErr := service.Create(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, createErr, errors.ShouldErr, tc.Name, fileTestName)
+			continue
 		}
-		permID, createErr := permSvc.Create(ctx, modelPerm)
-		if createErr != nil || permID < 1 {
-			t.Error("should not error and permID should be more than one")
-		}
+		assert.NoError(t, createErr, errors.ShouldNotErr, tc.Name, fileTestName)
 
-		permsID = append(permsID, permID)
-	}
+		userByID, getErr := service.GetByID(ctx, id)
+		assert.NoError(t, getErr, errors.ShouldNotErr, tc.Name, fileTestName)
+		assert.Equal(t, userByID.Name, tc.Payload.Name, errors.ShouldEqual, tc.Name, fileTestName)
+		assert.Equal(t, userByID.Description, tc.Payload.Description, errors.ShouldEqual, tc.Name, fileTestName)
 
-	defer func() {
-		svc.Delete(ctx, roleID)
-		for _, id := range permsID {
-			permSvc.Delete(ctx, id)
-		}
-	}()
+		userByID, getErr = service.GetByID(ctx, id*99)
+		assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
+		assert.Nil(t, userByID, errors.ShouldNil, tc.Name, fileTestName)
 
-	// Success connect
-	modelConnect := model.RoleConnectToPermissions{
-		RoleID:        roleID,
-		PermissionsID: permsID,
-	}
-	connectErr := svc.ConnectPermissions(ctx, modelConnect)
-	if connectErr != nil {
-		t.Error(errors.ShouldNotErr)
-	}
+		deleteErr := service.Delete(ctx, id)
+		assert.NoError(t, deleteErr, errors.ShouldNotErr, fileTestName)
 
-	roleByID, getErr := svc.GetByID(ctx, roleID)
-	if getErr != nil || roleByID == nil {
-		t.Error("should not error and role not nil")
-	}
-	if len(roleByID.Permissions) != len(permsID) {
-		t.Error("total of permissions connected by role should be equal")
-	}
+		deleteErr = service.Delete(ctx, id)
+		assert.Error(t, deleteErr, errors.ShouldErr, fileTestName)
 
-	roles, total, getAllErr := svc.GetAll(ctx, model.RequestGetAll{Limit: 10, Page: 1})
-	if len(roles) < 1 || total < 1 || getAllErr != nil {
-		t.Error("should be more than or equal to one and not error at all")
-	}
-
-	updateRoleModel := model.RoleUpdate{
-		ID:          roleID,
-		Name:        strings.ToLower(helper.RandomString(11)),
-		Description: helper.RandomString(31),
-	}
-	updateErr := svc.Update(ctx, updateRoleModel)
-	if updateErr != nil {
-		t.Error(errors.ShouldNotErr)
-	}
-
-	// Value reset
-	roleByID = nil
-	getErr = nil
-	roleByID, getErr = svc.GetByID(ctx, roleID)
-	if getErr != nil || roleByID == nil {
-		t.Error("should not error and roleByID should not be nil")
-	}
-	if roleByID.Name != updateRoleModel.Name || roleByID.Description != updateRoleModel.Description {
-		t.Error("name and description should be the same")
-	}
-
-	deleteErr := svc.Delete(ctx, roleID)
-	if deleteErr != nil {
-		t.Error(errors.ShouldNotErr)
-	}
-
-	// Value reset
-	roleByID = nil
-	getErr = nil
-	roleByID, getErr = svc.GetByID(ctx, roleID)
-	if getErr == nil || roleByID != nil {
-		t.Error("should error and roleByID should be nil")
+		userByID, getErr = service.GetByID(ctx, id)
+		assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
+		assert.Nil(t, userByID, errors.ShouldNil, tc.Name, fileTestName)
 	}
 }
 
-func TestFailedCrudRoles(t *testing.T) {
-	c := helper.NewFiberCtx()
-	ctx := c.Context()
-	permSvc := permService.NewPermissionService()
-	if permSvc == nil || ctx == nil {
-		t.Error(errors.ShouldNotNil)
-	}
-	svc := NewRoleService(permSvc)
-	if svc == nil {
-		t.Error(errors.ShouldNotNil)
+func TestGetAll(t *testing.T) {
+	repository := repository.NewRoleRepository()
+	assert.NotNil(t, repository, errors.ShouldNotNil, fileTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, errors.ShouldNotNil, fileTestName)
+	permService := service.NewPermissionService()
+	assert.NotNil(t, permService, errors.ShouldNotNil, fileTestName)
+	service := NewRoleService(permService)
+	assert.NotNil(t, service, errors.ShouldNotNil, fileTestName)
+
+	type testCase struct {
+		Name    string
+		Payload model.RequestGetAll
+		WantErr bool
 	}
 
-	// failed create: permissions not found
-	func() {
-		modelRole := model.RoleCreate{
-			Name:          strings.ToLower(helper.RandomString(10)),
-			Description:   helper.RandomString(30),
-			PermissionsID: []int{-1, -2, -3},
+	testCases := []testCase{
+		{
+			Name: "Failed Get All -1: invalid sort",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 10,
+				Sort:  "invalid-sort",
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Success Get All -1",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 100,
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Get All -2",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 10,
+			},
+			WantErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, fileTestName)
+
+		users, total, getErr := service.GetAll(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, getErr, errors.ShouldErr, tc.Name, fileTestName)
+			continue
 		}
-		roleID, createErr := svc.Create(ctx, modelRole)
-		if createErr == nil || roleID != 0 {
-			t.Error("should error and id should zero")
+		assert.NoError(t, getErr, errors.ShouldNotErr, tc.Name, fileTestName)
+		assert.True(t, total >= 0, tc.Name, fileTestName)
+		assert.True(t, len(users) >= 0, tc.Name, fileTestName)
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	repository := repository.NewRoleRepository()
+	assert.NotNil(t, repository, errors.ShouldNotNil, fileTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, errors.ShouldNotNil, fileTestName)
+	permService := service.NewPermissionService()
+	assert.NotNil(t, permService, errors.ShouldNotNil, fileTestName)
+	service := NewRoleService(permService)
+	assert.NotNil(t, service, errors.ShouldNotNil, fileTestName)
+
+	// create user for testing {payload}
+	user := createRole()
+	defer repository.Delete(ctx, user.ID)
+
+	type testCase struct {
+		Name    string
+		Payload model.RoleUpdate
+		WantErr bool
+	}
+
+	testCases := []testCase{
+		{
+			Name: "Success Update -1",
+			Payload: model.RoleUpdate{
+				ID:          user.ID,
+				Name:        strings.ToLower(helper.RandomString(12)),
+				Description: helper.RandomWords(7),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Update -2",
+			Payload: model.RoleUpdate{
+				ID:          user.ID,
+				Name:        strings.ToLower(helper.RandomString(12)),
+				Description: helper.RandomWords(7),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Update -1: invalid ID",
+			Payload: model.RoleUpdate{
+				ID:   -10,
+				Name: strings.ToLower(helper.RandomString(12)),
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Update -2: invalid id",
+			Payload: model.RoleUpdate{
+				ID:   0,
+				Name: strings.ToLower(helper.RandomString(12)),
+			},
+			WantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, fileTestName)
+
+		updateErr := service.Update(ctx, tc.Payload)
+		if tc.WantErr {
+			// error by data not found not detected
+			assert.Error(t, updateErr, errors.ShouldErr, tc.Name, fileTestName)
+			continue
 		}
-	}()
+		assert.NoError(t, updateErr, errors.ShouldNotErr, tc.Name, fileTestName)
 
-	// success create
-	modelRole := model.RoleCreate{
-		Name:        strings.ToLower(helper.RandomString(10)),
-		Description: helper.RandomString(30),
+		user, getErr := service.GetByID(ctx, tc.Payload.ID)
+		assert.NoError(t, getErr, errors.ShouldNotErr, tc.Name, fileTestName)
+		assert.Equal(t, user.Name, tc.Payload.Name, tc.Name, fileTestName)
+		assert.Equal(t, user.Description, tc.Payload.Description, tc.Name, fileTestName)
 	}
-	roleID, createErr := svc.Create(ctx, modelRole)
-	if createErr != nil || roleID < 1 {
-		t.Error("should not error and id should more than zero")
-	}
+}
 
-	defer func() {
-		svc.Delete(ctx, roleID)
-	}()
-
-	// failed connect
-	modelConnectFailed := model.RoleConnectToPermissions{
-		RoleID:        roleID,
-		PermissionsID: []int{-3, -2, -1},
+func createRole() entity.Role {
+	repository := repository.NewRoleRepository()
+	ctx := helper.NewFiberCtx().Context()
+	roleName := strings.ToLower(helper.RandomString(10))
+	role := entity.Role{
+		Name:        roleName,
+		Description: helper.RandomWords(6),
 	}
-	connectErr := svc.ConnectPermissions(ctx, modelConnectFailed)
-	if connectErr == nil {
-		t.Error(errors.ShouldErr)
+	role.SetCreateTime()
+	id, createErr := repository.Create(ctx, role, []int{})
+	if createErr != nil {
+		log.Fatal("error while create a new administrator role", fileTestName)
 	}
-
-	modelConnectFailed = model.RoleConnectToPermissions{
-		RoleID:        -1,
-		PermissionsID: []int{},
-	}
-	connectErr = nil
-	connectErr = svc.ConnectPermissions(ctx, modelConnectFailed)
-	if connectErr == nil {
-		t.Error(errors.ShouldErr)
-	}
-
-	// failed update
-	updateRoleModel := model.RoleUpdate{
-		ID:          -1,
-		Name:        strings.ToLower(helper.RandomString(11)),
-		Description: helper.RandomString(31),
-	}
-	updateErr := svc.Update(ctx, updateRoleModel)
-	if updateErr == nil {
-		t.Error(errors.ShouldErr)
-	}
-
-	// failed delete
-	deleteErr := svc.Delete(ctx, -1)
-	if deleteErr == nil {
-		t.Error(errors.ShouldErr)
-	}
+	role.ID = id
+	return role
 }

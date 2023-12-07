@@ -143,15 +143,12 @@ func (svc *UserManagementServiceImpl) GetAll(ctx context.Context, filter model.R
 }
 
 func (svc *UserManagementServiceImpl) Update(ctx context.Context, user model.UserProfileUpdate) (err error) {
-	getUser, getErr := svc.repository.GetByID(ctx, user.ID)
+	_, getErr := svc.repository.GetByID(ctx, user.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, errors.NotFound)
 		}
 		return getErr
-	}
-	if getUser == nil {
-		return fiber.NewError(fiber.StatusNotFound, errors.NotFound)
 	}
 
 	userEntity := entity.User{
@@ -170,15 +167,12 @@ func (svc *UserManagementServiceImpl) Update(ctx context.Context, user model.Use
 }
 
 func (svc *UserManagementServiceImpl) Delete(ctx context.Context, id int) (err error) {
-	getUser, getErr := svc.repository.GetByID(ctx, id)
+	_, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, errors.NotFound)
 		}
 		return getErr
-	}
-	if getUser == nil {
-		return fiber.NewError(fiber.StatusNotFound, errors.NotFound)
 	}
 
 	err = svc.repository.Delete(ctx, id)

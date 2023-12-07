@@ -115,9 +115,6 @@ func (svc *RoleServiceImpl) GetByID(ctx context.Context, id int) (role *entity.R
 		}
 		return nil, err
 	}
-	if role == nil {
-		return nil, fiber.NewError(fiber.StatusNotFound, roleNotFound)
-	}
 	return role, nil
 }
 
@@ -141,23 +138,17 @@ func (svc *RoleServiceImpl) GetAll(ctx context.Context, filter model.RequestGetA
 
 func (svc *RoleServiceImpl) Update(ctx context.Context, data model.RoleUpdate) (err error) {
 	data.Name = strings.ToLower(data.Name)
-	roleByName, getErr := svc.repository.GetByName(ctx, data.Name)
+	_, getErr := svc.repository.GetByName(ctx, data.Name)
 	if getErr != nil && getErr != gorm.ErrRecordNotFound {
 		return getErr
 	}
-	if roleByName != nil && roleByName.ID != data.ID {
-		return fiber.NewError(fiber.StatusBadRequest, "role name has been used")
-	}
 
-	roleByID, getErr := svc.repository.GetByID(ctx, data.ID)
+	_, getErr = svc.repository.GetByID(ctx, data.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, roleNotFound)
 		}
 		return getErr
-	}
-	if roleByID == nil {
-		return fiber.NewError(fiber.StatusNotFound, roleNotFound)
 	}
 
 	entityRole := entity.Role{
@@ -174,15 +165,12 @@ func (svc *RoleServiceImpl) Update(ctx context.Context, data model.RoleUpdate) (
 }
 
 func (svc *RoleServiceImpl) Delete(ctx context.Context, id int) (err error) {
-	role, getErr := svc.repository.GetByID(ctx, id)
+	_, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, roleNotFound)
 		}
 		return getErr
-	}
-	if role == nil {
-		return fiber.NewError(fiber.StatusNotFound, roleNotFound)
 	}
 	err = svc.repository.Delete(ctx, id)
 	if err != nil {
