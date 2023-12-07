@@ -41,10 +41,10 @@ const (
 )
 
 var (
-	userSvc  service.UserService
-	userCtr  UserController
-	userRepo repository.UserRepository
-	appURL   string
+	userSvc        service.UserService
+	userCtr        UserController
+	userRepository repository.UserRepository
+	appURL         string
 )
 
 func init() {
@@ -60,7 +60,7 @@ func init() {
 	roleService := roleService.NewRoleService(permService)
 	userSvc = service.NewUserService(roleService)
 	userCtr = NewUserController(userSvc)
-	userRepo = repository.NewUserRepository()
+	userRepository = repository.NewUserRepository()
 }
 
 func TestNewUserController(t *testing.T) {
@@ -85,7 +85,7 @@ func TestRegister(t *testing.T) {
 
 	createdUser := createUser(ctx, 1)
 	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
+		userRepository.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -193,8 +193,8 @@ func TestRegister(t *testing.T) {
 				t.Fatal("should ok")
 			}
 			defer func() {
-				u, _ := userRepo.GetByEmail(ctx, payload.Email)
-				userRepo.Delete(ctx, u.ID)
+				u, _ := userRepository.GetByEmail(ctx, payload.Email)
+				userRepository.Delete(ctx, u.ID)
 			}()
 		}
 
@@ -215,7 +215,7 @@ func TestAccountActivation(t *testing.T) {
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
 	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
+		userRepository.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -292,7 +292,7 @@ func TestDeleteAccountActivation(t *testing.T) {
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
 	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
+		userRepository.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -364,7 +364,7 @@ func TestForgetPassword(t *testing.T) {
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
 	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
+		userRepository.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -378,7 +378,7 @@ func TestForgetPassword(t *testing.T) {
 	})
 	assert.Nil(t, verifyErr, "verification should not error")
 
-	createdUser, getErr := userRepo.GetByID(ctx, createdUser.ID)
+	createdUser, getErr := userRepository.GetByID(ctx, createdUser.ID)
 	assert.Nil(t, getErr, "getByID should succeed")
 	assert.NotNil(t, createdUser, "getByID should return a non-nil user")
 	assert.Nil(t, createdUser.VerificationCode, "VerificationCode should be nil")
@@ -444,7 +444,7 @@ func TestResetPassword(t *testing.T) {
 
 	createdUser := createUser(ctx, 1)
 	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
+		userRepository.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -452,7 +452,7 @@ func TestResetPassword(t *testing.T) {
 		}
 	}()
 
-	userByID, getErr := userRepo.GetByID(ctx, createdUser.ID)
+	userByID, getErr := userRepository.GetByID(ctx, createdUser.ID)
 	assert.Nil(t, getErr, "Getting user by ID should succeed")
 	assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
 	vCode := userByID.VerificationCode
@@ -468,7 +468,7 @@ func TestResetPassword(t *testing.T) {
 	// value reset
 	userByID = nil
 	getErr = nil
-	userByID, getErr = userRepo.GetByID(ctx, createdUser.ID)
+	userByID, getErr = userRepository.GetByID(ctx, createdUser.ID)
 	assert.Nil(t, getErr, "Getting user by ID should succeed")
 	assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
 	assert.Nil(t, userByID.VerificationCode, "VerificationCode should be nil")
@@ -482,7 +482,7 @@ func TestResetPassword(t *testing.T) {
 	// value reset
 	userByID = nil
 	getErr = nil
-	userByID, getErr = userRepo.GetByID(ctx, createdUser.ID)
+	userByID, getErr = userRepository.GetByID(ctx, createdUser.ID)
 	assert.Nil(t, getErr, "Getting user by ID should succeed")
 	assert.NotNil(t, userByID, "Getting user by ID should return a non-nil user")
 	assert.NotNil(t, userByID.VerificationCode, "VerificationCode should not be nil")
@@ -559,8 +559,8 @@ func TestLogin(t *testing.T) {
 	createdUser := createUser(ctx, 1)
 	createdActiveUser := createActiveUser(ctx, 1)
 	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
-		userRepo.Delete(ctx, createdActiveUser.ID)
+		userRepository.Delete(ctx, createdUser.ID)
+		userRepository.Delete(ctx, createdActiveUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -720,7 +720,7 @@ func TestLogout(t *testing.T) {
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
 	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
+		userRepository.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -786,7 +786,7 @@ func TestUpdatePassword(t *testing.T) {
 	// create inactive user
 	createdUser := createActiveUser(ctx, 1)
 	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
+		userRepository.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -886,7 +886,7 @@ func TestUpdateProfile(t *testing.T) {
 	// create inactive user
 	createdUser := createActiveUser(ctx, 1)
 	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
+		userRepository.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -974,7 +974,7 @@ func TestMyProfile(t *testing.T) {
 	// create inactive user
 	createdUser := createActiveUser(ctx, 1)
 	defer func() {
-		userRepo.Delete(ctx, createdUser.ID)
+		userRepository.Delete(ctx, createdUser.ID)
 
 		r := recover()
 		if r != nil {
@@ -1049,7 +1049,7 @@ func createUser(ctx context.Context, roleID int) (data *entity.User) {
 		log.Fatal("failed creating user at User Controller Test :: createUser func ", err.Error())
 	}
 
-	data, getErr := userRepo.GetByID(ctx, id)
+	data, getErr := userRepository.GetByID(ctx, id)
 	if getErr != nil || data == nil {
 		log.Fatal("failed getting user at User Controller Test :: createUser func ", getErr.Error())
 	}
@@ -1073,7 +1073,7 @@ func createActiveUser(ctx context.Context, roleID int) (data *entity.User) {
 		log.Fatal("failed creating user createActiveUser func", err.Error())
 	}
 
-	userByID, getErr := userRepo.GetByID(ctx, id)
+	userByID, getErr := userRepository.GetByID(ctx, id)
 	if getErr != nil || userByID == nil {
 		log.Fatal("failed getting user createActiveUser func", getErr.Error())
 	}

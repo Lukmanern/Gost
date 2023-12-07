@@ -37,7 +37,7 @@ var (
 	userSvc           userService.UserService
 	userDevService    service.UserManagementService
 	userDevController UserManagementController
-	userRepo          repository.UserRepository
+	userRepository    repository.UserRepository
 	appURL            string
 )
 
@@ -51,7 +51,7 @@ func init() {
 
 	userDevService = service.NewUserManagementService()
 	userDevController = NewUserManagementController(userDevService)
-	userRepo = repository.NewUserRepository()
+	userRepository = repository.NewUserRepository()
 
 	permService := permService.NewPermissionService()
 	roleService := roleService.NewRoleService(permService)
@@ -172,8 +172,8 @@ func TestCreate(t *testing.T) {
 
 		if res.StatusCode == fiber.StatusCreated {
 			defer func(email string) {
-				u, _ := userRepo.GetByEmail(ctx, email)
-				userRepo.Delete(ctx, u.ID)
+				u, _ := userRepository.GetByEmail(ctx, email)
+				userRepository.Delete(ctx, u.ID)
 			}(tc.Payload.Email)
 		}
 	}
@@ -456,7 +456,7 @@ func createUser(ctx context.Context, roleID int) (data *entity.User) {
 		log.Fatal("failed creating user at User Controller Test :: createUser func ", err.Error())
 	}
 
-	data, getErr := userRepo.GetByID(ctx, id)
+	data, getErr := userRepository.GetByID(ctx, id)
 	if getErr != nil || data == nil {
 		log.Fatal("failed getting user at User Controller Test :: createUser func ", getErr.Error())
 	}
@@ -480,7 +480,7 @@ func createUser(ctx context.Context, roleID int) (data *entity.User) {
 // 		log.Fatal("failed creating user createActiveUser func", err.Error())
 // 	}
 
-// 	userByID, getErr := userRepo.GetByID(ctx, id)
+// 	userByID, getErr := userRepository.GetByID(ctx, id)
 // 	if getErr != nil || userByID == nil {
 // 		log.Fatal("failed getting user createActiveUser func", getErr.Error())
 // 	}

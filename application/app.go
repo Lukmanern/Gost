@@ -109,10 +109,10 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getUserManagementRoutes(router) // user CRUD without auth ⚠️
-	getDevopmentRouter(router)      // experimental without auth ⚠️
-	getUserRoutes(router)           // user with auth
-	getRolePermissionRoutes(router) // RBAC CRUD with auth
+	getUserManagementRoutes(router)
+	getDevopmentRouter(router)
+	getUserRoutes(router)
+	getRolePermissionRoutes(router)
 
 	if err := router.Listen(fmt.Sprintf(":%d", port)); err != nil {
 		log.Printf("Oops... Server is not running! Reason: %v", err)
