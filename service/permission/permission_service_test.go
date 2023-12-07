@@ -9,10 +9,9 @@ import (
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/helper"
 )
 
@@ -27,7 +26,7 @@ func init() {
 func TestNewPermissionService(t *testing.T) {
 	svc := NewPermissionService()
 	if svc == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 }
 
@@ -43,7 +42,7 @@ func TestSuccessCrudPermission(t *testing.T) {
 	ctx := c.Context()
 	svc := NewPermissionService()
 	if svc == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 	modelPerm := model.PermissionCreate{
 		Name:        strings.ToLower(helper.RandomString(10)),
@@ -65,7 +64,7 @@ func TestSuccessCrudPermission(t *testing.T) {
 		t.Error("name and desc should same")
 	}
 
-	perms, total, getAllErr := svc.GetAll(ctx, base.RequestGetAll{Limit: 10, Page: 1})
+	perms, total, getAllErr := svc.GetAll(ctx, model.RequestGetAll{Limit: 10, Page: 1})
 	if len(perms) < 1 || total < 1 || getAllErr != nil {
 		t.Error("should more than or equal one and not error at all")
 	}
@@ -77,7 +76,7 @@ func TestSuccessCrudPermission(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updatePermModel)
 	if updateErr != nil {
-		t.Error(constants.ShouldNotErr)
+		t.Error(errors.ShouldNotErr)
 	}
 
 	// value reset
@@ -93,7 +92,7 @@ func TestSuccessCrudPermission(t *testing.T) {
 
 	deleteErr := svc.Delete(ctx, permID)
 	if deleteErr != nil {
-		t.Error(constants.ShouldNotErr)
+		t.Error(errors.ShouldNotErr)
 	}
 
 	// value reset
@@ -110,7 +109,7 @@ func TestFailedCrudPermission(t *testing.T) {
 	ctx := c.Context()
 	svc := NewPermissionService()
 	if svc == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 	modelPerm := model.PermissionCreate{
 		Name:        strings.ToLower(helper.RandomString(10)),
@@ -136,11 +135,11 @@ func TestFailedCrudPermission(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updatePermModel)
 	if updateErr == nil {
-		t.Error(constants.ShouldErr)
+		t.Error(errors.ShouldErr)
 	}
 
 	deleteErr := svc.Delete(ctx, -10)
 	if deleteErr == nil {
-		t.Error(constants.ShouldErr)
+		t.Error(errors.ShouldErr)
 	}
 }

@@ -1,4 +1,12 @@
-package base
+package model
+
+// RequestGetAll struct used for request getAll controller funcs
+type RequestGetAll struct {
+	Page    int    `query:"page"`
+	Limit   int    `query:"limit"`
+	Keyword string `query:"search"`
+	Sort    string `query:"sort"`
+}
 
 type PageMeta struct {
 	Total int `json:"total"`

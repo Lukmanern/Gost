@@ -4,8 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Lukmanern/gost/domain/base"
-	"github.com/Lukmanern/gost/internal/constants"
+	"github.com/Lukmanern/gost/internal/errors"
 )
 
 func TestAllTablesName(t *testing.T) {
@@ -32,7 +31,7 @@ func TestUserSetActivateAccount(t *testing.T) {
 	user := User{
 		VerificationCode: &code,
 		ActivatedAt:      nil,
-		TimeFields: base.TimeFields{
+		TimeFields: TimeFields{
 			CreatedAt: &timeNow,
 			UpdatedAt: &timeNow,
 		},
@@ -40,9 +39,9 @@ func TestUserSetActivateAccount(t *testing.T) {
 
 	user.SetActivateAccount()
 	if user.VerificationCode != nil {
-		t.Error(constants.ShouldNil)
+		t.Error(errors.ShouldNil)
 	}
 	if user.ActivatedAt == nil {
-		t.Error(constants.ShouldNil)
+		t.Error(errors.ShouldNil)
 	}
 }

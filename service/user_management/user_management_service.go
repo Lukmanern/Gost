@@ -6,17 +6,15 @@ package service
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/helper"
 	repository "github.com/Lukmanern/gost/repository/user"
@@ -34,7 +32,7 @@ type UserManagementService interface {
 	GetByEmail(ctx context.Context, email string) (user *model.UserResponse, err error)
 
 	// GetAll func get some users
-	GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error)
+	GetAll(ctx context.Context, filter model.RequestGetAll) (users []model.UserResponse, total int, err error)
 
 	// Update func update one user data.
 	Update(ctx context.Context, user model.UserProfileUpdate) (err error)
@@ -97,7 +95,7 @@ func (svc *UserManagementServiceImpl) GetByID(ctx context.Context, id int) (user
 	userEntity, err := svc.repository.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fiber.NewError(fiber.StatusNotFound, constants.NotFound)
+			return nil, fiber.NewError(fiber.StatusNotFound, errors.NotFound)
 		}
 		return nil, err
 	}
@@ -114,7 +112,7 @@ func (svc *UserManagementServiceImpl) GetByEmail(ctx context.Context, email stri
 	userEntity, getErr := svc.repository.GetByEmail(ctx, email)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return nil, fiber.NewError(fiber.StatusNotFound, constants.NotFound)
+			return nil, fiber.NewError(fiber.StatusNotFound, errors.NotFound)
 		}
 		return nil, getErr
 	}
@@ -126,7 +124,7 @@ func (svc *UserManagementServiceImpl) GetByEmail(ctx context.Context, email stri
 	return user, nil
 }
 
-func (svc *UserManagementServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []model.UserResponse, total int, err error) {
+func (svc *UserManagementServiceImpl) GetAll(ctx context.Context, filter model.RequestGetAll) (users []model.UserResponse, total int, err error) {
 	userEntities, total, err := svc.repository.GetAll(ctx, filter)
 	if err != nil {
 		return nil, 0, err
@@ -148,12 +146,12 @@ func (svc *UserManagementServiceImpl) Update(ctx context.Context, user model.Use
 	getUser, getErr := svc.repository.GetByID(ctx, user.ID)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
+			return fiber.NewError(fiber.StatusNotFound, errors.NotFound)
 		}
 		return getErr
 	}
 	if getUser == nil {
-		return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
+		return fiber.NewError(fiber.StatusNotFound, errors.NotFound)
 	}
 
 	userEntity := entity.User{
@@ -175,12 +173,12 @@ func (svc *UserManagementServiceImpl) Delete(ctx context.Context, id int) (err e
 	getUser, getErr := svc.repository.GetByID(ctx, id)
 	if getErr != nil {
 		if getErr == gorm.ErrRecordNotFound {
-			return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
+			return fiber.NewError(fiber.StatusNotFound, errors.NotFound)
 		}
 		return getErr
 	}
 	if getUser == nil {
-		return fiber.NewError(fiber.StatusNotFound, constants.NotFound)
+		return fiber.NewError(fiber.StatusNotFound, errors.NotFound)
 	}
 
 	err = svc.repository.Delete(ctx, id)

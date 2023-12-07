@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	repository "github.com/Lukmanern/gost/repository/role"
@@ -27,7 +26,7 @@ type RoleService interface {
 	GetByID(ctx context.Context, id int) (role *entity.Role, err error)
 
 	// GetAll func get some roles.
-	GetAll(ctx context.Context, filter base.RequestGetAll) (roles []model.RoleResponse, total int, err error)
+	GetAll(ctx context.Context, filter model.RequestGetAll) (roles []model.RoleResponse, total int, err error)
 
 	// Update func update one role.
 	Update(ctx context.Context, data model.RoleUpdate) (err error)
@@ -122,7 +121,7 @@ func (svc *RoleServiceImpl) GetByID(ctx context.Context, id int) (role *entity.R
 	return role, nil
 }
 
-func (svc *RoleServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []model.RoleResponse, total int, err error) {
+func (svc *RoleServiceImpl) GetAll(ctx context.Context, filter model.RequestGetAll) (roles []model.RoleResponse, total int, err error) {
 	roleEntities, total, err := svc.repository.GetAll(ctx, filter)
 	if err != nil {
 		return nil, 0, err

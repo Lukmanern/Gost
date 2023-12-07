@@ -9,8 +9,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/domain/model"
 )
 
 type UserRepository interface {
@@ -27,7 +27,7 @@ type UserRepository interface {
 	GetByConditions(ctx context.Context, conds map[string]any) (user *entity.User, err error)
 
 	// GetAll retrieves all users based on a filter for pagination.
-	GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.User, total int, err error)
+	GetAll(ctx context.Context, filter model.RequestGetAll) (users []entity.User, total int, err error)
 
 	// Update modifies user information in the repository.
 	Update(ctx context.Context, user entity.User) (err error)
@@ -112,7 +112,7 @@ func (repo *UserRepositoryImpl) GetByConditions(ctx context.Context, conds map[s
 	return user, nil
 }
 
-func (repo *UserRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (users []entity.User, total int, err error) {
+func (repo *UserRepositoryImpl) GetAll(ctx context.Context, filter model.RequestGetAll) (users []entity.User, total int, err error) {
 	var count int64
 	args := []interface{}{"%" + filter.Keyword + "%"}
 	cond := "name LIKE ?"

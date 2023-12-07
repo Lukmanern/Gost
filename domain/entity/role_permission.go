@@ -3,8 +3,6 @@
 
 package entity
 
-import "github.com/Lukmanern/gost/domain/base"
-
 // This vars used in userServiceLayer
 const (
 	ADMIN = 1
@@ -18,7 +16,7 @@ type Role struct {
 	Name        string       `gorm:"type:varchar(255) not null unique" json:"name"`
 	Description string       `gorm:"type:varchar(255) not null" json:"description"`
 	Permissions []Permission `gorm:"many2many:role_has_permissions" json:"permissions"`
-	base.TimeFields
+	TimeFields
 }
 
 func (e *Role) TableName() string {
@@ -40,7 +38,7 @@ type Permission struct {
 	ID          int    `gorm:"type:serial;primaryKey" json:"id"`
 	Name        string `gorm:"type:varchar(255) not null unique" json:"name"`
 	Description string `gorm:"type:varchar(255) not null" json:"description"`
-	base.TimeFields
+	TimeFields
 }
 
 func (e *Permission) TableName() string {

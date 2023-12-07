@@ -16,8 +16,8 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/response"
@@ -64,26 +64,24 @@ func init() {
 }
 
 func TestNewUserController(t *testing.T) {
-	t.Parallel()
 	permService := permService.NewPermissionService()
 	roleService := roleService.NewRoleService(permService)
 	userService := service.NewUserService(roleService)
 	userController := NewUserController(userService)
 
-	assert.NotNil(t, userController, constants.ShouldNotNil+addTestName)
-	assert.NotNil(t, userService, constants.ShouldNotNil+addTestName)
-	assert.NotNil(t, roleService, constants.ShouldNotNil+addTestName)
-	assert.NotNil(t, permService, constants.ShouldNotNil+addTestName)
+	assert.NotNil(t, userController, errors.ShouldNotNil+addTestName)
+	assert.NotNil(t, userService, errors.ShouldNotNil+addTestName)
+	assert.NotNil(t, roleService, errors.ShouldNotNil+addTestName)
+	assert.NotNil(t, permService, errors.ShouldNotNil+addTestName)
 }
 
 func TestRegister(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	createdUser := createUser(ctx, 1)
 	defer func() {
@@ -175,10 +173,10 @@ func TestRegister(t *testing.T) {
 	for _, tc := range testCases {
 		log.Println(tc.Name, addTestName)
 		jsonData, marshalErr := json.Marshal(&tc.Payload)
-		assert.Nil(t, marshalErr, constants.ShouldNil, marshalErr)
+		assert.Nil(t, marshalErr, errors.ShouldNil, marshalErr)
 
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonData))
-		assert.Nil(t, httpReqErr, constants.ShouldNil, httpReqErr)
+		assert.Nil(t, httpReqErr, errors.ShouldNil, httpReqErr)
 
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
@@ -186,9 +184,9 @@ func TestRegister(t *testing.T) {
 		req.Close = true
 
 		res, testErr := app.Test(req, -1)
-		assert.Nil(t, testErr, constants.ShouldNil, testErr)
+		assert.Nil(t, testErr, errors.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, errors.ShouldEqual, res.StatusCode)
 		if res.StatusCode == fiber.StatusCreated {
 			payload, ok := tc.Payload.(*model.UserRegister)
 			if !ok {
@@ -202,18 +200,17 @@ func TestRegister(t *testing.T) {
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
-		assert.Nil(t, decodeErr, constants.ShouldNil, decodeErr)
+		assert.Nil(t, decodeErr, errors.ShouldNil, decodeErr)
 	}
 }
 
 func TestAccountActivation(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
@@ -263,10 +260,10 @@ func TestAccountActivation(t *testing.T) {
 	for _, tc := range testCases {
 		log.Println(tc.Name, addTestName)
 		jsonData, marshalErr := json.Marshal(&tc.Payload)
-		assert.Nil(t, marshalErr, constants.ShouldNil, marshalErr)
+		assert.Nil(t, marshalErr, errors.ShouldNil, marshalErr)
 
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonData))
-		assert.Nil(t, httpReqErr, constants.ShouldNil, httpReqErr)
+		assert.Nil(t, httpReqErr, errors.ShouldNil, httpReqErr)
 
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
@@ -274,24 +271,23 @@ func TestAccountActivation(t *testing.T) {
 		req.Close = true
 
 		res, testErr := app.Test(req, -1)
-		assert.Nil(t, testErr, constants.ShouldNil, testErr)
+		assert.Nil(t, testErr, errors.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, errors.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
-		assert.Nil(t, decodeErr, constants.ShouldNil, decodeErr)
+		assert.Nil(t, decodeErr, errors.ShouldNil, decodeErr)
 	}
 }
 
 func TestDeleteAccountActivation(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
@@ -336,10 +332,10 @@ func TestDeleteAccountActivation(t *testing.T) {
 	for _, tc := range testCases {
 		log.Println(tc.Name, addTestName)
 		jsonData, marshalErr := json.Marshal(&tc.Payload)
-		assert.Nil(t, marshalErr, constants.ShouldNil, marshalErr)
+		assert.Nil(t, marshalErr, errors.ShouldNil, marshalErr)
 
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonData))
-		assert.Nil(t, httpReqErr, constants.ShouldNil, httpReqErr)
+		assert.Nil(t, httpReqErr, errors.ShouldNil, httpReqErr)
 
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
@@ -347,24 +343,23 @@ func TestDeleteAccountActivation(t *testing.T) {
 		req.Close = true
 
 		res, testErr := app.Test(req, -1)
-		assert.Nil(t, testErr, constants.ShouldNil, testErr)
+		assert.Nil(t, testErr, errors.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, errors.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
-		assert.Nil(t, decodeErr, constants.ShouldNil, decodeErr)
+		assert.Nil(t, decodeErr, errors.ShouldNil, decodeErr)
 	}
 }
 
 func TestForgetPassword(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	createdUser := createUser(ctx, 1)
 	vCode := createdUser.VerificationCode
@@ -418,10 +413,10 @@ func TestForgetPassword(t *testing.T) {
 	for _, tc := range testCases {
 		log.Println(tc.Name, addTestName)
 		jsonData, marshalErr := json.Marshal(&tc.Payload)
-		assert.Nil(t, marshalErr, constants.ShouldNil, marshalErr)
+		assert.Nil(t, marshalErr, errors.ShouldNil, marshalErr)
 
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonData))
-		assert.Nil(t, httpReqErr, constants.ShouldNil, httpReqErr)
+		assert.Nil(t, httpReqErr, errors.ShouldNil, httpReqErr)
 
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
@@ -429,24 +424,23 @@ func TestForgetPassword(t *testing.T) {
 		req.Close = true
 
 		res, testErr := app.Test(req, -1)
-		assert.Nil(t, testErr, constants.ShouldNil, testErr)
+		assert.Nil(t, testErr, errors.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, errors.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
-		assert.Nil(t, decodeErr, constants.ShouldNil, decodeErr)
+		assert.Nil(t, decodeErr, errors.ShouldNil, decodeErr)
 	}
 }
 
 func TestResetPassword(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	createdUser := createUser(ctx, 1)
 	defer func() {
@@ -469,7 +463,7 @@ func TestResetPassword(t *testing.T) {
 		Code:  *vCode,
 		Email: userByID.Email,
 	})
-	assert.Nil(t, verifyErr, constants.ShouldNotErr)
+	assert.Nil(t, verifyErr, errors.ShouldNotErr)
 
 	// value reset
 	userByID = nil
@@ -483,7 +477,7 @@ func TestResetPassword(t *testing.T) {
 	forgetPassErr := userSvc.ForgetPassword(ctx, model.UserForgetPassword{
 		Email: userByID.Email,
 	})
-	assert.Nil(t, forgetPassErr, constants.ShouldNotErr)
+	assert.Nil(t, forgetPassErr, errors.ShouldNotErr)
 
 	// value reset
 	userByID = nil
@@ -532,10 +526,10 @@ func TestResetPassword(t *testing.T) {
 	for _, tc := range testCases {
 		log.Println(tc.Name, addTestName)
 		jsonData, marshalErr := json.Marshal(&tc.Payload)
-		assert.Nil(t, marshalErr, constants.ShouldNil, marshalErr)
+		assert.Nil(t, marshalErr, errors.ShouldNil, marshalErr)
 
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonData))
-		assert.Nil(t, httpReqErr, constants.ShouldNil, httpReqErr)
+		assert.Nil(t, httpReqErr, errors.ShouldNil, httpReqErr)
 
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
@@ -543,24 +537,23 @@ func TestResetPassword(t *testing.T) {
 		req.Close = true
 
 		res, testErr := app.Test(req, -1)
-		assert.Nil(t, testErr, constants.ShouldNil, testErr)
+		assert.Nil(t, testErr, errors.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, errors.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
-		assert.Nil(t, decodeErr, constants.ShouldNil, decodeErr)
+		assert.Nil(t, decodeErr, errors.ShouldNil, decodeErr)
 	}
 }
 
 func TestLogin(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	// create users
 	createdUser := createUser(ctx, 1)
@@ -655,10 +648,10 @@ func TestLogin(t *testing.T) {
 	for _, tc := range testCases {
 		log.Println(tc.Name, addTestName)
 		jsonData, marshalErr := json.Marshal(&tc.Payload)
-		assert.Nil(t, marshalErr, constants.ShouldNil, marshalErr)
+		assert.Nil(t, marshalErr, errors.ShouldNil, marshalErr)
 
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonData))
-		assert.Nil(t, httpReqErr, constants.ShouldNil, httpReqErr)
+		assert.Nil(t, httpReqErr, errors.ShouldNil, httpReqErr)
 
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
@@ -666,13 +659,13 @@ func TestLogin(t *testing.T) {
 		req.Close = true
 
 		res, testErr := app.Test(req, -1)
-		assert.Nil(t, testErr, constants.ShouldNil, testErr)
+		assert.Nil(t, testErr, errors.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, errors.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
-		assert.Nil(t, decodeErr, constants.ShouldNil, decodeErr)
+		assert.Nil(t, decodeErr, errors.ShouldNil, decodeErr)
 	}
 
 	// try blocking IP feature
@@ -693,36 +686,35 @@ func TestLogin(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		log.Println(testCase.Name, addTestName)
 		jsonObject, marshalErr := json.Marshal(&testCase.Payload)
-		assert.Nil(t, marshalErr, constants.ShouldNotErr, addTestName)
+		assert.Nil(t, marshalErr, errors.ShouldNotErr, addTestName)
 		url := appURL + endp
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
-		assert.Nil(t, httpReqErr, constants.ShouldNotErr)
+		assert.Nil(t, httpReqErr, errors.ShouldNotErr)
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 		app := fiber.New()
 		app.Post(endp, ctr.Login)
 		req.Close = true
 		res, testErr := app.Test(req, -1)
-		assert.Nil(t, testErr, constants.ShouldNotErr, addTestName)
+		assert.Nil(t, testErr, errors.ShouldNotErr, addTestName)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, testCase.ResCode, constants.ShouldEqual, res.StatusCode, "want", testCase.ResCode)
+		assert.Equal(t, res.StatusCode, testCase.ResCode, errors.ShouldEqual, res.StatusCode, "want", testCase.ResCode)
 	}
 
 	// check value
 	redis := connector.LoadRedisCache()
-	assert.NotNil(t, redis, constants.ShouldNotNil)
+	assert.NotNil(t, redis, errors.ShouldNotNil)
 	value := redis.Get("failed-login-" + clientIP).Val()
 	assert.Equal(t, value, "5", "value should be 5", addTestName)
 }
 
 func TestLogout(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	// create inactive user
 	createdUser := createUser(ctx, 1)
@@ -747,8 +739,8 @@ func TestLogout(t *testing.T) {
 		Password: createdUser.Password,
 		IP:       helper.RandomIPAddress(),
 	})
-	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
-	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
+	assert.NotEmpty(t, userToken, errors.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, errors.ShouldNotErr, addTestName)
 
 	testCases := []testCase{
 		{
@@ -784,13 +776,12 @@ func TestLogout(t *testing.T) {
 }
 
 func TestUpdatePassword(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	// create inactive user
 	createdUser := createActiveUser(ctx, 1)
@@ -808,8 +799,8 @@ func TestUpdatePassword(t *testing.T) {
 		Password: createdUser.Password,
 		IP:       helper.RandomIPAddress(),
 	})
-	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
-	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
+	assert.NotEmpty(t, userToken, errors.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, errors.ShouldNotErr, addTestName)
 
 	testCases := []struct {
 		Name    string
@@ -885,13 +876,12 @@ func TestUpdatePassword(t *testing.T) {
 }
 
 func TestUpdateProfile(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	// create inactive user
 	createdUser := createActiveUser(ctx, 1)
@@ -909,8 +899,8 @@ func TestUpdateProfile(t *testing.T) {
 		Password: createdUser.Password,
 		IP:       helper.RandomIPAddress(),
 	})
-	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
-	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
+	assert.NotEmpty(t, userToken, errors.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, errors.ShouldNotErr, addTestName)
 
 	testCases := []struct {
 		Name    string
@@ -974,13 +964,12 @@ func TestUpdateProfile(t *testing.T) {
 }
 
 func TestMyProfile(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userCtr
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	// create inactive user
 	createdUser := createActiveUser(ctx, 1)
@@ -998,8 +987,8 @@ func TestMyProfile(t *testing.T) {
 		Password: createdUser.Password,
 		IP:       helper.RandomIPAddress(),
 	})
-	assert.NotEmpty(t, userToken, constants.ShouldNotNil, addTestName)
-	assert.NoError(t, loginErr, constants.ShouldNotErr, addTestName)
+	assert.NotEmpty(t, userToken, errors.ShouldNotNil, addTestName)
+	assert.NoError(t, loginErr, errors.ShouldNotErr, addTestName)
 
 	testCases := []struct {
 		Name    string

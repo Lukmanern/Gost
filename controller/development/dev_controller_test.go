@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
@@ -187,7 +187,7 @@ func TestAllControllers(t *testing.T) {
 
 		tc.Handler(c)
 		res := c.Response()
-		assert.Equal(res.StatusCode(), tc.ResponseCode, constants.ShouldEqual, res.StatusCode())
+		assert.Equal(res.StatusCode(), tc.ResponseCode, errors.ShouldEqual, res.StatusCode())
 
 		resBody := res.Body()
 		resString := string(resBody)

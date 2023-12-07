@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/gofiber/fiber/v2"
 )
@@ -217,7 +217,7 @@ func TestJWTHandlerHasRole(t *testing.T) {
 	c.Request().Header.Add(fiber.HeaderAuthorization, "Bearer "+token)
 	jwtHandler.HasRole(c, "test-role")
 	if c.Response().Header.StatusCode() != fiber.StatusUnauthorized {
-		t.Error(constants.Unauthorized)
+		t.Error(errors.ShouldUnauthorized)
 	}
 }
 
@@ -233,7 +233,7 @@ func TestJWTHandlerCheckHasPermission(t *testing.T) {
 
 	err2 := jwtHandler.CheckHasPermission(9999)
 	if err2 == nil {
-		t.Error(constants.Unauthorized)
+		t.Error(errors.ShouldUnauthorized)
 	}
 }
 
@@ -249,7 +249,7 @@ func TestJWTHandlerCheckHasRole(t *testing.T) {
 
 	err2 := jwtHandler.CheckHasRole("permission-1")
 	if err2 == nil {
-		t.Error(constants.Unauthorized)
+		t.Error(errors.ShouldUnauthorized)
 	}
 }
 

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 )
 
@@ -33,7 +33,7 @@ func createOnePermission(t *testing.T, namePrefix string) *entity.Permission {
 	permission := entity.Permission{
 		Name:        "valid-permission-name-" + namePrefix,
 		Description: "valid-permission-description-" + namePrefix,
-		TimeFields: base.TimeFields{
+		TimeFields: entity.TimeFields{
 			CreatedAt: &timeNow,
 			UpdatedAt: &timeNow,
 		},
@@ -80,7 +80,7 @@ func TestPermissionRepositoryImplCreate(t *testing.T) {
 				permission: entity.Permission{
 					Name:        permission.Name,
 					Description: "",
-					TimeFields: base.TimeFields{
+					TimeFields: entity.TimeFields{
 						CreatedAt: &timeNow,
 						UpdatedAt: &timeNow,
 					},
@@ -225,7 +225,7 @@ func TestPermissionRepositoryImplGetAll(t *testing.T) {
 
 	type args struct {
 		ctx    context.Context
-		filter base.RequestGetAll
+		filter model.RequestGetAll
 	}
 	tests := []struct {
 		name    string
@@ -238,7 +238,7 @@ func TestPermissionRepositoryImplGetAll(t *testing.T) {
 			repo: permissionRepoImpl,
 			args: args{
 				ctx: ctx,
-				filter: base.RequestGetAll{
+				filter: model.RequestGetAll{
 					Limit: 1000,
 					Page:  1,
 				},
@@ -250,7 +250,7 @@ func TestPermissionRepositoryImplGetAll(t *testing.T) {
 			repo: permissionRepoImpl,
 			args: args{
 				ctx: ctx,
-				filter: base.RequestGetAll{
+				filter: model.RequestGetAll{
 					Limit: 1,
 					Page:  1,
 				},

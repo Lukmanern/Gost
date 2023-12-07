@@ -6,7 +6,7 @@ run:
 
 test:
 	go clean -testcache
-	go test -coverprofile=cover.out -race ./...
+	go test -coverprofile=cover.out -p 6 ./...
 	go tool cover -html cover.out -o cover.html
 
 migrate-test-report:

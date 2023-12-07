@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/domain/model"
 	"gorm.io/gorm"
 )
 
@@ -21,7 +21,7 @@ type PermissionRepository interface {
 	GetByName(ctx context.Context, name string) (permission *entity.Permission, err error)
 
 	// GetAll retrieves all permissions based on a filter for pagination.
-	GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []entity.Permission, total int, err error)
+	GetAll(ctx context.Context, filter model.RequestGetAll) (permissions []entity.Permission, total int, err error)
 
 	// Update modifies permission information in the repository.
 	Update(ctx context.Context, permission entity.Permission) (err error)
@@ -83,7 +83,7 @@ func (repo *PermissionRepositoryImpl) GetByName(ctx context.Context, name string
 	return permission, nil
 }
 
-func (repo *PermissionRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []entity.Permission, total int, err error) {
+func (repo *PermissionRepositoryImpl) GetAll(ctx context.Context, filter model.RequestGetAll) (permissions []entity.Permission, total int, err error) {
 	var count int64
 	args := []interface{}{"%" + filter.Keyword + "%"}
 	cond := "name LIKE ?"

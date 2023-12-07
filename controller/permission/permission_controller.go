@@ -7,9 +7,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/response"
 	service "github.com/Lukmanern/gost/service/permission"
 )
@@ -52,11 +51,11 @@ func NewPermissionController(service service.PermissionService) PermissionContro
 func (ctr *PermissionControllerImpl) Create(c *fiber.Ctx) error {
 	var permission model.PermissionCreate
 	if err := c.BodyParser(&permission); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&permission); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -66,7 +65,7 @@ func (ctr *PermissionControllerImpl) Create(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+createErr.Error())
+		return response.Error(c, errors.ServerErr+createErr.Error())
 	}
 	data := map[string]any{
 		"id": id,
@@ -77,7 +76,7 @@ func (ctr *PermissionControllerImpl) Create(c *fiber.Ctx) error {
 func (ctr *PermissionControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, constants.InvalidID)
+		return response.BadRequest(c, errors.InvalidID)
 	}
 
 	ctx := c.Context()
@@ -87,13 +86,13 @@ func (ctr *PermissionControllerImpl) Get(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+getErr.Error())
+		return response.Error(c, errors.ServerErr+getErr.Error())
 	}
 	return response.SuccessLoaded(c, permission)
 }
 
 func (ctr *PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
-	request := base.RequestGetAll{
+	request := model.RequestGetAll{
 		Page:    c.QueryInt("page", 1),
 		Limit:   c.QueryInt("limit", 20),
 		Keyword: c.Query("search"),
@@ -106,15 +105,15 @@ func (ctr *PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 	ctx := c.Context()
 	permissions, total, getErr := ctr.service.GetAll(ctx, request)
 	if getErr != nil {
-		return response.Error(c, constants.ServerErr+getErr.Error())
+		return response.Error(c, errors.ServerErr+getErr.Error())
 	}
 
 	data := make([]interface{}, len(permissions))
 	for i := range permissions {
 		data[i] = permissions[i]
 	}
-	responseData := base.GetAllResponse{
-		Meta: base.PageMeta{
+	responseData := model.GetAllResponse{
+		Meta: model.PageMeta{
 			Total: total,
 			Pages: int(math.Ceil(float64(total) / float64(request.Limit))),
 			Page:  request.Page,
@@ -127,16 +126,16 @@ func (ctr *PermissionControllerImpl) GetAll(c *fiber.Ctx) error {
 func (ctr *PermissionControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, constants.InvalidID)
+		return response.BadRequest(c, errors.InvalidID)
 	}
 	var permission model.PermissionUpdate
 	permission.ID = id
 	if err := c.BodyParser(&permission); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&permission); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -146,7 +145,7 @@ func (ctr *PermissionControllerImpl) Update(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+updateErr.Error())
+		return response.Error(c, errors.ServerErr+updateErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -154,7 +153,7 @@ func (ctr *PermissionControllerImpl) Update(c *fiber.Ctx) error {
 func (ctr *PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, constants.InvalidID)
+		return response.BadRequest(c, errors.InvalidID)
 	}
 
 	ctx := c.Context()
@@ -164,7 +163,7 @@ func (ctr *PermissionControllerImpl) Delete(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+deleteErr.Error())
+		return response.Error(c, errors.ServerErr+deleteErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }

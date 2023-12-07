@@ -13,8 +13,8 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/response"
 	"github.com/gofiber/fiber/v2"
@@ -62,9 +62,9 @@ func TestCreate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userDevController
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	createdUser := createUser(ctx, 1)
 	defer func() {
@@ -151,10 +151,10 @@ func TestCreate(t *testing.T) {
 	for _, tc := range testCases {
 		log.Println(tc.Name, addTestName)
 		jsonData, marshalErr := json.Marshal(&tc.Payload)
-		assert.Nil(t, marshalErr, constants.ShouldNil, marshalErr)
+		assert.Nil(t, marshalErr, errors.ShouldNil, marshalErr)
 
 		req, httpReqErr := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(jsonData))
-		assert.Nil(t, httpReqErr, constants.ShouldNil, httpReqErr)
+		assert.Nil(t, httpReqErr, errors.ShouldNil, httpReqErr)
 
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
@@ -162,13 +162,13 @@ func TestCreate(t *testing.T) {
 		req.Close = true
 
 		res, testErr := app.Test(req, -1)
-		assert.Nil(t, testErr, constants.ShouldNil, testErr)
+		assert.Nil(t, testErr, errors.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, errors.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
-		assert.Nil(t, decodeErr, constants.ShouldNil, decodeErr)
+		assert.Nil(t, decodeErr, errors.ShouldNil, decodeErr)
 
 		if res.StatusCode == fiber.StatusCreated {
 			defer func(email string) {
@@ -183,7 +183,7 @@ func TestGet(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	createdUser := model.UserCreate{
@@ -247,24 +247,24 @@ func TestGet(t *testing.T) {
 		app.Get("/user-management/:id", userDevController.Get)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
-			t.Error(constants.ShouldEqual)
+			t.Error(errors.ShouldEqual)
 		}
 		if !tc.wantErr {
 			respModel := response.Response{}
 			decodeErr := json.NewDecoder(resp.Body).Decode(&respModel)
 			if decodeErr != nil {
-				t.Error(constants.ShouldNotErr, decodeErr)
+				t.Error(errors.ShouldNotErr, decodeErr)
 			}
 
 			if tc.response.Message != respModel.Message && tc.response.Message != "" {
-				t.Error(constants.ShouldEqual)
+				t.Error(errors.ShouldEqual)
 			}
 			if respModel.Success != tc.response.Success {
-				t.Error(constants.ShouldEqual)
+				t.Error(errors.ShouldEqual)
 			}
 		}
 	}
@@ -274,9 +274,9 @@ func TestGetAll(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userDevController
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	userIDs := make([]int, 0)
 	for i := 0; i < 10; i++ {
@@ -327,14 +327,14 @@ func TestGetAll(t *testing.T) {
 		app.Get("/user-management", userDevController.GetAll)
 		res, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr, err.Error())
+			t.Fatal(errors.ShouldNotErr, err.Error())
 		}
 		defer res.Body.Close()
-		assert.Equal(t, res.StatusCode, tc.ResCode, constants.ShouldEqual, res.StatusCode)
+		assert.Equal(t, res.StatusCode, tc.ResCode, errors.ShouldEqual, res.StatusCode)
 
 		resStruct := response.Response{}
 		decodeErr := json.NewDecoder(res.Body).Decode(&resStruct)
-		assert.Nil(t, decodeErr, constants.ShouldNil, decodeErr)
+		assert.Nil(t, decodeErr, errors.ShouldNil, decodeErr)
 	}
 }
 
@@ -342,9 +342,9 @@ func TestUpdate(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := userDevController
-	assert.NotNil(t, ctr, constants.ShouldNotNil)
-	assert.NotNil(t, c, constants.ShouldNotNil)
-	assert.NotNil(t, ctx, constants.ShouldNotNil)
+	assert.NotNil(t, ctr, errors.ShouldNotNil)
+	assert.NotNil(t, c, errors.ShouldNotNil)
+	assert.NotNil(t, ctx, errors.ShouldNotNil)
 
 	createdUser := createUser(ctx, 1)
 	defer func() {
@@ -414,12 +414,12 @@ func TestUpdate(t *testing.T) {
 		log.Println(tc.Name)
 		jsonObject, err := json.Marshal(&tc.Payload)
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		url := appURL + "user-management/" + strconv.Itoa(tc.Payload.ID)
 		req, httpReqErr := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil || req == nil {
-			t.Fatal(constants.ShouldNotNil)
+			t.Fatal(errors.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -428,17 +428,17 @@ func TestUpdate(t *testing.T) {
 		req.Close = true
 		res, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer res.Body.Close()
 		if res.StatusCode != tc.ResCode {
-			t.Error(constants.ShouldEqual, res.StatusCode)
+			t.Error(errors.ShouldEqual, res.StatusCode)
 		}
 		if tc.Payload != nil {
 			respModel := response.Response{}
 			decodeErr := json.NewDecoder(res.Body).Decode(&respModel)
 			if decodeErr != nil && decodeErr != io.EOF {
-				t.Error(constants.ShouldNotErr, decodeErr)
+				t.Error(errors.ShouldNotErr, decodeErr)
 			}
 		}
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	repository "github.com/Lukmanern/gost/repository/permission"
@@ -22,7 +21,7 @@ type PermissionService interface {
 	GetByID(ctx context.Context, id int) (permission *model.PermissionResponse, err error)
 
 	// GetAll func get some permissions with payload.
-	GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []model.PermissionResponse, total int, err error)
+	GetAll(ctx context.Context, filter model.RequestGetAll) (permissions []model.PermissionResponse, total int, err error)
 
 	// Update func update one permission by ID and payload.
 	Update(ctx context.Context, permission model.PermissionUpdate) (err error)
@@ -90,7 +89,7 @@ func (svc *PermissionServiceImpl) GetByID(ctx context.Context, id int) (permissi
 	return permission, nil
 }
 
-func (svc *PermissionServiceImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (permissions []model.PermissionResponse, total int, err error) {
+func (svc *PermissionServiceImpl) GetAll(ctx context.Context, filter model.RequestGetAll) (permissions []model.PermissionResponse, total int, err error) {
 	permissionEntities, total, err := svc.repository.GetAll(ctx, filter)
 	if err != nil {
 		return nil, 0, err

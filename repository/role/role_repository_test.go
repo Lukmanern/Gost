@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/stretchr/testify/assert"
 )
@@ -39,7 +39,7 @@ func createOneRole(t *testing.T, namePrefix string) *entity.Role {
 	role := entity.Role{
 		Name:        "valid-role-name-" + namePrefix,
 		Description: "valid-role-description-" + namePrefix,
-		TimeFields: base.TimeFields{
+		TimeFields: entity.TimeFields{
 			CreatedAt: &timeNow,
 			UpdatedAt: &timeNow,
 		},
@@ -86,7 +86,7 @@ func TestCreate(t *testing.T) {
 				role: entity.Role{
 					Name:        role.Name,
 					Description: "",
-					TimeFields: base.TimeFields{
+					TimeFields: entity.TimeFields{
 						CreatedAt: &timeNow,
 						UpdatedAt: &timeNow,
 					},
@@ -284,7 +284,7 @@ func TestGetAll(t *testing.T) {
 	lenRoles := len(roles)
 	type args struct {
 		ctx    context.Context
-		filter base.RequestGetAll
+		filter model.RequestGetAll
 	}
 	tests := []struct {
 		name    string
@@ -297,7 +297,7 @@ func TestGetAll(t *testing.T) {
 			repo: roleRepoImpl,
 			args: args{
 				ctx: ctx,
-				filter: base.RequestGetAll{
+				filter: model.RequestGetAll{
 					Limit: 1000,
 					Page:  1,
 				},
@@ -309,7 +309,7 @@ func TestGetAll(t *testing.T) {
 			repo: roleRepoImpl,
 			args: args{
 				ctx: ctx,
-				filter: base.RequestGetAll{
+				filter: model.RequestGetAll{
 					Limit: 1,
 					Page:  1,
 				},

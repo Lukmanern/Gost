@@ -11,8 +11,8 @@ import (
 
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	repository "github.com/Lukmanern/gost/repository/user"
@@ -33,7 +33,7 @@ func TestNewUserService(t *testing.T) {
 	roleSvc := roleService.NewRoleService(permSvc)
 	svc := NewUserService(roleSvc)
 	if svc == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 }
 
@@ -47,12 +47,12 @@ func TestSuccessRegister(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if svc == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	userRepo := repository.NewUserRepository()
 	if userRepo == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	modelUserRegis := model.UserRegister{
@@ -80,10 +80,10 @@ func TestSuccessRegister(t *testing.T) {
 		t.Error("should equal")
 	}
 	if userByID.VerificationCode == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 	if userByID.ActivatedAt != nil {
-		t.Error(constants.ShouldNil)
+		t.Error(errors.ShouldNil)
 	}
 
 	// failed login : account is created,
@@ -131,7 +131,7 @@ func TestSuccessRegister(t *testing.T) {
 		Email: userByID.Email,
 	})
 	if verifErr != nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	// value reset
@@ -142,10 +142,10 @@ func TestSuccessRegister(t *testing.T) {
 		t.Error("should not error and id should not nil")
 	}
 	if userByID.VerificationCode != nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 	if userByID.ActivatedAt == nil {
-		t.Error(constants.ShouldNil)
+		t.Error(errors.ShouldNil)
 	}
 
 	// reset value
@@ -171,7 +171,7 @@ func TestSuccessRegister(t *testing.T) {
 	}
 	forgetPwErr := svc.ForgetPassword(ctx, modelUserForgetPasswd)
 	if forgetPwErr != nil {
-		t.Error(constants.ShouldNotErr)
+		t.Error(errors.ShouldNotErr)
 	}
 
 	// value reset
@@ -182,10 +182,10 @@ func TestSuccessRegister(t *testing.T) {
 		t.Error("should not error and id should not nil")
 	}
 	if userByID.VerificationCode == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 	if userByID.ActivatedAt == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	passwd := helper.RandomString(12)
@@ -197,7 +197,7 @@ func TestSuccessRegister(t *testing.T) {
 	}
 	resetErr := svc.ResetPassword(ctx, modelUserResetPasswd)
 	if resetErr != nil {
-		t.Error(constants.ShouldNotErr)
+		t.Error(errors.ShouldNotErr)
 	}
 
 	// reset value, login failed
@@ -235,7 +235,7 @@ func TestSuccessRegister(t *testing.T) {
 	}
 	updatePasswdErr := svc.UpdatePassword(ctx, modelUserUpdatePasswd)
 	if updatePasswdErr != nil {
-		t.Error(constants.ShouldNotErr)
+		t.Error(errors.ShouldNotErr)
 	}
 
 	// reset value, login success
@@ -257,12 +257,12 @@ func TestSuccessRegister(t *testing.T) {
 	}
 	updateProfileErr := svc.UpdateProfile(ctx, modelUserUpdate)
 	if updateProfileErr != nil {
-		t.Error(constants.ShouldNotErr)
+		t.Error(errors.ShouldNotErr)
 	}
 
 	profile, getErr := svc.MyProfile(ctx, userID)
 	if getErr != nil {
-		t.Error(constants.ShouldNotErr)
+		t.Error(errors.ShouldNotErr)
 	}
 	if profile.Name != helper.ToTitle(modelUserUpdate.Name) {
 		t.Error("should equal")
@@ -286,12 +286,12 @@ func TestFailedRegister(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if svc == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	userRepo := repository.NewUserRepository()
 	if userRepo == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	modelUserRegis := model.UserRegister{
@@ -314,7 +314,7 @@ func TestFailedRegister(t *testing.T) {
 		Email: "wrongEmail",
 	})
 	if verifErr == nil {
-		t.Error(constants.ShouldErr)
+		t.Error(errors.ShouldErr)
 	}
 	fiberErr, ok := verifErr.(*fiber.Error)
 	if ok {
@@ -328,7 +328,7 @@ func TestFailedRegister(t *testing.T) {
 		Email: "wrongEmail",
 	})
 	if deleteUserErr == nil {
-		t.Error(constants.ShouldErr)
+		t.Error(errors.ShouldErr)
 	}
 	fiberErr, ok = deleteUserErr.(*fiber.Error)
 	if ok {
@@ -342,27 +342,27 @@ func TestFailedRegister(t *testing.T) {
 		IP: helper.RandomIPAddress(),
 	})
 	if loginErr == nil {
-		t.Error(constants.ShouldErr)
+		t.Error(errors.ShouldErr)
 	}
 
 	forgetErr := svc.ForgetPassword(ctx, model.UserForgetPassword{Email: "wrong_email@gost.project"})
 	if forgetErr == nil {
-		t.Error(constants.ShouldErr)
+		t.Error(errors.ShouldErr)
 	}
 
 	verifyErr := svc.ResetPassword(ctx, model.UserResetPassword{Code: "wrong-code"})
 	if verifyErr == nil {
-		t.Error(constants.ShouldErr)
+		t.Error(errors.ShouldErr)
 	}
 
 	updatePasswdErr := svc.UpdatePassword(ctx, model.UserPasswordUpdate{ID: -1})
 	if updatePasswdErr == nil {
-		t.Error(constants.ShouldErr)
+		t.Error(errors.ShouldErr)
 	}
 
 	_, getErr := svc.MyProfile(ctx, -10)
 	if getErr == nil {
-		t.Error(constants.ShouldErr)
+		t.Error(errors.ShouldErr)
 	}
 }
 
@@ -376,13 +376,13 @@ func TestBannedIPAddress(t *testing.T) {
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if svc == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	for i := 1; i <= 15; i++ {
 		counter, err := svc.FailedLoginCounter(helper.RandomIPAddress(), true)
 		if err != nil {
-			t.Error(constants.ShouldNotErr)
+			t.Error(errors.ShouldNotErr)
 		}
 		if i >= 4 {
 			if counter == i {

@@ -15,8 +15,8 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/response"
 	permSvc "github.com/Lukmanern/gost/service/permission"
@@ -44,11 +44,10 @@ func init() {
 }
 
 func TestRoleCreate(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	totalPermissions := 5
@@ -124,18 +123,18 @@ func TestRoleCreate(t *testing.T) {
 		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		req, httpReqErr := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if httpReqErr != nil {
-			t.Error(constants.ShouldNotErr, httpReqErr.Error())
+			t.Error(errors.ShouldNotErr, httpReqErr.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Post(endp, roleCtr.Create)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -161,18 +160,17 @@ func TestRoleCreate(t *testing.T) {
 			}
 			deleteErr := roleService.Delete(ctx, int(intID))
 			if deleteErr != nil {
-				t.Error(constants.ShouldNotErr)
+				t.Error(errors.ShouldNotErr)
 			}
 		}
 	}
 }
 
 func TestRoleConnect(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	totalPermissions := 5
@@ -253,18 +251,18 @@ func TestRoleConnect(t *testing.T) {
 		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonObject))
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Post(endp, roleCtr.Connect)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -288,11 +286,10 @@ func TestRoleConnect(t *testing.T) {
 }
 
 func TestRoleGet(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	totalPermissions := 5
@@ -351,14 +348,14 @@ func TestRoleGet(t *testing.T) {
 		url := fmt.Sprintf(appURL+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Get("/role/:id", roleCtr.Get)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -372,11 +369,10 @@ func TestRoleGet(t *testing.T) {
 }
 
 func TestRoleGetAll(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	totalPermissions := 5
@@ -430,14 +426,14 @@ func TestRoleGetAll(t *testing.T) {
 		url := appURL + "role?" + tc.params
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Get("/role", roleCtr.GetAll)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -451,11 +447,10 @@ func TestRoleGetAll(t *testing.T) {
 }
 
 func TestRoleUpdate(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	totalPermissions := 5
@@ -540,19 +535,19 @@ func TestRoleUpdate(t *testing.T) {
 		log.Println("case-name: " + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		url := fmt.Sprintf(appURL+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Put("/role/:id", roleCtr.Update)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -578,11 +573,10 @@ func TestRoleUpdate(t *testing.T) {
 }
 
 func TestRoleDelete(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	if c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	totalPermissions := 5
@@ -641,14 +635,14 @@ func TestRoleDelete(t *testing.T) {
 		url := fmt.Sprintf(appURL+"role/%d", tc.roleID)
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Delete("/role/:id", roleCtr.Delete)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {

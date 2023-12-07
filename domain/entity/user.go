@@ -5,8 +5,6 @@ package entity
 
 import (
 	"time"
-
-	"github.com/Lukmanern/gost/domain/base"
 )
 
 type User struct {
@@ -17,7 +15,7 @@ type User struct {
 	VerificationCode *string    `gorm:"type:varchar(100) null" json:"verification_code"`
 	ActivatedAt      *time.Time `gorm:"type:timestamp null;default:null" json:"activated_at"`
 	Roles            []Role     `gorm:"many2many:user_has_roles" json:"roles"`
-	base.TimeFields
+	TimeFields
 }
 
 func (e *User) SetActivateAccount() {

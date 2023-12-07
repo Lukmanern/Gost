@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/domain/model"
 	"gorm.io/gorm"
 )
 
@@ -24,7 +24,7 @@ type RoleRepository interface {
 	GetByName(ctx context.Context, name string) (role *entity.Role, err error)
 
 	// GetAll retrieves all roles based on a filter for pagination.
-	GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error)
+	GetAll(ctx context.Context, filter model.RequestGetAll) (roles []entity.Role, total int, err error)
 
 	// Update modifies role information in the repository.
 	Update(ctx context.Context, role entity.Role) (err error)
@@ -124,7 +124,7 @@ func (repo *RoleRepositoryImpl) GetByName(ctx context.Context, name string) (rol
 	return role, nil
 }
 
-func (repo *RoleRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error) {
+func (repo *RoleRepositoryImpl) GetAll(ctx context.Context, filter model.RequestGetAll) (roles []entity.Role, total int, err error) {
 	var count int64
 	args := []interface{}{"%" + filter.Keyword + "%"}
 	cond := "name LIKE ?"

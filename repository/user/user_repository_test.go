@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
 )
@@ -58,7 +58,7 @@ func TestUserRepositoryImplCreate(t *testing.T) {
 					Name:     "validname",
 					Email:    "valid1@email.com",
 					Password: "example-password",
-					TimeFields: base.TimeFields{
+					TimeFields: entity.TimeFields{
 						CreatedAt: &timeNow,
 						UpdatedAt: &timeNow,
 					},
@@ -118,7 +118,7 @@ func TestUserRepositoryImplGetByID(t *testing.T) {
 		Name:     "validname",
 		Email:    "valid2@email.com",
 		Password: "example-password",
-		TimeFields: base.TimeFields{
+		TimeFields: entity.TimeFields{
 			CreatedAt: &timeNow,
 			UpdatedAt: &timeNow,
 		},
@@ -186,7 +186,7 @@ func TestUserRepositoryImplGetByEmail(t *testing.T) {
 		Name:     "validname",
 		Email:    "valid3@email.com",
 		Password: "example-password",
-		TimeFields: base.TimeFields{
+		TimeFields: entity.TimeFields{
 			CreatedAt: &timeNow,
 			UpdatedAt: &timeNow,
 		},
@@ -259,7 +259,7 @@ func TestUserRepositoryImplGetAll(t *testing.T) {
 			Name:     "validname",
 			Email:    "valid" + id + "@email.com", // email is unique
 			Password: "example-password",
-			TimeFields: base.TimeFields{
+			TimeFields: entity.TimeFields{
 				CreatedAt: &timeNow,
 				UpdatedAt: &timeNow,
 			},
@@ -278,7 +278,7 @@ func TestUserRepositoryImplGetAll(t *testing.T) {
 
 	type args struct {
 		ctx    context.Context
-		filter base.RequestGetAll
+		filter model.RequestGetAll
 	}
 	tests := []struct {
 		name    string
@@ -292,7 +292,7 @@ func TestUserRepositoryImplGetAll(t *testing.T) {
 			wantErr: false,
 			args: args{
 				ctx: ctx,
-				filter: base.RequestGetAll{
+				filter: model.RequestGetAll{
 					Page:    1,
 					Limit:   1000,
 					Keyword: "",
@@ -305,7 +305,7 @@ func TestUserRepositoryImplGetAll(t *testing.T) {
 			wantErr: false,
 			args: args{
 				ctx: ctx,
-				filter: base.RequestGetAll{
+				filter: model.RequestGetAll{
 					Page:    1,
 					Limit:   1,
 					Keyword: "",
@@ -339,7 +339,7 @@ func TestUserRepositoryImplUpdate(t *testing.T) {
 		Name:     "validname",
 		Email:    "valid9@email.com",
 		Password: "example-password",
-		TimeFields: base.TimeFields{
+		TimeFields: entity.TimeFields{
 			CreatedAt: &timeNow,
 			UpdatedAt: &timeNow,
 		},
@@ -416,7 +416,7 @@ func TestUserRepositoryImplUpdatePassword(t *testing.T) {
 		Name:     "validname",
 		Email:    helper.RandomEmail(),
 		Password: "example-password",
-		TimeFields: base.TimeFields{
+		TimeFields: entity.TimeFields{
 			CreatedAt: &timeNow,
 			UpdatedAt: &timeNow,
 		},
@@ -487,7 +487,7 @@ func TestUserRepositoryImplGetByConditions(t *testing.T) {
 		Name:     "validname",
 		Email:    helper.RandomEmail(),
 		Password: "example-password",
-		TimeFields: base.TimeFields{
+		TimeFields: entity.TimeFields{
 			CreatedAt: &timeNow,
 			UpdatedAt: &timeNow,
 		},

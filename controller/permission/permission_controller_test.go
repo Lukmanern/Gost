@@ -14,10 +14,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/response"
@@ -50,22 +49,20 @@ func init() {
 }
 
 func TestPermNewPermissionController(t *testing.T) {
-	t.Parallel()
 	permSvc := service.NewPermissionService()
 	permCtr := NewPermissionController(permSvc)
 
 	if permSvc == nil || permCtr == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 }
 
 func TestPermCreate(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	userID, userToken := createUserAndToken()
@@ -167,12 +164,11 @@ func TestPermCreate(t *testing.T) {
 }
 
 func TestPermGet(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	testCases := []struct {
@@ -208,7 +204,7 @@ func TestPermGet(t *testing.T) {
 		app.Get("/permission/:id", permController.Get)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -216,9 +212,9 @@ func TestPermGet(t *testing.T) {
 		}
 		if resp.StatusCode == http.StatusOK {
 			var respStruct struct {
-				Message string              `json:"message"`
-				Success bool                `json:"success"`
-				Data    base.GetAllResponse `json:"data"`
+				Message string               `json:"message"`
+				Success bool                 `json:"success"`
+				Data    model.GetAllResponse `json:"data"`
 			}
 			err := json.NewDecoder(resp.Body).Decode(&respStruct)
 			if err != nil {
@@ -235,23 +231,22 @@ func TestPermGet(t *testing.T) {
 }
 
 func TestPermGetAll(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	testCases := []struct {
 		caseName string
 		respCode int
-		payload  base.RequestGetAll
+		payload  model.RequestGetAll
 	}{
 		{
 			caseName: "success get -1",
 			respCode: http.StatusOK,
-			payload: base.RequestGetAll{
+			payload: model.RequestGetAll{
 				Limit: 10,
 				Page:  1,
 			},
@@ -259,7 +254,7 @@ func TestPermGetAll(t *testing.T) {
 		{
 			caseName: "success get -2",
 			respCode: http.StatusOK,
-			payload: base.RequestGetAll{
+			payload: model.RequestGetAll{
 				Limit: 100,
 				Page:  2,
 			},
@@ -267,7 +262,7 @@ func TestPermGetAll(t *testing.T) {
 		{
 			caseName: "failed get: invalid payload",
 			respCode: http.StatusBadRequest,
-			payload: base.RequestGetAll{
+			payload: model.RequestGetAll{
 				Limit: -1,
 				Page:  -1,
 			},
@@ -280,7 +275,7 @@ func TestPermGetAll(t *testing.T) {
 		app.Get("/permission", permController.GetAll)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -288,9 +283,9 @@ func TestPermGetAll(t *testing.T) {
 		}
 		if resp.StatusCode == http.StatusOK {
 			var respStruct struct {
-				Message string              `json:"message"`
-				Success bool                `json:"success"`
-				Data    base.GetAllResponse `json:"data"`
+				Message string               `json:"message"`
+				Success bool                 `json:"success"`
+				Data    model.GetAllResponse `json:"data"`
 			}
 			err := json.NewDecoder(resp.Body).Decode(&respStruct)
 			if err != nil {
@@ -310,12 +305,11 @@ func TestPermGetAll(t *testing.T) {
 }
 
 func TestPermUpdate(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	// create 1 permission
@@ -388,19 +382,19 @@ func TestPermUpdate(t *testing.T) {
 		log.Println(":::::::" + tc.caseName)
 		jsonObject, err := json.Marshal(tc.payload)
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		url := fmt.Sprintf(appURL+"permission/%d", tc.permID)
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(jsonObject))
 		if err != nil {
-			t.Error(constants.ShouldNotErr, err.Error())
+			t.Error(errors.ShouldNotErr, err.Error())
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Put("/permission/:id", permController.Update)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -426,12 +420,11 @@ func TestPermUpdate(t *testing.T) {
 }
 
 func TestPermDelete(t *testing.T) {
-	t.Parallel()
 	c := helper.NewFiberCtx()
 	ctx := c.Context()
 	ctr := permController
 	if ctr == nil || c == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	// create 1 permission
@@ -478,14 +471,14 @@ func TestPermDelete(t *testing.T) {
 		url := appURL + "permission/" + strconv.Itoa(tc.permID)
 		req, httpReqErr := http.NewRequest(http.MethodDelete, url, nil)
 		if httpReqErr != nil || req == nil {
-			t.Fatal(constants.ShouldNotNil)
+			t.Fatal(errors.ShouldNotNil)
 		}
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		app := fiber.New()
 		app.Delete("/permission/:id", permController.Delete)
 		resp, err := app.Test(req, -1)
 		if err != nil {
-			t.Fatal(constants.ShouldNotErr)
+			t.Fatal(errors.ShouldNotErr)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != tc.respCode {
@@ -504,7 +497,7 @@ func createUserAndToken() (userID int, token string) {
 	ctx := c.Context()
 	ctr := userCtr
 	if ctr == nil || c == nil || ctx == nil {
-		log.Fatal(constants.ShouldNotNil)
+		log.Fatal(errors.ShouldNotNil)
 	}
 
 	createdUser := model.UserRegister{
@@ -531,7 +524,7 @@ func createUserAndToken() (userID int, token string) {
 		Email: userByID.Email,
 	})
 	if verifyErr != nil {
-		log.Fatal(constants.ShouldNotErr)
+		log.Fatal(errors.ShouldNotErr)
 	}
 	userByID = nil
 	userByID, getErr = userRepo.GetByID(ctx, userID)

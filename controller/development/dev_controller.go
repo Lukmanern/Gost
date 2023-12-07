@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/internal/constants"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/response"
 
 	fileService "github.com/Lukmanern/gost/service/file"
@@ -102,7 +102,7 @@ func (ctr *DevControllerImpl) PingDatabase(c *fiber.Ctx) error {
 func (ctr *DevControllerImpl) PingRedis(c *fiber.Ctx) error {
 	redis := ctr.redis
 	if redis == nil {
-		return response.Error(c, constants.RedisNil)
+		return response.Error(c, errors.RedisNil)
 	}
 	for i := 0; i < 5; i++ {
 		status := redis.Ping()
@@ -129,7 +129,7 @@ func (ctr *DevControllerImpl) Panic(c *fiber.Ctx) error {
 func (ctr *DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
 	redis := ctr.redis
 	if redis == nil {
-		return response.Error(c, constants.RedisNil)
+		return response.Error(c, errors.RedisNil)
 	}
 	redisStatus := redis.Set("example-key", "example-value", 50*time.Minute)
 	if redisStatus.Err() != nil {
@@ -143,7 +143,7 @@ func (ctr *DevControllerImpl) StoringToRedis(c *fiber.Ctx) error {
 func (ctr *DevControllerImpl) GetFromRedis(c *fiber.Ctx) error {
 	redis := ctr.redis
 	if redis == nil {
-		return response.Error(c, constants.RedisNil)
+		return response.Error(c, errors.RedisNil)
 	}
 	redisStatus := redis.Get("example-key")
 	if redisStatus.Err() != nil {
@@ -190,7 +190,7 @@ func (ctr *DevControllerImpl) UploadFile(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+uploadErr.Error())
+		return response.Error(c, errors.ServerErr+uploadErr.Error())
 	}
 	return response.SuccessCreated(c, map[string]any{
 		"file_url": fileURL,
@@ -202,11 +202,11 @@ func (ctr *DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
 		FileName string `validate:"required,min=4,max=150" json:"file_name"`
 	}
 	if err := c.BodyParser(&fileName); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&fileName); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 
 	removeErr := ctr.fileSvc.RemoveFile(fileName.FileName)
@@ -215,7 +215,7 @@ func (ctr *DevControllerImpl) RemoveFile(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+removeErr.Error())
+		return response.Error(c, errors.ServerErr+removeErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -227,7 +227,7 @@ func (ctr *DevControllerImpl) GetFilesList(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+getErr.Error())
+		return response.Error(c, errors.ServerErr+getErr.Error())
 	}
 	return response.SuccessLoaded(c, resp)
 }

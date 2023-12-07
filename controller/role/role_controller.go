@@ -7,9 +7,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/response"
 	service "github.com/Lukmanern/gost/service/role"
 )
@@ -57,7 +56,7 @@ func NewRoleController(service service.RoleService) RoleController {
 func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 	var role model.RoleCreate
 	if err := c.BodyParser(&role); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 	// hashmap
 	idCheckers := make(map[int]bool)
@@ -72,7 +71,7 @@ func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 	}
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -82,7 +81,7 @@ func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+createErr.Error())
+		return response.Error(c, errors.ServerErr+createErr.Error())
 	}
 	data := map[string]any{
 		"id": id,
@@ -93,7 +92,7 @@ func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 func (ctr *RoleControllerImpl) Connect(c *fiber.Ctx) error {
 	var role model.RoleConnectToPermissions
 	if err := c.BodyParser(&role); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 	// hashmap
 	idCheckers := make(map[int]bool)
@@ -108,7 +107,7 @@ func (ctr *RoleControllerImpl) Connect(c *fiber.Ctx) error {
 	}
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -118,7 +117,7 @@ func (ctr *RoleControllerImpl) Connect(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+connectErr.Error())
+		return response.Error(c, errors.ServerErr+connectErr.Error())
 	}
 	return response.SuccessCreated(c, "role and permissions success connected")
 }
@@ -126,7 +125,7 @@ func (ctr *RoleControllerImpl) Connect(c *fiber.Ctx) error {
 func (ctr *RoleControllerImpl) Get(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, constants.InvalidID)
+		return response.BadRequest(c, errors.InvalidID)
 	}
 
 	ctx := c.Context()
@@ -136,13 +135,13 @@ func (ctr *RoleControllerImpl) Get(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+getErr.Error())
+		return response.Error(c, errors.ServerErr+getErr.Error())
 	}
 	return response.SuccessLoaded(c, role)
 }
 
 func (ctr *RoleControllerImpl) GetAll(c *fiber.Ctx) error {
-	request := base.RequestGetAll{
+	request := model.RequestGetAll{
 		Page:    c.QueryInt("page", 1),
 		Limit:   c.QueryInt("limit", 20),
 		Keyword: c.Query("search"),
@@ -155,15 +154,15 @@ func (ctr *RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 	ctx := c.Context()
 	roles, total, getErr := ctr.service.GetAll(ctx, request)
 	if getErr != nil {
-		return response.Error(c, constants.ServerErr+getErr.Error())
+		return response.Error(c, errors.ServerErr+getErr.Error())
 	}
 
 	data := make([]interface{}, len(roles))
 	for i := range roles {
 		data[i] = roles[i]
 	}
-	responseData := base.GetAllResponse{
-		Meta: base.PageMeta{
+	responseData := model.GetAllResponse{
+		Meta: model.PageMeta{
 			Total: total,
 			Pages: int(math.Ceil(float64(total) / float64(request.Limit))),
 			Page:  request.Page,
@@ -176,16 +175,16 @@ func (ctr *RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, constants.InvalidID)
+		return response.BadRequest(c, errors.InvalidID)
 	}
 	var role model.RoleUpdate
 	role.ID = id
 	if err := c.BodyParser(&role); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
-		return response.BadRequest(c, constants.InvalidBody+err.Error())
+		return response.BadRequest(c, errors.InvalidBody+err.Error())
 	}
 
 	ctx := c.Context()
@@ -195,7 +194,7 @@ func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+updateErr.Error())
+		return response.Error(c, errors.ServerErr+updateErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -203,7 +202,7 @@ func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
 func (ctr *RoleControllerImpl) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
-		return response.BadRequest(c, constants.InvalidID)
+		return response.BadRequest(c, errors.InvalidID)
 	}
 
 	ctx := c.Context()
@@ -213,7 +212,7 @@ func (ctr *RoleControllerImpl) Delete(c *fiber.Ctx) error {
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
 		}
-		return response.Error(c, constants.ServerErr+deleteErr.Error())
+		return response.Error(c, errors.ServerErr+deleteErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }

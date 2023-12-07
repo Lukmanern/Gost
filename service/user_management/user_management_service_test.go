@@ -8,10 +8,9 @@ import (
 	"testing"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/errors"
 	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/gofiber/fiber/v2"
 )
@@ -27,7 +26,7 @@ func init() {
 func TestNewUserManagementService(t *testing.T) {
 	svc := NewUserManagementService()
 	if svc == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 }
 
@@ -45,7 +44,7 @@ func TestSuccessCrud(t *testing.T) {
 	ctx := c.Context()
 	svc := NewUserManagementService()
 	if svc == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
+		t.Error(errors.ShouldNotNil)
 	}
 
 	userModel := model.UserCreate{
@@ -78,7 +77,7 @@ func TestSuccessCrud(t *testing.T) {
 		t.Error("name and email should same")
 	}
 
-	users, total, getAllErr := svc.GetAll(ctx, base.RequestGetAll{Limit: 10, Page: 1})
+	users, total, getAllErr := svc.GetAll(ctx, model.RequestGetAll{Limit: 10, Page: 1})
 	if len(users) < 1 || total < 1 || getAllErr != nil {
 		t.Error("should more than or equal one and not error at all")
 	}
@@ -89,7 +88,7 @@ func TestSuccessCrud(t *testing.T) {
 	}
 	updateErr := svc.Update(ctx, updateUserData)
 	if updateErr != nil {
-		t.Error(constants.ShouldNotErr)
+		t.Error(errors.ShouldNotErr)
 	}
 
 	// reset value
@@ -105,7 +104,7 @@ func TestSuccessCrud(t *testing.T) {
 
 	deleteErr := svc.Delete(ctx, userID)
 	if deleteErr != nil {
-		t.Error(constants.ShouldNotErr)
+		t.Error(errors.ShouldNotErr)
 	}
 
 	// reset value
