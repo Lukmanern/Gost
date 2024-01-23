@@ -1,9 +1,6 @@
 package middleware
 
 import (
-	"fmt"
-	"math"
-	"reflect"
 	"testing"
 	"time"
 
@@ -16,8 +13,7 @@ import (
 type GenTokenParams struct {
 	ID      int
 	Email   string
-	Role    string
-	Per     map[int]int
+	Roles   map[string]uint8
 	Exp     time.Time
 	wantErr bool
 }
@@ -32,19 +28,9 @@ func init() {
 
 	timeNow := time.Now()
 	params = GenTokenParams{
-		ID:    1,
-		Email: helper.RandomEmail(),
-		Role:  "test-role",
-		Per: map[int]int{
-			1: 1,
-			2: 1,
-			3: 1,
-			4: 1,
-			5: 1,
-			6: 1,
-			7: 1,
-			8: 1,
-		},
+		ID:      1,
+		Email:   helper.RandomEmail(),
+		Roles:   map[string]uint8{"test-role": 1},
 		Exp:     timeNow.Add(5 * time.Minute),
 		wantErr: false,
 	}
@@ -63,7 +49,7 @@ func TestNewJWTHandler(t *testing.T) {
 
 func TestGenerateClaims(t *testing.T) {
 	jwtHandler := NewJWTHandler()
-	token, err := jwtHandler.GenerateJWT(1, params.Email, params.Role, params.Exp)
+	token, err := jwtHandler.GenerateJWT(1, params.Email, params.Roles, params.Exp)
 	if err != nil || token == "" {
 		t.Fatal("should not error")
 	}
@@ -95,7 +81,7 @@ func TestGenerateClaims(t *testing.T) {
 
 func TestJWTHandlerInvalidateToken(t *testing.T) {
 	jwtHandler := NewJWTHandler()
-	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Exp)
+	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Roles, params.Exp)
 	if err != nil {
 		t.Error("error while generating token")
 	}
@@ -118,7 +104,7 @@ func TestJWTHandlerInvalidateToken(t *testing.T) {
 func TestJWTHandlerIsBlacklisted(t *testing.T) {
 	jwtHandler := NewJWTHandler()
 	cookie, err := jwtHandler.GenerateJWT(1000,
-		helper.RandomEmail(), "example-role",
+		helper.RandomEmail(), params.Roles,
 		time.Now().Add(1*time.Hour))
 	if err != nil {
 		t.Error("generate cookie/token should not error")
@@ -151,7 +137,7 @@ func TestJWTHandlerIsBlacklisted(t *testing.T) {
 
 func TestJWTHandlerIsAuthenticated(t *testing.T) {
 	jwtHandler := NewJWTHandler()
-	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Exp)
+	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Roles, params.Exp)
 	if err != nil {
 		t.Error("error while generating token")
 	}
@@ -187,37 +173,9 @@ func TestJWTHandlerIsAuthenticated(t *testing.T) {
 	}()
 }
 
-func TestJWTHandlerHasRole(t *testing.T) {
-	jwtHandler := NewJWTHandler()
-	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Exp)
-	if err != nil {
-		t.Error("Error while generating token:", err)
-	}
-	if token == "" {
-		t.Error("Error: Token is empty")
-	}
-	c := helper.NewFiberCtx()
-	c.Request().Header.Add(fiber.HeaderAuthorization, "Bearer "+token)
-	jwtHandler.HasRole(c, "test-role")
-	if c.Response().Header.StatusCode() != fiber.StatusUnauthorized {
-		t.Error(consts.Unauthorized)
-	}
-}
-
-func TestJWTHandlerCheckHasPermission(t *testing.T) {
-	jwtHandler := NewJWTHandler()
-	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Exp)
-	if err != nil {
-		t.Error("Error while generating token:", err)
-	}
-	if token == "" {
-		t.Error("Error: Token is empty")
-	}
-}
-
 func TestJWTHandlerCheckHasRole(t *testing.T) {
 	jwtHandler := NewJWTHandler()
-	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Role, params.Exp)
+	token, err := jwtHandler.GenerateJWT(params.ID, params.Email, params.Roles, params.Exp)
 	if err != nil {
 		t.Error("Error while generating token:", err)
 	}
@@ -225,74 +183,8 @@ func TestJWTHandlerCheckHasRole(t *testing.T) {
 		t.Error("Error: Token is empty")
 	}
 
-	checkErr := jwtHandler.CheckHasRole("permission-1")
+	checkErr := jwtHandler.HasRole("role-x-1")
 	if checkErr == nil {
 		t.Error(consts.Unauthorized)
-	}
-}
-
-func TestPermissionBitGroup(t *testing.T) {
-	d := 8
-	testCases := []struct {
-		input  int
-		result map[int]int
-	}{
-		{
-			input: d,
-			result: map[int]int{
-				1: int(math.Pow(2, 7)),
-			},
-		},
-		{
-			input: 10 * d,
-			result: map[int]int{
-				10: int(math.Pow(2, 7)),
-			},
-		},
-		{
-			input: d + 7,
-			result: map[int]int{
-				2: int(math.Pow(2, 6)),
-			},
-		},
-		{
-			input: d,
-			result: map[int]int{
-				1: int(math.Pow(2, 7)),
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		result := BuildBitGroups(tc.input)
-		if !reflect.DeepEqual(result, tc.result) {
-			t.Error("should same, but got", result, "want", tc.result)
-		}
-	}
-
-	permIDs := make([]int, 0)
-	for i := 1; i < 90; i++ {
-		if i%2 != 0 {
-			continue
-		}
-		permIDs = append(permIDs, i)
-	}
-
-	result := BuildBitGroups(permIDs...)
-	for group, bits := range result {
-		fmt.Printf("%d : %08b\n", group, bits)
-	}
-}
-
-func TestCheckHasPermission(t *testing.T) {
-	// user perms
-	permIDs := make([]int, 0)
-	for i := 1; i <= 19; i++ {
-		permIDs = append(permIDs, i)
-	}
-
-	bitGroups := BuildBitGroups(permIDs...)
-	for i := 1; i <= 30; i++ {
-		fmt.Println(i, ":", CheckHasPermission(i, bitGroups))
 	}
 }

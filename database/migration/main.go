@@ -63,7 +63,7 @@ func main() {
 		}
 	}
 
-	// Seed master-RBAC data (roles and permissions)
+	// Seed Roles
 	if !config.GetAppInProduction() {
 		seeding()
 	}
@@ -80,9 +80,7 @@ func dropAll() {
 	}
 }
 
-// seeding func seed data like role, permission,
-// and role_has_permissions tables. You can add
-// more seed if you want.
+// seeding roles
 func seeding() {
 	// Create a new transaction for seeding
 	tx := db.Begin()
@@ -90,7 +88,7 @@ func seeding() {
 		log.Panicf("Error starting transaction for seeding: %s", tx.Error)
 	}
 
-	// Seeding permission and role
+	// Seeding role
 	for _, data := range role.AllRoles() {
 		data.SetCreateTime()
 		if createErr := tx.Create(&data).Error; createErr != nil {

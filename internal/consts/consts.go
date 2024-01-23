@@ -10,22 +10,18 @@ const (
 
 const (
 	InvalidJSONBody = "invalid JSON body"
-	InvalidUserID   = "invalid user ID"
 	InvalidID       = "invalid ID"
-
-	RedisNil = "redis nil value"
-
-	ErrGetIDFromJWT = "error while getting user ID from JWT-Claims"
-	ErrHashing      = "error while hashing password, please try again"
+	NilValue        = "error nil value"
+	InvalidToken    = "invalid token / JWT, please logout and try-login"
 )
 
 const (
-	ShouldErr      = "should error"
-	ShouldNotErr   = "should not error"
-	ShouldNil      = "should nil"
-	ShouldNotNil   = "should not nil"
-	ShouldEqual    = "should equal"
-	ShouldNotEqual = "should not equal"
-
-	LoginShouldSuccess = "login should success"
+	ShouldErr        = "should error"
+	ShouldNotErr     = "should not error"
+	ShouldNil        = "should nil"
+	ShouldNotNil     = "should not nil"
+	ShouldEqual      = "should equal"
+	ShouldNotEqual   = "should not equal"
+	ShouldSuccess    = "should success"
+	ShouldNotSuccess = "should not success"
 )

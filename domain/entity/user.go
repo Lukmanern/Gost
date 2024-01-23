@@ -22,9 +22,9 @@ func (e *User) TableName() string {
 }
 
 type UserHasRoles struct {
-	UserID int  `json:"role_id"`
+	UserID int  `json:"user_id"`
 	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user"`
-	RoleID int  `json:"permission_id"`
+	RoleID int  `json:"role_id"`
 	Role   Role `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"role"`
 }
 

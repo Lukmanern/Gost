@@ -26,12 +26,12 @@ type JWTHandler struct {
 }
 
 // Claims struct will be generated as token,contains
-// user data like ID, email, role and permissions.
-// You can add new field if you want.
+// user data like ID, email and roles.
+// You can add new field/property if you want.
 type Claims struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	ID    int              `json:"id"`
+	Email string           `json:"email"`
+	Roles map[string]uint8 `json:"roles"`
 	jwt.RegisteredClaims
 }
 
@@ -66,12 +66,12 @@ func NewJWTHandler() *JWTHandler {
 }
 
 // GenerateJWT func generate new token with expire time for user
-func (j *JWTHandler) GenerateJWT(id int, email, role string, expired time.Time) (t string, err error) {
+func (j *JWTHandler) GenerateJWT(id int, email string, roles map[string]uint8, expired time.Time) (t string, err error) {
 	// Create Claims
 	claims := Claims{
 		ID:    id,
 		Email: email,
-		Role:  role,
+		Roles: roles,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: &jwt.NumericDate{Time: expired},
 			NotBefore: &jwt.NumericDate{Time: time.Now()},
@@ -173,52 +173,19 @@ func (j JWTHandler) GenerateClaims(cookieToken string) *Claims {
 	return &claims
 }
 
-// BuildBitGroups func builds bit-group that can contains
-// so much permissions data inside with fast and effective
-// with bit manipulations. See the example :
-// permissions = {9:10,10:256}
-// => read as : bit-group-9th, contains 2 permissions
-// => read as : bit-group-10th, contains 8 permissions
-// per group contain max 8 permissions sequentially,
-// for more You can read in paper (for link, see in readme-md)
-func BuildBitGroups(permIDs ...int) map[int]int {
-	groups := make(map[int]int)
-	for _, id := range permIDs {
-		group := (id - 1) / 8
-		bitPosition := uint(id - 1 - (group * 8))
-		groups[group+1] |= 1 << bitPosition
-	}
-	return groups
-}
-
-// CheckHasPermission func checks if bitGroups (map[int]int)
-// contains require permission ID or not
-func CheckHasPermission(requirePermID int, userPermissions map[int]int) bool {
-	endpointBits := BuildBitGroups(requirePermID)
-	// it seems O(n), but it's actually O(1)
-	// because length of $endpointBits is 1
-	for key, requiredBits := range endpointBits {
-		userBits, ok := userPermissions[key]
-		if !ok || requiredBits&userBits == 0 {
-			return false
-		}
-	}
-	return true
-}
-
-// HasRole func check claims-role equal or not with require role
-func (j JWTHandler) HasRole(c *fiber.Ctx, role string) error {
-	claims, ok := c.Locals("claims").(*Claims)
-	if !ok || role != claims.Role {
-		return response.Unauthorized(c)
-	}
-	return c.Next()
-}
-
 // CheckHasRole func is handler/middleware that
 // called before the controller for checks the fiber ctx
-func (j JWTHandler) CheckHasRole(role string) func(c *fiber.Ctx) error {
+func (j JWTHandler) HasRole(roles ...string) func(c *fiber.Ctx) error {
+	if len(roles) < 1 {
+		return response.Unauthorized
+	}
 	return func(c *fiber.Ctx) error {
-		return j.HasRole(c, role)
+		claims, ok := c.Locals("claims").(*Claims)
+		for _, role := range roles {
+			if !ok || claims.Roles[role] != 1 {
+				return response.Unauthorized(c)
+			}
+		}
+		return c.Next()
 	}
 }
