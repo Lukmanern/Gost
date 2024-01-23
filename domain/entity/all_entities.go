@@ -21,8 +21,7 @@ var allTables = []any{
 	&UserHasRoles{},
 	&Role{},
 
-	// ...
-	// Add more tables/structs
+	// add more tables/structs
 }
 
 func AllTables() []any {

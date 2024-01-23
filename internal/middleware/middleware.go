@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"crypto/rsa"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -28,11 +27,11 @@ type JWTHandler struct {
 
 // Claims struct will be generated as token,contains
 // user data like ID, email, role and permissions.
+// You can add new field if you want.
 type Claims struct {
-	ID          int         `json:"id"`
-	Email       string      `json:"email"`
-	Role        string      `json:"role"`
-	Permissions map[int]int `json:"permissions"`
+	ID    int    `json:"id"`
+	Email string `json:"email"`
+	Role  string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -67,16 +66,12 @@ func NewJWTHandler() *JWTHandler {
 }
 
 // GenerateJWT func generate new token with expire time for user
-func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions map[int]int, expired time.Time) (t string, err error) {
-	if email == "" || role == "" || len(permissions) < 1 {
-		return "", errors.New("email/ role/ permission too short or void")
-	}
+func (j *JWTHandler) GenerateJWT(id int, email, role string, expired time.Time) (t string, err error) {
 	// Create Claims
 	claims := Claims{
-		ID:          id,
-		Email:       email,
-		Role:        role,
-		Permissions: permissions,
+		ID:    id,
+		Email: email,
+		Role:  role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: &jwt.NumericDate{Time: expired},
 			NotBefore: &jwt.NumericDate{Time: time.Now()},
@@ -211,25 +206,6 @@ func CheckHasPermission(requirePermID int, userPermissions map[int]int) bool {
 	return true
 }
 
-// HasPermission func extracts and checks for claims from fiber Ctx
-func (j JWTHandler) HasPermission(c *fiber.Ctx, endpointPermID int) error {
-	claims, ok := c.Locals("claims").(*Claims)
-	if !ok {
-		return response.Unauthorized(c)
-	}
-	userPermissions := claims.Permissions
-	endpointBits := BuildBitGroups(endpointPermID)
-	// it seems O(n), but it's actually O(1)
-	// because length of $endpointBits is 1
-	for key, requiredBits := range endpointBits {
-		userBits, ok := userPermissions[key]
-		if !ok || requiredBits&userBits == 0 {
-			return response.Unauthorized(c)
-		}
-	}
-	return c.Next()
-}
-
 // HasRole func check claims-role equal or not with require role
 func (j JWTHandler) HasRole(c *fiber.Ctx, role string) error {
 	claims, ok := c.Locals("claims").(*Claims)
@@ -237,14 +213,6 @@ func (j JWTHandler) HasRole(c *fiber.Ctx, role string) error {
 		return response.Unauthorized(c)
 	}
 	return c.Next()
-}
-
-// CheckHasPermission func is handler/middleware that
-// called before the controller for checks the fiber ctx
-func (j JWTHandler) CheckHasPermission(endpointPermID int) func(c *fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		return j.HasPermission(c, endpointPermID)
-	}
 }
 
 // CheckHasRole func is handler/middleware that

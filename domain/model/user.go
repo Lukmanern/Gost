@@ -1,6 +1,10 @@
 package model
 
-import "github.com/Lukmanern/gost/domain/entity"
+import (
+	"time"
+
+	"github.com/Lukmanern/gost/domain/entity"
+)
 
 type UserRegister struct {
 	Name     string `validate:"required,min=2,max=60" json:"name"`
@@ -39,19 +43,22 @@ type UserPasswordUpdate struct {
 }
 
 type UserProfile struct {
-	Email string
-	Name  string
-	Roles []string
+	Email       string
+	Name        string
+	ActivatedAt *time.Time
+	Roles       []string
 }
 
 type UserResponse struct {
-	ID   int
-	Name string
+	ID          int
+	Name        string
+	ActivatedAt *time.Time
 }
 
 type UserResponseDetail struct {
-	ID    int
-	Email string
-	Name  string
-	Roles []entity.Role
+	ID          int
+	Email       string
+	Name        string
+	ActivatedAt *time.Time
+	Roles       []entity.Role
 }

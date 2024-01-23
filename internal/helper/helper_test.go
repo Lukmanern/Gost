@@ -4,7 +4,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/Lukmanern/gost/internal/constants"
+	"github.com/Lukmanern/gost/internal/consts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,27 +27,27 @@ func TestRandomIPAddress(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		ipRand := RandomIPAddress()
 		ip := net.ParseIP(ipRand)
-		assert.NotNil(t, ip, constants.ShouldNotNil)
+		assert.NotNil(t, ip, consts.ShouldNotNil)
 	}
 }
 
 func TestValidateEmails(t *testing.T) {
 	err1 := ValidateEmails("f", "a")
-	assert.Error(t, err1, constants.ShouldErr)
+	assert.Error(t, err1, consts.ShouldErr)
 
 	err2 := ValidateEmails("validemail098@gmail.com")
 	assert.NoError(t, err2, "should not error")
 
 	err3 := ValidateEmails("validemail0911@gmail.com", "invalidemail0987@.gmail.com")
-	assert.Error(t, err3, constants.ShouldErr)
+	assert.Error(t, err3, consts.ShouldErr)
 
 	err4 := ValidateEmails("validemail0987@gmail.com", "valid_email0987@gmail.com", "invalidemail0987@gmail.com.")
-	assert.Error(t, err4, constants.ShouldErr)
+	assert.Error(t, err4, consts.ShouldErr)
 }
 
 func TestNewFiberCtx(t *testing.T) {
 	c := NewFiberCtx()
-	assert.NotNil(t, c, constants.ShouldNotNil)
+	assert.NotNil(t, c, consts.ShouldNotNil)
 }
 
 func TestToTitle(t *testing.T) {
