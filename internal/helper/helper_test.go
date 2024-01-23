@@ -2,7 +2,6 @@ package helper
 
 import (
 	"net"
-	"strings"
 	"testing"
 
 	"github.com/Lukmanern/gost/internal/constants"
@@ -13,17 +12,6 @@ func TestRandomString(t *testing.T) {
 	for i := 0; i < 25; i++ {
 		s := RandomString(uint(i))
 		assert.Len(t, s, i, "length of string should equal")
-	}
-}
-
-func TestRandomEmails(t *testing.T) {
-	for i := 1; i <= 20; i++ {
-		emails := RandomEmails(uint(i))
-		assert.Len(t, emails, i, "total of emails should equal")
-		for _, email := range emails {
-			assert.GreaterOrEqual(t, len(email), 10, "length of an email should not less than 10")
-			assert.Equal(t, email, strings.ToLower(email), "email should be lowercase")
-		}
 	}
 }
 

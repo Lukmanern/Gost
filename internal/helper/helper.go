@@ -27,23 +27,6 @@ func RandomString(n uint) string {
 	return string(b)
 }
 
-// RandomEmails func return some emails
-// used for testing and any needs.
-func RandomEmails(n uint) []string {
-	emailsMap := make(map[string]int)
-	for uint(len(emailsMap)) < n {
-		body := strings.ToLower(RandomString(7) + RandomString(7) + RandomString(7))
-		randEmail := body + "@gost.project"
-		emailsMap[randEmail]++
-	}
-
-	emails := make([]string, 0, len(emailsMap))
-	for email := range emailsMap {
-		emails = append(emails, email)
-	}
-	return emails
-}
-
 // RandomEmail func return a email
 // used for testing and any needs.
 func RandomEmail() string {

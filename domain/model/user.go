@@ -9,7 +9,7 @@ type UserRegister struct {
 	RoleID   int    `validate:"required,numeric,min=1" json:"role_id"`
 }
 
-type UserVerificationCode struct {
+type UserActivation struct {
 	Code  string `validate:"required,min=21,max=60" json:"code"`
 	Email string `validate:"required,email,min=5,max=60" json:"email"`
 }
@@ -41,5 +41,17 @@ type UserPasswordUpdate struct {
 type UserProfile struct {
 	Email string
 	Name  string
-	Role  entity.Role
+	Roles []string
+}
+
+type UserResponse struct {
+	ID   int
+	Name string
+}
+
+type UserResponseDetail struct {
+	ID    int
+	Email string
+	Name  string
+	Roles []entity.Role
 }
