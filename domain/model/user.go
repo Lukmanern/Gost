@@ -18,7 +18,7 @@ type UserRegister struct {
 	Name     string `validate:"required,min=2,max=60" json:"name"`
 	Email    string `validate:"required,email,min=5,max=60" json:"email"`
 	Password string `validate:"required,min=8,max=30" json:"password"`
-	RolesID  []int  `validate:"required" json:"role_id"`
+	RoleIDs  []int  `validate:"required" json:"role_id"`
 }
 
 type UserActivation struct {
@@ -46,7 +46,7 @@ type UserUpdate struct {
 
 type UserUpdateRoles struct {
 	ID      int   `gorm:"type:bigserial;primaryKey" json:"id"`
-	RolesID []int `validate:"required" json:"role_id"`
+	RoleIDs []int `validate:"required" json:"role_id"`
 }
 
 type UserForgetPassword struct {

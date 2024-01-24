@@ -323,7 +323,7 @@ func TestUpdateProfile(t *testing.T) {
 			Name: "Success Update -1",
 			Payload: model.UserUpdate{
 				ID:   validUser.ID,
-				Name: helper.RandomString(12),
+				Name: helper.RandomString(12) + "xxxx",
 			},
 			WantErr: false,
 		},

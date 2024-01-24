@@ -147,8 +147,7 @@ func (repo *UserRepositoryImpl) Update(ctx context.Context, user entity.User) (e
 		}
 
 		oldData.Name = user.Name
-		oldData.ActivatedAt = user.ActivatedAt
-		oldData.UpdatedAt = user.UpdatedAt
+		oldData.SetUpdateTime()
 		result = tx.Save(&oldData)
 		if result.Error != nil {
 			return result.Error
