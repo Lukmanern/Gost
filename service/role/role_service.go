@@ -21,7 +21,7 @@ type RoleService interface {
 	Create(ctx context.Context, data model.RoleCreate) (id int, err error)
 
 	// GetByID func get one role.
-	GetByID(ctx context.Context, id int) (role *entity.Role, err error)
+	GetByID(ctx context.Context, id int) (role model.RoleResponse, err error)
 
 	// GetAll func get some roles.
 	GetAll(ctx context.Context, filter model.RequestGetAll) (roles []model.RoleResponse, total int, err error)
@@ -58,10 +58,7 @@ func (svc *RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (
 		return 0, fiber.NewError(fiber.StatusBadRequest, "role name has been used")
 	}
 
-	entityRole := entity.Role{
-		Name:        data.Name,
-		Description: data.Description,
-	}
+	entityRole := modelCreateToEntity(data)
 	entityRole.SetCreateTime()
 	id, err = svc.repository.Create(ctx, entityRole)
 	if err != nil {
@@ -70,31 +67,27 @@ func (svc *RoleServiceImpl) Create(ctx context.Context, data model.RoleCreate) (
 	return id, nil
 }
 
-func (svc *RoleServiceImpl) GetByID(ctx context.Context, id int) (role *entity.Role, err error) {
-	role, err = svc.repository.GetByID(ctx, id)
+func (svc *RoleServiceImpl) GetByID(ctx context.Context, id int) (role model.RoleResponse, err error) {
+	enttRole, err := svc.repository.GetByID(ctx, id)
 	if err == gorm.ErrRecordNotFound {
-		return nil, fiber.NewError(fiber.StatusNotFound, consts.NotFound)
+		return role, fiber.NewError(fiber.StatusNotFound, consts.NotFound)
 	}
-	if err != nil || role == nil {
-		return nil, errors.New("error while getting role data")
+	if err != nil || enttRole == nil {
+		return role, errors.New("error while getting role data")
 	}
+	role = entityToResponse(enttRole)
 	return role, nil
 }
 
 func (svc *RoleServiceImpl) GetAll(ctx context.Context, filter model.RequestGetAll) (roles []model.RoleResponse, total int, err error) {
-	roleEntities, total, err := svc.repository.GetAll(ctx, filter)
+	enttRoles, total, err := svc.repository.GetAll(ctx, filter)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	roles = []model.RoleResponse{}
-	for _, roleEntity := range roleEntities {
-		newRole := model.RoleResponse{
-			ID:          roleEntity.ID,
-			Name:        roleEntity.Name,
-			Description: roleEntity.Description,
-		}
-		roles = append(roles, newRole)
+	for _, enttRole := range enttRoles {
+		roles = append(roles, entityToResponse(&enttRole))
 	}
 	return roles, total, nil
 }
@@ -117,11 +110,7 @@ func (svc *RoleServiceImpl) Update(ctx context.Context, data model.RoleUpdate) (
 		return errors.New("error while getting role data")
 	}
 
-	entityRole := entity.Role{
-		ID:          data.ID,
-		Name:        data.Name,
-		Description: data.Description,
-	}
+	entityRole := modelUpdateToEntity(data)
 	entityRole.SetUpdateTime()
 	err = svc.repository.Update(ctx, entityRole)
 	if err != nil {
@@ -144,4 +133,28 @@ func (svc *RoleServiceImpl) Delete(ctx context.Context, id int) (err error) {
 		return err
 	}
 	return nil
+}
+
+func modelCreateToEntity(data model.RoleCreate) entity.Role {
+	return entity.Role{
+		Name:        data.Name,
+		Description: data.Description,
+	}
+}
+
+func modelUpdateToEntity(data model.RoleUpdate) entity.Role {
+	return entity.Role{
+		ID:          data.ID,
+		Name:        data.Name,
+		Description: data.Description,
+	}
+}
+
+func entityToResponse(data *entity.Role) model.RoleResponse {
+	return model.RoleResponse{
+		ID:          data.ID,
+		Name:        data.Name,
+		Description: data.Description,
+		TimeFields:  data.TimeFields,
+	}
 }

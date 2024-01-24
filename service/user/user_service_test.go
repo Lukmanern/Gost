@@ -60,6 +60,16 @@ func TestRegister(t *testing.T) {
 			WantErr: true,
 		},
 		{
+			Name: "Failed Create -2: invalid role ID",
+			Payload: model.UserRegister{
+				Name:     helper.RandomString(15),
+				Email:    helper.RandomEmail(),
+				Password: "password00",
+				RoleIDs:  []int{-1, 0},
+			},
+			WantErr: true,
+		},
+		{
 			Name: "Success Create -1",
 			Payload: model.UserRegister{
 				Name:     helper.RandomString(15),

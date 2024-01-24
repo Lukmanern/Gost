@@ -13,6 +13,7 @@ import (
 	"github.com/Lukmanern/gost/internal/consts"
 	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/middleware"
+	roleRepository "github.com/Lukmanern/gost/repository/role"
 	repository "github.com/Lukmanern/gost/repository/user"
 	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
@@ -33,9 +34,10 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
+	redis      *redis.Client
 	jwtHandler *middleware.JWTHandler
 	repository repository.UserRepository
-	redis      *redis.Client
+	roleRepo   roleRepository.RoleRepository
 }
 
 var (
@@ -46,9 +48,10 @@ var (
 func NewUserService() UserService {
 	userSvcImplOnce.Do(func() {
 		userSvcImpl = &UserServiceImpl{
+			redis:      connector.LoadRedisCache(),
 			jwtHandler: middleware.NewJWTHandler(),
 			repository: repository.NewUserRepository(),
-			redis:      connector.LoadRedisCache(),
+			roleRepo:   roleRepository.NewRoleRepository(),
 		}
 	})
 	return userSvcImpl
@@ -58,6 +61,16 @@ func (svc *UserServiceImpl) Register(ctx context.Context, data model.UserRegiste
 	_, getErr := svc.repository.GetByEmail(ctx, data.Email)
 	if getErr == nil {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "email already used")
+	}
+
+	for _, roleID := range data.RoleIDs {
+		enttRole, err := svc.repository.GetByID(ctx, roleID)
+		if err == gorm.ErrRecordNotFound {
+			return 0, fiber.NewError(fiber.StatusNotFound, consts.NotFound)
+		}
+		if err != nil || enttRole == nil {
+			return 0, errors.New("error while getting role data")
+		}
 	}
 
 	pwHashed, hashErr := hash.Generate(data.Password)
