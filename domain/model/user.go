@@ -6,11 +6,19 @@ import (
 	"github.com/Lukmanern/gost/domain/entity"
 )
 
+type User struct {
+	ID          int        `gorm:"type:bigserial;primaryKey" json:"id"`
+	Name        string     `gorm:"type:varchar(100) not null" json:"name"`
+	Email       string     `gorm:"type:varchar(100) not null unique" json:"email"`
+	Password    string     `gorm:"type:varchar(255) not null" json:"password"`
+	ActivatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"activated_at"`
+}
+
 type UserRegister struct {
 	Name     string `validate:"required,min=2,max=60" json:"name"`
 	Email    string `validate:"required,email,min=5,max=60" json:"email"`
 	Password string `validate:"required,min=8,max=30" json:"password"`
-	RoleID   int    `validate:"required,numeric,min=1" json:"role_id"`
+	RolesID  []int  `validate:"required" json:"role_id"`
 }
 
 type UserActivation struct {
@@ -22,6 +30,23 @@ type UserLogin struct {
 	Email    string `validate:"required,email,min=5,max=60" json:"email"`
 	Password string `validate:"required,min=8,max=30" json:"password"`
 	IP       string `validate:"required,min=4,max=20" json:"ip"`
+}
+
+// ID          int        `gorm:"type:bigserial;primaryKey" json:"id"`
+// Name        string     `gorm:"type:varchar(100) not null" json:"name"`
+// Email       string     `gorm:"type:varchar(100) not null unique" json:"email"`
+// Password    string     `gorm:"type:varchar(255) not null" json:"password"`
+// ActivatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"activated_at"`
+// Roles       []Role     `gorm:"many2many:user_has_roles" json:"roles"`
+
+type UserUpdate struct {
+	ID   int    `gorm:"type:bigserial;primaryKey" json:"id"`
+	Name string `gorm:"type:varchar(100) not null" json:"name"`
+}
+
+type UserUpdateRoles struct {
+	ID      int   `gorm:"type:bigserial;primaryKey" json:"id"`
+	RolesID []int `validate:"required" json:"role_id"`
 }
 
 type UserForgetPassword struct {

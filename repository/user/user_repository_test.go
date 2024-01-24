@@ -83,7 +83,7 @@ func TestCreateDelete(t *testing.T) {
 		log.Println(tc.Name, headerTestName)
 
 		tc.Payload.SetCreateTime()
-		id, createErr := repository.Create(ctx, tc.Payload, 1)
+		id, createErr := repository.Create(ctx, tc.Payload, []int{1})
 		if tc.WantErr {
 			assert.Error(t, createErr, consts.ShouldErr, tc.Name, headerTestName)
 			continue
@@ -443,7 +443,7 @@ func createUser() entity.User {
 		ActivatedAt: &timeNow,
 	}
 	newUser.SetCreateTime()
-	userID, createErr := repository.Create(ctx, newUser, 1)
+	userID, createErr := repository.Create(ctx, newUser, []int{1})
 	if createErr != nil {
 		log.Fatal("error while create new user", headerTestName)
 	}

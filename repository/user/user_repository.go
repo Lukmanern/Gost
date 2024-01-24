@@ -15,7 +15,7 @@ import (
 
 type UserRepository interface {
 	// Create adds a new user to the repository with a specified role.
-	Create(ctx context.Context, user entity.User, roleID int) (id int, err error)
+	Create(ctx context.Context, user entity.User, roleIDs []int) (id int, err error)
 
 	// GetByID retrieves a user by their unique identifier.
 	GetByID(ctx context.Context, id int) (user *entity.User, err error)
@@ -57,7 +57,7 @@ func NewUserRepository() UserRepository {
 	return userRepositoryImpl
 }
 
-func (repo *UserRepositoryImpl) Create(ctx context.Context, user entity.User, roleID int) (id int, err error) {
+func (repo *UserRepositoryImpl) Create(ctx context.Context, user entity.User, roleIDs []int) (id int, err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		if res := tx.Create(&user); res.Error != nil {
 			tx.Rollback()
@@ -65,12 +65,14 @@ func (repo *UserRepositoryImpl) Create(ctx context.Context, user entity.User, ro
 		}
 		id = user.ID
 
-		if res := tx.Create(&entity.UserHasRoles{
-			UserID: id,
-			RoleID: roleID,
-		}); res.Error != nil {
-			tx.Rollback()
-			return res.Error
+		for _, roleID := range roleIDs {
+			if res := tx.Create(&entity.UserHasRoles{
+				UserID: id,
+				RoleID: roleID,
+			}); res.Error != nil {
+				tx.Rollback()
+				return res.Error
+			}
 		}
 		return nil
 	})

@@ -13,6 +13,7 @@ const (
 	InvalidID       = "invalid ID"
 	NilValue        = "error nil value"
 	InvalidToken    = "invalid token / JWT, please logout and try-login"
+	ErrHashing      = "error while hashing password"
 )
 
 const (
