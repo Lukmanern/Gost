@@ -8,11 +8,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/XANi/loremipsum"
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
+
+func RandomWords(n int) string {
+	if n < 2 {
+		n = 2
+	}
+	loremIpsumGenerator := loremipsum.New()
+	words := loremIpsumGenerator.Words(n)
+	return words
+}
 
 // RandomString func generate random string
 // used for testing and any needs.
@@ -71,4 +81,11 @@ func NewFiberCtx() *fiber.Ctx {
 // Example : Your name => Your Name
 func ToTitle(s string) string {
 	return cases.Title(language.Und).String(s)
+}
+
+func GenerateRandomID() int {
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+	min := 9000000
+	max := 10000000
+	return rand.Intn(max-min) + min
 }

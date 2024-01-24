@@ -85,6 +85,7 @@ func (repo *RoleRepositoryImpl) GetByName(ctx context.Context, name string) (rol
 
 func (repo *RoleRepositoryImpl) GetAll(ctx context.Context, filter model.RequestGetAll) (roles []entity.Role, total int, err error) {
 	var count int64
+	filter.Sort = ""
 	args := []interface{}{"%" + filter.Keyword + "%"}
 	cond := "name LIKE ?"
 	result := repo.db.Where(cond, args...).Find(&roles)

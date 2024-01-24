@@ -1,12 +1,25 @@
 package helper
 
 import (
+	"log"
 	"net"
+	"strings"
 	"testing"
 
 	"github.com/Lukmanern/gost/internal/consts"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestRandomWords(t *testing.T) {
+	for i := 2; i < 12; i++ {
+		words := RandomWords(i)
+		wordsSlice := strings.Split(words, " ")
+		log.Println(words)
+		if len(wordsSlice) < i {
+			t.Fatal("should equal")
+		}
+	}
+}
 
 func TestRandomString(t *testing.T) {
 	for i := 0; i < 25; i++ {
@@ -76,5 +89,12 @@ func TestToTitle(t *testing.T) {
 		} else if res == payload.str && !payload.isEqual {
 			assert.Failf(t, "should not equal, but equal at: %s got %s", payload.str, res)
 		}
+	}
+}
+
+func TestGenerateRandomID(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		v := GenerateRandomID()
+		assert.True(t, v > 0, "shoult true")
 	}
 }

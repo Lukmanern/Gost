@@ -28,7 +28,7 @@ func init() {
 
 	timeNow := time.Now()
 	params = GenTokenParams{
-		ID:      1,
+		ID:      helper.GenerateRandomID(),
 		Email:   helper.RandomEmail(),
 		Roles:   map[string]uint8{"test-role": 1},
 		Exp:     timeNow.Add(5 * time.Minute),

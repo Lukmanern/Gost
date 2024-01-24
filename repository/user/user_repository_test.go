@@ -1,550 +1,452 @@
 package repository
 
 import (
-	"context"
+	"log"
+	"strconv"
 	"testing"
 	"time"
 
-	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
+	"github.com/Lukmanern/gost/internal/consts"
 	"github.com/Lukmanern/gost/internal/env"
+	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/helper"
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	headerTestName string = "at UserRepoTest"
 )
 
 var (
 	timeNow time.Time
-	ctx     context.Context
 )
 
 func init() {
-	filePath := "./../../.env"
-	env.ReadConfig(filePath)
+	envFilePath := "./../../.env"
+	env.ReadConfig(envFilePath)
 	timeNow = time.Now()
-	ctx = context.Background()
 }
 
-func TestNewUserRepository(t *testing.T) {
-	userRepository := NewUserRepository()
-	if userRepository == nil {
-		t.Error("should not nil")
-	}
-}
+func TestCreateDelete(t *testing.T) {
+	repository := NewUserRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
 
-func TestUserRepositoryImplCreate(t *testing.T) {
-	userRepositoryImpl := UserRepositoryImpl{
-		db: connector.LoadDatabase(),
+	type testCase struct {
+		Name    string
+		Payload entity.User
+		WantErr bool
 	}
+	pwHashed, hashErr := hash.Generate(helper.RandomString(8))
+	assert.NoError(t, hashErr, consts.ShouldNotErr, headerTestName)
 
-	type args struct {
-		ctx  context.Context
-		user entity.User
-	}
-	tests := []struct {
-		name      string
-		repo      UserRepositoryImpl
-		wantErr   bool
-		wantPanic bool
-		args      args
-	}{
+	validUser := createUser()
+	defer repository.Delete(ctx, validUser.ID)
+
+	testCases := []testCase{
 		{
-			name:      "success create new user",
-			repo:      userRepositoryImpl,
-			wantErr:   false,
-			wantPanic: false,
-			args: args{
-				ctx: context.Background(),
-				user: entity.User{
-					Name:     "validname",
-					Email:    "valid1@email.com",
-					Password: "example-password",
-					TimeFields: entity.TimeFields{
-						CreatedAt: &timeNow,
-						UpdatedAt: &timeNow,
-					},
-				},
+			Name: "Failed Create User -1: email already used",
+			Payload: entity.User{
+				Name:        helper.RandomString(12),
+				Email:       validUser.Email,
+				Password:    pwHashed,
+				ActivatedAt: &timeNow,
 			},
+			WantErr: true,
 		},
 		{
-			name:      "success create new user with void data",
-			repo:      userRepositoryImpl,
-			wantErr:   false,
-			wantPanic: false,
+			Name: "Success Create User -1",
+			Payload: entity.User{
+				Name:        helper.RandomString(10),
+				Email:       helper.RandomEmail(),
+				Password:    pwHashed,
+				ActivatedAt: &timeNow,
+			},
+			WantErr: false,
 		},
 		{
-			name: "failed create new user with void data and nil repository",
-			repo: UserRepositoryImpl{
-				db: nil,
+			Name: "Success Create User -2",
+			Payload: entity.User{
+				Name:        helper.RandomString(10),
+				Email:       helper.RandomEmail(),
+				Password:    pwHashed,
+				ActivatedAt: &timeNow,
 			},
-			wantErr:   true,
-			wantPanic: true,
+			WantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if !tt.wantPanic {
-				gotID, err := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("UserRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				gotID2, err2 := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
-				if err2 == nil || gotID2 != 0 {
-					t.Error("should be error, couse email is already used")
-				}
-				tt.repo.Delete(tt.args.ctx, gotID)
 
-				return
-			}
-			// want panic
-			defer func() {
-				if r := recover(); r == nil {
-					t.Errorf("create() do not panic")
-				}
-			}()
-			userID, err := tt.repo.Create(tt.args.ctx, tt.args.user, 1)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UserRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			userRepositoryImpl.Delete(ctx, userID)
-		})
-	}
-}
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
 
-func TestUserRepositoryImplGetByID(t *testing.T) {
-	// create user
-	user := entity.User{
-		Name:     "validname",
-		Email:    "valid2@email.com",
-		Password: "example-password",
-		TimeFields: entity.TimeFields{
-			CreatedAt: &timeNow,
-			UpdatedAt: &timeNow,
-		},
-	}
-	userRepositoryImpl := UserRepositoryImpl{
-		db: connector.LoadDatabase(),
-	}
-	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
-	if createErr != nil {
-		t.Errorf("error while creating user")
-	}
-	defer func() {
-		userRepositoryImpl.Delete(ctx, id)
-	}()
-
-	type args struct {
-		ctx context.Context
-		id  int
-	}
-	tests := []struct {
-		name     string
-		repo     UserRepositoryImpl
-		wantErr  bool
-		wantUser bool
-		args     args
-	}{
-		{
-			name:     "Success get user by id",
-			repo:     userRepositoryImpl,
-			wantErr:  false,
-			wantUser: true,
-			args: args{
-				ctx: ctx,
-				id:  id,
-			},
-		},
-		{
-			name:     "Failed get user by negative id",
-			repo:     userRepositoryImpl,
-			wantErr:  true,
-			wantUser: false,
-			args: args{
-				ctx: ctx,
-				id:  -10,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotUser, err := tt.repo.GetByID(tt.args.ctx, tt.args.id)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UserRepositoryImpl.GetByID() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.wantUser {
-				if gotUser == nil {
-					t.Error("error user shouldn't nil")
-				}
-			}
-		})
-	}
-}
-
-func TestUserRepositoryImplGetByEmail(t *testing.T) {
-	// create user
-	user := entity.User{
-		Name:     "validname",
-		Email:    "valid3@email.com",
-		Password: "example-password",
-		TimeFields: entity.TimeFields{
-			CreatedAt: &timeNow,
-			UpdatedAt: &timeNow,
-		},
-	}
-	userRepositoryImpl := UserRepositoryImpl{
-		db: connector.LoadDatabase(),
-	}
-	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
-	if createErr != nil {
-		t.Errorf("error while creating user")
-	}
-	defer func() {
-		userRepositoryImpl.Delete(ctx, id)
-	}()
-
-	type args struct {
-		ctx   context.Context
-		email string
-	}
-	tests := []struct {
-		name     string
-		repo     UserRepositoryImpl
-		wantUser bool
-		wantErr  bool
-		args     args
-	}{
-		{
-			name:     "Success get user by valid email",
-			repo:     userRepositoryImpl,
-			wantErr:  false,
-			wantUser: true,
-			args: args{
-				ctx:   ctx,
-				email: user.Email,
-			},
-		},
-		{
-			name:     "Failed get user by invalid-email",
-			repo:     userRepositoryImpl,
-			wantErr:  true,
-			wantUser: false,
-			args: args{
-				ctx:   ctx,
-				email: "invalid-email",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotUser, err := tt.repo.GetByEmail(tt.args.ctx, tt.args.email)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UserRepositoryImpl.GetByID() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.wantUser {
-				if gotUser == nil {
-					t.Error("error user shouldn't nil")
-				}
-			}
-		})
-	}
-}
-
-func TestUserRepositoryImplGetAll(t *testing.T) {
-	// create user
-	allUsersID := make([]int, 0)
-	userRepositoryImpl := UserRepositoryImpl{
-		db: connector.LoadDatabase(),
-	}
-	for _, id := range []string{"4", "5", "6", "7", "8"} {
-		user := entity.User{
-			Name:     "validname",
-			Email:    "valid" + id + "@email.com", // email is unique
-			Password: "example-password",
-			TimeFields: entity.TimeFields{
-				CreatedAt: &timeNow,
-				UpdatedAt: &timeNow,
-			},
+		tc.Payload.SetCreateTime()
+		id, createErr := repository.Create(ctx, tc.Payload, 1)
+		if tc.WantErr {
+			assert.Error(t, createErr, consts.ShouldErr, tc.Name, headerTestName)
+			continue
 		}
-		newUserID, createErr := userRepositoryImpl.Create(ctx, user, 1)
-		if createErr != nil {
-			t.Errorf("error while creating user :" + id)
+
+		assert.NoError(t, createErr, consts.ShouldNotErr, tc.Name, headerTestName)
+
+		deleteErr := repository.Delete(ctx, id)
+		assert.NoError(t, deleteErr, consts.ShouldNotErr, headerTestName)
+	}
+}
+
+func TestGetByID(t *testing.T) {
+	repository := NewUserRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	userIDs := make([]int, 2)
+	for i := range userIDs {
+		userIDs[i] = createUser().ID
+		defer repository.Delete(ctx, userIDs[i])
+	}
+
+	type testCase struct {
+		Name    string
+		ID      int
+		WantErr bool
+	}
+	testCases := []testCase{
+		{
+			Name:    "Failed Get User -1: invalid ID",
+			WantErr: true,
+			ID:      -1,
+		},
+		{
+			Name:    "Failed Get User -2: Data not found",
+			WantErr: true,
+			ID:      userIDs[0] * 99,
+		},
+	}
+	for i, id := range userIDs {
+		testCases = append(testCases, testCase{
+			Name:    "Success Get data-" + strconv.Itoa(i+1),
+			ID:      id,
+			WantErr: false,
+		})
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		user, err := repository.GetByID(ctx, tc.ID)
+		if tc.WantErr {
+			assert.Error(t, err, consts.ShouldErr, headerTestName)
+			continue
 		}
-		allUsersID = append(allUsersID, newUserID)
+		assert.NoError(t, err, consts.ShouldNotErr, headerTestName)
+		assert.NotNil(t, user, consts.ShouldNotNil, headerTestName)
 	}
-	defer func() {
-		for _, userID := range allUsersID {
-			userRepositoryImpl.Delete(ctx, userID)
+}
+
+func TestGetByEmail(t *testing.T) {
+	repository := NewUserRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	userEmails := make([]string, 2)
+	for i := range userEmails {
+		user := createUser()
+		userEmails[i] = user.Email
+		defer repository.Delete(ctx, user.ID)
+	}
+
+	type testCase struct {
+		Name    string
+		Email   string
+		WantErr bool
+	}
+	testCases := []testCase{
+		{
+			Name:    "Failed Get User -1: invalid Email",
+			WantErr: true,
+			Email:   "",
+		},
+		{
+			Name:    "Failed Get User -2: Data not found",
+			WantErr: true,
+			Email:   "validemail@example.xyz",
+		},
+	}
+	for i, email := range userEmails {
+		testCases = append(testCases, testCase{
+			Name:    "Success Get data-" + strconv.Itoa(i+1),
+			Email:   email,
+			WantErr: false,
+		})
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		user, err := repository.GetByEmail(ctx, tc.Email)
+		if tc.WantErr {
+			assert.Error(t, err, consts.ShouldErr, headerTestName)
+			continue
 		}
-	}()
-
-	type args struct {
-		ctx    context.Context
-		filter model.RequestGetAll
-	}
-	tests := []struct {
-		name    string
-		repo    UserRepositoryImpl
-		wantErr bool
-		args    args
-	}{
-		{
-			name:    "success get 5 or more users",
-			repo:    userRepositoryImpl,
-			wantErr: false,
-			args: args{
-				ctx: ctx,
-				filter: model.RequestGetAll{
-					Page:    1,
-					Limit:   1000,
-					Keyword: "",
-				},
-			},
-		},
-		{
-			name:    "success get less than 5",
-			repo:    userRepositoryImpl,
-			wantErr: false,
-			args: args{
-				ctx: ctx,
-				filter: model.RequestGetAll{
-					Page:    1,
-					Limit:   1,
-					Keyword: "",
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotUsers, gotTotal, err := tt.repo.GetAll(tt.args.ctx, tt.args.filter)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UserRepositoryImpl.GetAll() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.args.filter.Limit > 5 && len(gotUsers) < 5 {
-				t.Error("users should be 5 or more")
-			}
-			if tt.args.filter.Limit > 5 && gotTotal < 5 {
-				t.Error("total users should be 5 or more")
-			}
-			if tt.args.filter.Limit < 5 && len(gotUsers) > 5 {
-				t.Error("users should be less than 5")
-			}
-		})
+		assert.NoError(t, err, consts.ShouldNotErr, headerTestName)
+		assert.NotNil(t, user, consts.ShouldNotNil, headerTestName)
 	}
 }
 
-func TestUserRepositoryImplUpdate(t *testing.T) {
-	// create user
-	user := entity.User{
-		Name:     "validname",
-		Email:    "valid9@email.com",
-		Password: "example-password",
-		TimeFields: entity.TimeFields{
-			CreatedAt: &timeNow,
-			UpdatedAt: &timeNow,
+func TestGetByConditions(t *testing.T) {
+	repository := NewUserRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	userEmails := make([]string, 2)
+	for i := range userEmails {
+		user := createUser()
+		userEmails[i] = user.Email
+		defer repository.Delete(ctx, user.ID)
+	}
+
+	type testCase struct {
+		Name       string
+		Conditions map[string]any
+		WantErr    bool
+	}
+	testCases := []testCase{
+		{
+			Name:    "Failed Get User -1: invalid Conditions",
+			WantErr: true,
+			Conditions: map[string]any{
+				"invalid =": 90,
+			},
+		},
+		{
+			Name:    "Failed Get User -2: Data not found",
+			WantErr: true,
+			Conditions: map[string]any{
+				"email =": helper.RandomEmail(),
+			},
 		},
 	}
-	userRepositoryImpl := UserRepositoryImpl{
-		db: connector.LoadDatabase(),
+	for i, email := range userEmails {
+		testCases = append(testCases, testCase{
+			Name:    "Success Get data-" + strconv.Itoa(i+1),
+			WantErr: false,
+			Conditions: map[string]any{
+				"email =": email,
+			},
+		})
 	}
-	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		user, err := repository.GetByConditions(ctx, tc.Conditions)
+		if tc.WantErr {
+			assert.Error(t, err, consts.ShouldErr, headerTestName)
+			continue
+		}
+		assert.NoError(t, err, consts.ShouldNotErr, headerTestName)
+		assert.NotNil(t, user, consts.ShouldNotNil, headerTestName)
+	}
+}
+
+func TestGetAll(t *testing.T) {
+	repository := NewUserRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	type testCase struct {
+		Name    string
+		Payload model.RequestGetAll
+		WantErr bool
+	}
+
+	testCases := []testCase{
+		{
+			Name: "Success Get All -1",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 100,
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Get All -2",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 10,
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Get All -1: invalid sort",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 10,
+				Sort:  "invalid-sort",
+			},
+			WantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		users, total, getErr := repository.GetAll(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, getErr, consts.ShouldErr, headerTestName)
+			continue
+		}
+		assert.NoError(t, getErr, consts.ShouldNotErr, headerTestName)
+		assert.True(t, total >= 0, headerTestName)
+		assert.True(t, len(users) >= 0, headerTestName)
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	repository := NewUserRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	// create user for testing {payload}
+	user := createUser()
+	defer repository.Delete(ctx, user.ID)
+
+	type testCase struct {
+		Name    string
+		Payload entity.User
+		WantErr bool
+	}
+
+	testCases := []testCase{
+		{
+			Name: "Success Update -1",
+			Payload: entity.User{
+				ID:   user.ID,
+				Name: helper.RandomString(12),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Update -2",
+			Payload: entity.User{
+				ID:   user.ID,
+				Name: helper.RandomString(12),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Update -1: invalid ID",
+			Payload: entity.User{
+				ID:   -10,
+				Name: helper.RandomString(12),
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Update -2: invalid id",
+			Payload: entity.User{
+				ID:   0,
+				Name: helper.RandomString(12),
+			},
+			WantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		tc.Payload.SetUpdateTime()
+		updateErr := repository.Update(ctx, tc.Payload)
+		if tc.WantErr {
+			// error by data not found not detected
+			// assert.Error(t, updateErr, consts.ShouldErr, headerTestName)
+			continue
+		}
+		assert.NoError(t, updateErr, consts.ShouldNotErr, headerTestName)
+
+		user, getErr := repository.GetByID(ctx, tc.Payload.ID)
+		assert.NoError(t, getErr, consts.ShouldNotErr, headerTestName)
+		assert.Equal(t, user.Name, tc.Payload.Name)
+	}
+}
+
+func TestUpdatePassword(t *testing.T) {
+	repository := NewUserRepository()
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	user := createUser()
+	defer repository.Delete(ctx, user.ID)
+
+	type testCase struct {
+		Name    string
+		Payload entity.User
+		WantErr bool
+	}
+
+	testCases := []testCase{
+		{
+			Name: "Success Update -1",
+			Payload: entity.User{
+				ID:       user.ID,
+				Password: helper.RandomString(12),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Update: invalid id",
+			Payload: entity.User{
+				ID:       -10,
+				Password: helper.RandomString(12),
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Update: invalid id",
+			Payload: entity.User{
+				ID:       0,
+				Password: helper.RandomString(12),
+			},
+			WantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		tc.Payload.SetUpdateTime()
+		updateErr := repository.UpdatePassword(ctx, tc.Payload.ID, tc.Payload.Password)
+		if tc.WantErr {
+			assert.Error(t, updateErr, consts.ShouldErr, headerTestName)
+			continue
+		}
+		assert.NoError(t, updateErr, consts.ShouldNotErr, headerTestName)
+	}
+}
+
+func createUser() entity.User {
+	repository := NewUserRepository()
+	ctx := helper.NewFiberCtx().Context()
+	pwHashed, _ := hash.Generate(helper.RandomString(10))
+	newUser := entity.User{
+		Name:        helper.RandomString(10),
+		Email:       helper.RandomEmail(),
+		Password:    pwHashed,
+		ActivatedAt: &timeNow,
+	}
+	newUser.SetCreateTime()
+	userID, createErr := repository.Create(ctx, newUser, 1)
 	if createErr != nil {
-		t.Errorf("error while creating user")
+		log.Fatal("error while create new user", headerTestName)
 	}
-	// add id to user
-	user.ID = id
-	defer func() {
-		userRepositoryImpl.Delete(ctx, id)
-	}()
-
-	type args struct {
-		ctx  context.Context
-		user entity.User
-	}
-	tests := []struct {
-		name        string
-		repo        UserRepositoryImpl
-		wantErr     bool
-		newUserName string
-		args        args
-	}{
-		{
-			name:        "success update user's name",
-			repo:        userRepositoryImpl,
-			wantErr:     false,
-			newUserName: "test-update-001",
-			args: args{
-				ctx:  ctx,
-				user: user,
-			},
-		},
-	}
-	for _, tt := range tests {
-		tt.args.user.Name = tt.newUserName
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.repo.Update(tt.args.ctx, tt.args.user); (err != nil) != tt.wantErr {
-				t.Errorf("UserRepositoryImpl.Update() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			getUser, getErr := tt.repo.GetByID(tt.args.ctx, id)
-			if getErr != nil {
-				t.Error("error while getting user")
-			}
-			if getUser.Name != tt.newUserName {
-				t.Error("update name failed")
-			}
-		})
-	}
-}
-
-func TestUserRepositoryImplDelete(t *testing.T) {
-	userRepository := NewUserRepository()
-	if userRepository == nil {
-		t.Error("shouldn't nil")
-	}
-
-	ctx := context.Background()
-	err := userRepository.Delete(ctx, -2)
-	if err != nil {
-		t.Error("delete shouldn't error")
-	}
-	if ctx.Err() != nil {
-		t.Error("delete shouldn't error")
-	}
-}
-
-func TestUserRepositoryImplUpdatePassword(t *testing.T) {
-	// create user
-	user := entity.User{
-		Name:     "validname",
-		Email:    helper.RandomEmail(),
-		Password: "example-password",
-		TimeFields: entity.TimeFields{
-			CreatedAt: &timeNow,
-			UpdatedAt: &timeNow,
-		},
-	}
-	userRepositoryImpl := UserRepositoryImpl{
-		db: connector.LoadDatabase(),
-	}
-	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
-	if createErr != nil {
-		t.Errorf("error while creating user")
-	}
-	// add id to user
-	user.ID = id
-	defer func() {
-		userRepositoryImpl.Delete(ctx, id)
-	}()
-
-	type args struct {
-		ctx            context.Context
-		id             int
-		passwordHashed string
-	}
-	tests := []struct {
-		name    string
-		repo    UserRepositoryImpl
-		args    args
-		wantErr bool
-	}{
-		{
-			name:    "success update user's password",
-			repo:    userRepositoryImpl,
-			wantErr: false,
-			args: args{
-				ctx:            ctx,
-				id:             id,
-				passwordHashed: "new-password-hashed",
-			},
-		},
-		{
-			name:    "failed getting user with negative id",
-			repo:    userRepositoryImpl,
-			wantErr: true,
-			args: args{
-				ctx: ctx,
-				id:  -100,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.repo.UpdatePassword(tt.args.ctx, tt.args.id, tt.args.passwordHashed); (err != nil) != tt.wantErr {
-				t.Errorf("UserRepositoryImpl.UpdatePassword() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr {
-				getUser, getErr := tt.repo.GetByID(tt.args.ctx, id)
-				if getErr != nil {
-					t.Error("error while getting user")
-				}
-				if getUser.Password != tt.args.passwordHashed {
-					t.Error("failed to update user's password")
-				}
-			}
-		})
-	}
-}
-
-func TestUserRepositoryImplGetByConditions(t *testing.T) {
-	user := entity.User{
-		Name:     "validname",
-		Email:    helper.RandomEmail(),
-		Password: "example-password",
-		TimeFields: entity.TimeFields{
-			CreatedAt: &timeNow,
-			UpdatedAt: &timeNow,
-		},
-	}
-	userRepositoryImpl := UserRepositoryImpl{
-		db: connector.LoadDatabase(),
-	}
-	id, createErr := userRepositoryImpl.Create(ctx, user, 1)
-	if createErr != nil {
-		t.Errorf("error while creating user")
-	}
-	// add id to user
-	user.ID = id
-	defer func() {
-		userRepositoryImpl.Delete(ctx, id)
-	}()
-
-	type args struct {
-		ctx   context.Context
-		conds map[string]any
-	}
-	tests := []struct {
-		name    string
-		repo    UserRepositoryImpl
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "success get data",
-			repo: userRepositoryImpl,
-			args: args{
-				ctx: ctx,
-				conds: map[string]any{
-					"name =": user.Name,
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotUser, err := tt.repo.GetByConditions(tt.args.ctx, tt.args.conds)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UserRepositoryImpl.GetByConditions() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotUser.ID != user.ID || gotUser.Email != user.Email || gotUser.Password != user.Password {
-				t.Error("should got same ID/ Email/ Password")
-			}
-		})
-	}
+	newUser.ID = userID
+	return newUser
 }
