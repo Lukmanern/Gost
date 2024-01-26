@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"net"
 	"strings"
 	"sync"
 
@@ -23,13 +22,6 @@ type UserController interface {
 	// AccountActivation function activates user account with
 	// verification code that has been sended to the user's email
 	AccountActivation(c *fiber.Ctx) error
-
-	// DeleteUserByVerification function deletes user data if the
-	// user account is not yet verified. This implies that the email
-	// owner hasn't actually registered the email, indicating that
-	// the user who registered may be making typing errors or may
-	// be a hacker attempting to get the verification code.
-	DeleteAccountActivation(c *fiber.Ctx) error
 
 	// ForgetPassword function send
 	// verification code into user's email
@@ -90,7 +82,9 @@ func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 	if regisErr != nil {
 		fiberErr, ok := regisErr.(*fiber.Error)
 		if ok {
-			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
 		}
 		return response.Error(c, consts.ErrServer+regisErr.Error())
 	}
@@ -100,11 +94,11 @@ func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 	data := map[string]any{
 		"id": id,
 	}
-	return response.CreateResponse(c, fiber.StatusCreated, true, message, data)
+	return response.SuccessCreated(c, data)
 }
 
 func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
-	var user model.UserVerificationCode
+	var user model.UserActivation
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
@@ -113,40 +107,23 @@ func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 	ctx := c.Context()
-	err := ctr.service.Verification(ctx, user)
+	err := ctr.service.AccountActivation(ctx, user)
 	if err != nil {
 		fiberErr, ok := err.(*fiber.Error)
 		if ok {
-			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
 		}
 		return response.Error(c, consts.ErrServer+err.Error())
 	}
 
 	message := "Thank you for your confirmation. Your account is active now, you can login."
-	return response.CreateResponse(c, fiber.StatusOK, true, message, nil)
-}
-
-func (ctr *UserControllerImpl) DeleteAccountActivation(c *fiber.Ctx) error {
-	var verifyData model.UserVerificationCode
-	if err := c.BodyParser(&verifyData); err != nil {
-		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
-	}
-	validate := validator.New()
-	if err := validate.Struct(&verifyData); err != nil {
-		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
-	}
-	ctx := c.Context()
-	err := ctr.service.DeleteUserByVerification(ctx, verifyData)
-	if err != nil {
-		fiberErr, ok := err.(*fiber.Error)
-		if ok {
-			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
-		}
-		return response.Error(c, consts.ErrServer+err.Error())
-	}
-
-	message := "Your data is already deleted, thank you for your confirmation."
-	return response.CreateResponse(c, fiber.StatusOK, true, message, nil)
+	return response.CreateResponse(c, fiber.StatusOK, response.Response{
+		Message: message,
+		Success: true,
+		Data:    nil,
+	})
 }
 
 func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
@@ -154,16 +131,6 @@ func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 	// user.IP = c.IP() // Note : uncomment this line in production
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
-	}
-
-	userIP := net.ParseIP(user.IP)
-	if userIP == nil {
-		return response.BadRequest(c, consts.InvalidJSONBody+"invalid user ip address")
-	}
-	counter, _ := ctr.service.FailedLoginCounter(userIP.String(), false)
-	ipBlockMsg := "Your IP has been blocked by system. Please try again in 1 or 2 Hour"
-	if counter >= 5 {
-		return response.CreateResponse(c, fiber.StatusBadRequest, false, ipBlockMsg, nil)
 	}
 
 	validate := validator.New()
@@ -174,13 +141,11 @@ func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 	ctx := c.Context()
 	token, loginErr := ctr.service.Login(ctx, user)
 	if loginErr != nil {
-		counter, _ := ctr.service.FailedLoginCounter(userIP.String(), true)
-		if counter >= 5 {
-			return response.CreateResponse(c, fiber.StatusBadRequest, false, ipBlockMsg, nil)
-		}
 		fiberErr, ok := loginErr.(*fiber.Error)
 		if ok {
-			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
 		}
 		return response.Error(c, consts.ErrServer+loginErr.Error())
 	}
@@ -189,7 +154,11 @@ func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 		"token":        token,
 		"token-length": len(token),
 	}
-	return response.CreateResponse(c, fiber.StatusOK, true, "success login", data)
+	return response.CreateResponse(c, fiber.StatusOK, response.Response{
+		Message: "Success Login",
+		Success: true,
+		Data:    data,
+	})
 }
 
 func (ctr *UserControllerImpl) Logout(c *fiber.Ctx) error {
@@ -201,7 +170,7 @@ func (ctr *UserControllerImpl) Logout(c *fiber.Ctx) error {
 	if logoutErr != nil {
 		return response.Error(c, consts.ErrServer+logoutErr.Error())
 	}
-	return response.CreateResponse(c, fiber.StatusOK, true, "success logout", nil)
+	return response.SuccessNoContent(c)
 }
 
 func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
@@ -219,13 +188,19 @@ func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	if forgetErr != nil {
 		fiberErr, ok := forgetErr.(*fiber.Error)
 		if ok {
-			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
 		}
 		return response.Error(c, consts.ErrServer+forgetErr.Error())
 	}
 
 	message := "success sending link for reset password to email, check your email inbox"
-	return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
+	return response.CreateResponse(c, fiber.StatusAccepted, response.Response{
+		Message: message,
+		Success: true,
+		Data:    nil,
+	})
 }
 
 func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
@@ -246,13 +221,19 @@ func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 	if resetErr != nil {
 		fiberErr, ok := resetErr.(*fiber.Error)
 		if ok {
-			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
 		}
 		return response.Error(c, consts.ErrServer+resetErr.Error())
 	}
 
 	message := "your password already updated, you can login with your new password, thank you"
-	return response.CreateResponse(c, fiber.StatusAccepted, true, message, nil)
+	return response.CreateResponse(c, fiber.StatusAccepted, response.Response{
+		Message: message,
+		Success: true,
+		Data:    nil,
+	})
 }
 
 func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
@@ -283,7 +264,9 @@ func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	if updateErr != nil {
 		fiberErr, ok := updateErr.(*fiber.Error)
 		if ok {
-			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
 		}
 		return response.Error(c, consts.ErrServer+updateErr.Error())
 	}
@@ -297,7 +280,7 @@ func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 		return response.Unauthorized(c)
 	}
 
-	var user model.UserProfileUpdate
+	var user model.UserUpdate
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
@@ -312,7 +295,9 @@ func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	if updateErr != nil {
 		fiberErr, ok := updateErr.(*fiber.Error)
 		if ok {
-			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
 		}
 		return response.Error(c, consts.ErrServer+updateErr.Error())
 	}
@@ -331,7 +316,9 @@ func (ctr *UserControllerImpl) MyProfile(c *fiber.Ctx) error {
 	if getErr != nil {
 		fiberErr, ok := getErr.(*fiber.Error)
 		if ok {
-			return response.CreateResponse(c, fiberErr.Code, false, fiberErr.Message, nil)
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
 		}
 		return response.Error(c, consts.ErrServer+getErr.Error())
 	}

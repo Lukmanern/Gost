@@ -22,6 +22,7 @@ import (
 
 type UserService interface {
 	Register(ctx context.Context, data model.UserRegister) (id int, err error)
+	AccountActivation(ctx context.Context, data model.UserActivation) (err error)
 	Login(ctx context.Context, data model.UserLogin) (token string, err error)
 	Logout(c *fiber.Ctx) (err error)
 
@@ -72,6 +73,10 @@ func (svg *UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserF
 // ResetPassword func resets password by creating
 // new password by email and verification code
 func (svg *UserServiceImpl) ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) {
+	return nil
+}
+
+func (svg *UserServiceImpl) AccountActivation(ctx context.Context, data model.UserActivation) (err error) {
 	return nil
 }
 
