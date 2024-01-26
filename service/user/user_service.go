@@ -28,6 +28,13 @@ type UserService interface {
 	GetAll(ctx context.Context, filter model.RequestGetAll) (users []model.User, total int, err error)
 	MyProfile(ctx context.Context, id int) (profile model.User, err error)
 
+	// ForgetPassword func send verification code into user's email
+	ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error)
+
+	// ResetPassword func resets password by creating
+	// new password by email and verification code
+	ResetPassword(ctx context.Context, user model.UserResetPassword) (err error)
+
 	UpdateProfile(ctx context.Context, data model.UserUpdate) (err error)
 	UpdatePassword(ctx context.Context, data model.UserPasswordUpdate) (err error)
 	Delete(ctx context.Context, id int) (err error)
@@ -55,6 +62,17 @@ func NewUserService() UserService {
 		}
 	})
 	return userSvcImpl
+}
+
+// ForgetPassword func send verification code into user's email
+func (svg *UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
+	return nil
+}
+
+// ResetPassword func resets password by creating
+// new password by email and verification code
+func (svg *UserServiceImpl) ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) {
+	return nil
 }
 
 func (svc *UserServiceImpl) Register(ctx context.Context, data model.UserRegister) (id int, err error) {

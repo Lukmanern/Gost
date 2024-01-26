@@ -185,7 +185,7 @@ func TestBadRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := BadRequest(tt.args.c); (err != nil) != tt.wantErr {
+			if err := BadRequest(tt.args.c, tt.args.message); (err != nil) != tt.wantErr {
 				t.Errorf("BadRequest() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

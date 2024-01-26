@@ -52,9 +52,9 @@ func SuccessCreated(c *fiber.Ctx, data interface{}) error {
 }
 
 // BadRequest formats a response with HTTP status 400.
-func BadRequest(c *fiber.Ctx) error {
+func BadRequest(c *fiber.Ctx, message string) error {
 	return CreateResponse(c, fiber.StatusBadRequest, Response{
-		Message: consts.BadRequest,
+		Message: message,
 		Success: false,
 		Data:    nil,
 	})

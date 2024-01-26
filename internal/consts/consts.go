@@ -14,6 +14,7 @@ const (
 	NilValue        = "error nil value"
 	InvalidToken    = "invalid token / JWT, please logout and try-login"
 	ErrHashing      = "error while hashing password"
+	ErrServer       = "internal server error"
 )
 
 const (
