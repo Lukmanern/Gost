@@ -16,7 +16,6 @@ import (
 )
 
 type RoleService interface {
-
 	// Create func create one role.
 	Create(ctx context.Context, data model.RoleCreate) (id int, err error)
 

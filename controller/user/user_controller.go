@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"math"
 	"strings"
 	"sync"
 
@@ -15,36 +16,20 @@ import (
 )
 
 type UserController interface {
-	// Register function register user account,
-	// than send verification-code to email
+	// no-auth
 	Register(c *fiber.Ctx) error
-
-	// AccountActivation function activates user account with
-	// verification code that has been sended to the user's email
 	AccountActivation(c *fiber.Ctx) error
-
-	// ForgetPassword function send
-	// verification code into user's email
-	ForgetPassword(c *fiber.Ctx) error
-
-	// ResetPassword func resets password by creating
-	// new password by email and verification code
-	ResetPassword(c *fiber.Ctx) error
-
-	// Login func gives token and access to user
 	Login(c *fiber.Ctx) error
-
-	// Logout func stores user's token into Redis
-	Logout(c *fiber.Ctx) error
-
-	// UpdatePassword func updates user's password
-	UpdatePassword(c *fiber.Ctx) error
-
-	// UpdateProfile func updates user's profile data
-	UpdateProfile(c *fiber.Ctx) error
-
-	// MyProfile func shows user's profile data
+	ForgetPassword(c *fiber.Ctx) error
+	ResetPassword(c *fiber.Ctx) error
+	// auth+admin
+	GetAll(c *fiber.Ctx) error
+	// auth
 	MyProfile(c *fiber.Ctx) error
+	Logout(c *fiber.Ctx) error
+	UpdateProfile(c *fiber.Ctx) error
+	UpdatePassword(c *fiber.Ctx) error
+	Delete(c *fiber.Ctx) error
 }
 
 type UserControllerImpl struct {
@@ -163,18 +148,6 @@ func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 	})
 }
 
-func (ctr *UserControllerImpl) Logout(c *fiber.Ctx) error {
-	userClaims, ok := c.Locals("claims").(*middleware.Claims)
-	if !ok || userClaims == nil {
-		return response.Unauthorized(c)
-	}
-	err := ctr.service.Logout(c)
-	if err != nil {
-		return response.Error(c, consts.ErrServer)
-	}
-	return response.SuccessNoContent(c)
-}
-
 func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	var user model.UserForgetPassword
 	if err := c.BodyParser(&user); err != nil {
@@ -236,6 +209,105 @@ func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 	})
 }
 
+func (ctr *UserControllerImpl) GetAll(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
+	request := model.RequestGetAll{
+		Page:    c.QueryInt("page", 1),
+		Limit:   c.QueryInt("limit", 20),
+		Keyword: c.Query("search"),
+		Sort:    c.Query("sort"),
+	}
+	if request.Page <= 0 || request.Limit <= 0 {
+		return response.BadRequest(c, "invalid page or limit value")
+	}
+
+	ctx := c.Context()
+	roles, total, getErr := ctr.service.GetAll(ctx, request)
+	if getErr != nil {
+		return response.Error(c, consts.ErrServer+getErr.Error())
+	}
+
+	data := make([]interface{}, len(roles))
+	for i := range roles {
+		data[i] = roles[i]
+	}
+	responseData := model.GetAllResponse{
+		Meta: model.PageMeta{
+			TotalData:  total,
+			TotalPages: int(math.Ceil(float64(total) / float64(request.Limit))),
+			AtPage:     request.Page,
+		},
+		Data: data,
+	}
+	return response.SuccessLoaded(c, responseData)
+}
+
+func (ctr *UserControllerImpl) MyProfile(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
+	ctx := c.Context()
+	userProfile, getErr := ctr.service.MyProfile(ctx, userClaims.ID)
+	if getErr != nil {
+		fiberErr, ok := getErr.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
+		}
+		return response.Error(c, consts.ErrServer+getErr.Error())
+	}
+	return response.SuccessLoaded(c, userProfile)
+}
+
+func (ctr *UserControllerImpl) Logout(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+	err := ctr.service.Logout(c)
+	if err != nil {
+		return response.Error(c, consts.ErrServer)
+	}
+	return response.SuccessNoContent(c)
+}
+
+func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
+	var user model.UserUpdate
+	if err := c.BodyParser(&user); err != nil {
+		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
+	}
+	user.ID = userClaims.ID
+	validate := validator.New()
+	if err := validate.Struct(&user); err != nil {
+		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
+	}
+
+	ctx := c.Context()
+	err := ctr.service.UpdateProfile(ctx, user)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
+		}
+		return response.Error(c, consts.ErrServer)
+	}
+	return response.SuccessNoContent(c)
+}
+
 func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -273,52 +345,6 @@ func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
-func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
-	userClaims, ok := c.Locals("claims").(*middleware.Claims)
-	if !ok || userClaims == nil {
-		return response.Unauthorized(c)
-	}
-
-	var user model.UserUpdate
-	if err := c.BodyParser(&user); err != nil {
-		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
-	}
-	user.ID = userClaims.ID
-	validate := validator.New()
-	if err := validate.Struct(&user); err != nil {
-		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
-	}
-
-	ctx := c.Context()
-	err := ctr.service.UpdateProfile(ctx, user)
-	if err != nil {
-		fiberErr, ok := err.(*fiber.Error)
-		if ok {
-			return response.CreateResponse(c, fiberErr.Code, response.Response{
-				Message: fiberErr.Message, Success: false, Data: nil,
-			})
-		}
-		return response.Error(c, consts.ErrServer)
-	}
+func (ctr *UserControllerImpl) Delete(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
-}
-
-func (ctr *UserControllerImpl) MyProfile(c *fiber.Ctx) error {
-	userClaims, ok := c.Locals("claims").(*middleware.Claims)
-	if !ok || userClaims == nil {
-		return response.Unauthorized(c)
-	}
-
-	ctx := c.Context()
-	userProfile, getErr := ctr.service.MyProfile(ctx, userClaims.ID)
-	if getErr != nil {
-		fiberErr, ok := getErr.(*fiber.Error)
-		if ok {
-			return response.CreateResponse(c, fiberErr.Code, response.Response{
-				Message: fiberErr.Message, Success: false, Data: nil,
-			})
-		}
-		return response.Error(c, consts.ErrServer+getErr.Error())
-	}
-	return response.SuccessLoaded(c, userProfile)
 }
