@@ -9,6 +9,7 @@ import (
 
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/consts"
+	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/response"
 	service "github.com/Lukmanern/gost/service/role"
 )
@@ -49,6 +50,11 @@ func NewRoleController(service service.RoleService) RoleController {
 }
 
 func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
 	var role model.RoleCreate
 	if err := c.BodyParser(&role); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
@@ -59,15 +65,15 @@ func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 	}
 
 	ctx := c.Context()
-	id, createErr := ctr.service.Create(ctx, role)
-	if createErr != nil {
-		fiberErr, ok := createErr.(*fiber.Error)
+	id, err := ctr.service.Create(ctx, role)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, response.Response{
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+createErr.Error())
+		return response.Error(c, consts.ErrServer)
 	}
 	data := map[string]any{
 		"id": id,
@@ -76,26 +82,36 @@ func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 }
 
 func (ctr *RoleControllerImpl) Get(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, consts.InvalidID)
 	}
 
 	ctx := c.Context()
-	role, getErr := ctr.service.GetByID(ctx, id)
-	if getErr != nil {
-		fiberErr, ok := getErr.(*fiber.Error)
+	role, err := ctr.service.GetByID(ctx, id)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, response.Response{
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+getErr.Error())
+		return response.Error(c, consts.ErrServer)
 	}
 	return response.SuccessLoaded(c, role)
 }
 
 func (ctr *RoleControllerImpl) GetAll(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
 	request := model.RequestGetAll{
 		Page:    c.QueryInt("page", 1),
 		Limit:   c.QueryInt("limit", 20),
@@ -128,6 +144,11 @@ func (ctr *RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 }
 
 func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, consts.InvalidID)
@@ -143,35 +164,40 @@ func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
 	}
 
 	ctx := c.Context()
-	updateErr := ctr.service.Update(ctx, role)
-	if updateErr != nil {
-		fiberErr, ok := updateErr.(*fiber.Error)
+	err = ctr.service.Update(ctx, role)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, response.Response{
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+updateErr.Error())
+		return response.Error(c, consts.ErrServer)
 	}
 	return response.SuccessNoContent(c)
 }
 
 func (ctr *RoleControllerImpl) Delete(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, consts.InvalidID)
 	}
 
 	ctx := c.Context()
-	deleteErr := ctr.service.Delete(ctx, id)
-	if deleteErr != nil {
-		fiberErr, ok := deleteErr.(*fiber.Error)
+	err = ctr.service.Delete(ctx, id)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, response.Response{
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+deleteErr.Error())
+		return response.Error(c, consts.ErrServer)
 	}
 	return response.SuccessNoContent(c)
 }
