@@ -14,7 +14,6 @@ import (
 )
 
 type RoleController interface {
-
 	// Create func creates a new role
 	Create(c *fiber.Ctx) error
 

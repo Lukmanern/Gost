@@ -78,23 +78,27 @@ func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 	}
 
 	ctx := c.Context()
-	id, regisErr := ctr.service.Register(ctx, user)
-	if regisErr != nil {
-		fiberErr, ok := regisErr.(*fiber.Error)
+	id, err := ctr.service.Register(ctx, user)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, response.Response{
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+regisErr.Error())
+		return response.Error(c, consts.ErrServer)
 	}
 
-	message := "Account success created. please check " + user.Email + " "
-	message += "inbox, our system has sended verification code or link."
+	message := "account successfully created. please check " + user.Email
+	message += " inbox; our system has sent a verification code or link."
 	data := map[string]any{
 		"id": id,
 	}
-	return response.SuccessCreated(c, data)
+	return response.CreateResponse(c, fiber.StatusCreated, response.Response{
+		Message: message,
+		Success: true,
+		Data:    data,
+	})
 }
 
 func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
@@ -115,12 +119,11 @@ func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+err.Error())
+		return response.Error(c, consts.ErrServer)
 	}
 
-	message := "Thank you for your confirmation. Your account is active now, you can login."
 	return response.CreateResponse(c, fiber.StatusOK, response.Response{
-		Message: message,
+		Message: "thank you for your confirmation. your account is active now, you can login.",
 		Success: true,
 		Data:    nil,
 	})
@@ -139,25 +142,24 @@ func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 	}
 
 	ctx := c.Context()
-	token, loginErr := ctr.service.Login(ctx, user)
-	if loginErr != nil {
-		fiberErr, ok := loginErr.(*fiber.Error)
+	token, err := ctr.service.Login(ctx, user)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, response.Response{
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+loginErr.Error())
+		return response.Error(c, consts.ErrServer)
 	}
 
-	data := map[string]any{
-		"token":        token,
-		"token-length": len(token),
-	}
 	return response.CreateResponse(c, fiber.StatusOK, response.Response{
-		Message: "Success Login",
+		Message: "success login",
 		Success: true,
-		Data:    data,
+		Data: map[string]any{
+			"token":        token,
+			"token-length": len(token),
+		},
 	})
 }
 
@@ -166,9 +168,9 @@ func (ctr *UserControllerImpl) Logout(c *fiber.Ctx) error {
 	if !ok || userClaims == nil {
 		return response.Unauthorized(c)
 	}
-	logoutErr := ctr.service.Logout(c)
-	if logoutErr != nil {
-		return response.Error(c, consts.ErrServer+logoutErr.Error())
+	err := ctr.service.Logout(c)
+	if err != nil {
+		return response.Error(c, consts.ErrServer)
 	}
 	return response.SuccessNoContent(c)
 }
@@ -184,20 +186,19 @@ func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	}
 
 	ctx := c.Context()
-	forgetErr := ctr.service.ForgetPassword(ctx, user)
-	if forgetErr != nil {
-		fiberErr, ok := forgetErr.(*fiber.Error)
+	err := ctr.service.ForgetPassword(ctx, user)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, response.Response{
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+forgetErr.Error())
+		return response.Error(c, consts.ErrServer)
 	}
 
-	message := "success sending link for reset password to email, check your email inbox"
 	return response.CreateResponse(c, fiber.StatusAccepted, response.Response{
-		Message: message,
+		Message: "success sending link for reset password to email, check your email inbox",
 		Success: true,
 		Data:    nil,
 	})
@@ -213,24 +214,23 @@ func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 	if user.NewPassword != user.NewPasswordConfirm {
-		return response.BadRequest(c, "password confirmation not match")
+		return response.BadRequest(c, "password confirmation isn't match")
 	}
 
 	ctx := c.Context()
-	resetErr := ctr.service.ResetPassword(ctx, user)
-	if resetErr != nil {
-		fiberErr, ok := resetErr.(*fiber.Error)
+	err := ctr.service.ResetPassword(ctx, user)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, response.Response{
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+resetErr.Error())
+		return response.Error(c, consts.ErrServer)
 	}
 
-	message := "your password already updated, you can login with your new password, thank you"
 	return response.CreateResponse(c, fiber.StatusAccepted, response.Response{
-		Message: message,
+		Message: "your password already updated, you can login with the new password",
 		Success: true,
 		Data:    nil,
 	})
@@ -260,17 +260,16 @@ func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	}
 
 	ctx := c.Context()
-	updateErr := ctr.service.UpdatePassword(ctx, user)
-	if updateErr != nil {
-		fiberErr, ok := updateErr.(*fiber.Error)
+	err := ctr.service.UpdatePassword(ctx, user)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, response.Response{
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+updateErr.Error())
+		return response.Error(c, consts.ErrServer)
 	}
-
 	return response.SuccessNoContent(c)
 }
 
@@ -291,17 +290,16 @@ func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	}
 
 	ctx := c.Context()
-	updateErr := ctr.service.UpdateProfile(ctx, user)
-	if updateErr != nil {
-		fiberErr, ok := updateErr.(*fiber.Error)
+	err := ctr.service.UpdateProfile(ctx, user)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
 		if ok {
 			return response.CreateResponse(c, fiberErr.Code, response.Response{
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer+updateErr.Error())
+		return response.Error(c, consts.ErrServer)
 	}
-
 	return response.SuccessNoContent(c)
 }
 
