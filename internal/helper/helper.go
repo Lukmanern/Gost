@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/XANi/loremipsum"
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
@@ -81,6 +82,17 @@ func NewFiberCtx() *fiber.Ctx {
 // Example : Your name => Your Name
 func ToTitle(s string) string {
 	return cases.Title(language.Und).String(s)
+}
+
+// Generate token for admin role : Full Access
+func GenerateToken() string {
+	jwtHandler := middleware.NewJWTHandler()
+	expire := time.Now().Add(15 * time.Hour)
+	token, err := jwtHandler.GenerateJWT(GenerateRandomID(), RandomEmail(), map[string]uint8{"admin": 1}, expire)
+	if err != nil {
+		return ""
+	}
+	return token
 }
 
 func GenerateRandomID() int {

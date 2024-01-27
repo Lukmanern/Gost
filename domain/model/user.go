@@ -2,16 +2,14 @@ package model
 
 import (
 	"time"
-
-	"github.com/Lukmanern/gost/domain/entity"
 )
 
 type User struct {
-	ID          int        `gorm:"type:bigserial;primaryKey" json:"id"`
-	Name        string     `gorm:"type:varchar(100) not null" json:"name"`
-	Email       string     `gorm:"type:varchar(100) not null unique" json:"email"`
-	Password    string     `gorm:"type:varchar(255) not null" json:"password"`
-	ActivatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"activated_at"`
+	ID          int        `json:"id"`
+	Name        string     `json:"name"`
+	Email       string     `json:"email"`
+	Password    string     `json:"password"`
+	ActivatedAt *time.Time `json:"activated_at"`
 }
 
 type UserRegister struct {
@@ -32,20 +30,13 @@ type UserLogin struct {
 	IP       string `validate:"required,min=4,max=20" json:"ip"`
 }
 
-// ID          int        `gorm:"type:bigserial;primaryKey" json:"id"`
-// Name        string     `gorm:"type:varchar(100) not null" json:"name"`
-// Email       string     `gorm:"type:varchar(100) not null unique" json:"email"`
-// Password    string     `gorm:"type:varchar(255) not null" json:"password"`
-// ActivatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"activated_at"`
-// Roles       []Role     `gorm:"many2many:user_has_roles" json:"roles"`
-
 type UserUpdate struct {
-	ID   int    `gorm:"type:bigserial;primaryKey" json:"id"`
-	Name string `gorm:"type:varchar(100) not null" json:"name"`
+	ID   int    `validate:"required,numeric,min=1" json:"id"`
+	Name string `validate:"required,min=2,max=60" json:"name"`
 }
 
 type UserUpdateRoles struct {
-	ID      int   `gorm:"type:bigserial;primaryKey" json:"id"`
+	ID      int   `validate:"required,numeric,min=1" json:"id"`
 	RoleIDs []int `validate:"required" json:"role_id"`
 }
 
@@ -61,29 +52,8 @@ type UserResetPassword struct {
 }
 
 type UserPasswordUpdate struct {
-	ID                 int    `validate:"required,numeric,min=1"`
+	ID                 int    `validate:"required,numeric,min=1" json:"id"`
 	OldPassword        string `validate:"required,min=8,max=30" json:"old_password"`
 	NewPassword        string `validate:"required,min=8,max=30" json:"new_password"`
 	NewPasswordConfirm string `validate:"required,min=8,max=30" json:"new_password_confirm"`
-}
-
-type UserProfile struct {
-	Email       string
-	Name        string
-	ActivatedAt *time.Time
-	Roles       []string
-}
-
-type UserResponse struct {
-	ID          int
-	Name        string
-	ActivatedAt *time.Time
-}
-
-type UserResponseDetail struct {
-	ID          int
-	Email       string
-	Name        string
-	ActivatedAt *time.Time
-	Roles       []entity.Role
 }

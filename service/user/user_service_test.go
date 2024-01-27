@@ -102,7 +102,7 @@ func TestRegister(t *testing.T) {
 		assert.NoError(t, getErr, consts.ShouldNotErr, tc.Name, headerTestName)
 		assert.NotNil(t, user, consts.ShouldNotNil, tc.Name, headerTestName)
 
-		deleteErr := service.Delete(ctx, id)
+		deleteErr := service.DeleteAccount(ctx, id)
 		assert.NoError(t, deleteErr, consts.ShouldNotErr, tc.Name, headerTestName)
 
 		// value reset
@@ -504,7 +504,7 @@ func TestDelete(t *testing.T) {
 	for _, tc := range testCases {
 		log.Println(tc.Name, headerTestName)
 
-		deleteErr := service.Delete(ctx, tc.ID)
+		deleteErr := service.DeleteAccount(ctx, tc.ID)
 		if tc.WantErr {
 			assert.Error(t, deleteErr, consts.ShouldErr, tc.Name, headerTestName)
 			continue

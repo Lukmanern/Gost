@@ -34,7 +34,7 @@ type UserService interface {
 	Logout(c *fiber.Ctx) (err error)
 	UpdateProfile(ctx context.Context, data model.UserUpdate) (err error)
 	UpdatePassword(ctx context.Context, data model.UserPasswordUpdate) (err error)
-	Delete(ctx context.Context, id int) (err error)
+	DeleteAccount(ctx context.Context, id int) (err error)
 }
 
 type UserServiceImpl struct {
@@ -80,7 +80,7 @@ func (svc *UserServiceImpl) Register(ctx context.Context, data model.UserRegiste
 	}
 
 	for _, roleID := range data.RoleIDs {
-		enttRole, err := svc.repository.GetByID(ctx, roleID)
+		enttRole, err := svc.roleRepo.GetByID(ctx, roleID)
 		if err == gorm.ErrRecordNotFound {
 			return 0, fiber.NewError(fiber.StatusNotFound, consts.NotFound)
 		}
@@ -215,7 +215,7 @@ func (svc *UserServiceImpl) UpdatePassword(ctx context.Context, data model.UserP
 	return nil
 }
 
-func (svc *UserServiceImpl) Delete(ctx context.Context, id int) (err error) {
+func (svc *UserServiceImpl) DeleteAccount(ctx context.Context, id int) (err error) {
 	user, getErr := svc.repository.GetByID(ctx, id)
 	if getErr == gorm.ErrRecordNotFound {
 		return fiber.NewError(fiber.StatusNotFound, consts.NotFound)

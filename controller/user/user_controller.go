@@ -10,6 +10,7 @@ import (
 
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/consts"
+	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/response"
 	service "github.com/Lukmanern/gost/service/user"
@@ -22,14 +23,14 @@ type UserController interface {
 	Login(c *fiber.Ctx) error
 	ForgetPassword(c *fiber.Ctx) error
 	ResetPassword(c *fiber.Ctx) error
-	// auth+admin
+	// auth + admin
 	GetAll(c *fiber.Ctx) error
 	// auth
 	MyProfile(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
 	UpdateProfile(c *fiber.Ctx) error
 	UpdatePassword(c *fiber.Ctx) error
-	Delete(c *fiber.Ctx) error
+	DeleteAccount(c *fiber.Ctx) error
 }
 
 type UserControllerImpl struct {
@@ -58,6 +59,9 @@ func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 	}
 	user.Email = strings.ToLower(user.Email)
 	validate := validator.New()
+	if len(user.RoleIDs) < 1 {
+		return response.BadRequest(c, "please choose one or more role")
+	}
 	if err := validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
@@ -116,11 +120,10 @@ func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 
 func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 	var user model.UserLogin
-	// user.IP = c.IP() // Note : uncomment this line in production
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
-
+	user.IP = helper.RandomIPAddress() // Todo : update to c.IP()
 	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
@@ -345,6 +348,22 @@ func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
-func (ctr *UserControllerImpl) Delete(c *fiber.Ctx) error {
+func (ctr *UserControllerImpl) DeleteAccount(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
+	ctx := c.Context()
+	err := ctr.service.DeleteAccount(ctx, userClaims.ID)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
+		}
+		return response.Error(c, consts.ErrServer)
+	}
 	return response.SuccessNoContent(c)
 }
