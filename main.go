@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"github.com/Lukmanern/gost/application"
+)
 
 func main() {
-	fmt.Println("hello world")
+	application.RunApp()
 }
