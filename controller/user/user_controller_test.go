@@ -28,13 +28,13 @@ import (
 )
 
 const (
-	headerTestName string = "at UserController Test"
+	headerTestName string = "at User Controller Test"
 )
 
 var (
-	baseURL   string
-	timeNow   time.Time
-	adminRepo repository.UserRepository
+	baseURL  string
+	timeNow  time.Time
+	userRepo repository.UserRepository
 )
 
 func init() {
@@ -43,7 +43,7 @@ func init() {
 	config := env.Configuration()
 	baseURL = config.AppURL
 	timeNow = time.Now()
-	adminRepo = repository.NewUserRepository()
+	userRepo = repository.NewUserRepository()
 
 	connector.LoadDatabase()
 	r := connector.LoadRedisCache()
@@ -842,10 +842,11 @@ func TestDeleteAccount(t *testing.T) {
 		}
 	}
 }
+
 func createUser() entity.User {
 	pw := helper.RandomString(15)
 	pwHashed, _ := hash.Generate(pw)
-	repo := adminRepo
+	repo := userRepo
 	ctx := helper.NewFiberCtx().Context()
 	data := entity.User{
 		Name:        helper.RandomString(15),
