@@ -10,12 +10,12 @@ type RoleResponse struct {
 }
 
 type RoleCreate struct {
-	Name        string `validate:"required,max=60" json:"name"`
+	Name        string `validate:"required,min=5,max=60" json:"name"`
 	Description string `validate:"required,max=100" json:"description"`
 }
 
 type RoleUpdate struct {
 	ID          int    `validate:"required,numeric,min=1"`
-	Name        string `validate:"required,max=60" json:"name"`
+	Name        string `validate:"required,min=5,max=60" json:"name"`
 	Description string `validate:"required,max=100" json:"description"`
 }

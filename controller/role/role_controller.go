@@ -49,11 +49,11 @@ func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 
 	var role model.RoleCreate
 	if err := c.BodyParser(&role); err != nil {
-		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
+		return response.BadRequest(c, consts.InvalidJSONBody)
 	}
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
-		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
+		return response.BadRequest(c, consts.InvalidJSONBody)
 	}
 
 	ctx := c.Context()
@@ -140,19 +140,19 @@ func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
 	if !ok || userClaims == nil {
 		return response.Unauthorized(c)
 	}
-
 	id, err := c.ParamsInt("id")
 	if err != nil || id <= 0 {
 		return response.BadRequest(c, consts.InvalidID)
 	}
+
 	var role model.RoleUpdate
-	role.ID = id
 	if err := c.BodyParser(&role); err != nil {
-		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
+		return response.BadRequest(c, consts.InvalidJSONBody)
 	}
+	role.ID = id
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
-		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
+		return response.BadRequest(c, consts.InvalidJSONBody)
 	}
 
 	ctx := c.Context()
