@@ -1,10 +1,4 @@
-// 📌 Origin Github Repository: https://github.com/Lukmanern<slash>gost
-
-// 🔍 README
-// Application package configures middleware, error management, and
-// handles OS signals for gracefully stopping the server when receiving
-// an interrupt signal. This package provides routes related to user
-// management and role-based access control (RBAC). And so on.
+// 📌 Origin Github Repository: https://github.com/Lukmanern
 
 package application
 
@@ -119,7 +113,8 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	// set routes here
+	getUserRoutes(router)
+	getRolePermissionRoutes(router)
 
 	if err := router.Listen(fmt.Sprintf(":%d", port)); err != nil {
 		log.Printf("Oops... Server is not running! Reason: %v", err)
