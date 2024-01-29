@@ -60,6 +60,7 @@ jobs:
       - name: Run migration
         run: |
           go run database/migration/main.go
+          sleep 3s
 
       - name: Run Test
         run: go test -race ./...
