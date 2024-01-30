@@ -23,14 +23,15 @@ type UserController interface {
 	Login(c *fiber.Ctx) error
 	ForgetPassword(c *fiber.Ctx) error
 	ResetPassword(c *fiber.Ctx) error
-	// auth + admin
-	GetAll(c *fiber.Ctx) error
 	// auth
 	MyProfile(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
 	UpdateProfile(c *fiber.Ctx) error
 	UpdatePassword(c *fiber.Ctx) error
 	DeleteAccount(c *fiber.Ctx) error
+	// auth + admin
+	GetAll(c *fiber.Ctx) error
+	BanAccount(c *fiber.Ctx) error
 }
 
 type UserControllerImpl struct {
@@ -212,43 +213,6 @@ func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 	})
 }
 
-func (ctr *UserControllerImpl) GetAll(c *fiber.Ctx) error {
-	userClaims, ok := c.Locals("claims").(*middleware.Claims)
-	if !ok || userClaims == nil {
-		return response.Unauthorized(c)
-	}
-
-	request := model.RequestGetAll{
-		Page:    c.QueryInt("page", 1),
-		Limit:   c.QueryInt("limit", 20),
-		Keyword: c.Query("search"),
-		Sort:    c.Query("sort"),
-	}
-	if request.Page <= 0 || request.Limit <= 0 {
-		return response.BadRequest(c, "invalid page or limit value")
-	}
-
-	ctx := c.Context()
-	roles, total, getErr := ctr.service.GetAll(ctx, request)
-	if getErr != nil {
-		return response.Error(c, consts.ErrServer+getErr.Error())
-	}
-
-	data := make([]interface{}, len(roles))
-	for i := range roles {
-		data[i] = roles[i]
-	}
-	responseData := model.GetAllResponse{
-		Meta: model.PageMeta{
-			TotalData:  total,
-			TotalPages: int(math.Ceil(float64(total) / float64(request.Limit))),
-			AtPage:     request.Page,
-		},
-		Data: data,
-	}
-	return response.SuccessLoaded(c, responseData)
-}
-
 func (ctr *UserControllerImpl) MyProfile(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -356,6 +320,68 @@ func (ctr *UserControllerImpl) DeleteAccount(c *fiber.Ctx) error {
 
 	ctx := c.Context()
 	err := ctr.service.DeleteAccount(ctx, userClaims.ID)
+	if err != nil {
+		fiberErr, ok := err.(*fiber.Error)
+		if ok {
+			return response.CreateResponse(c, fiberErr.Code, response.Response{
+				Message: fiberErr.Message, Success: false, Data: nil,
+			})
+		}
+		return response.Error(c, consts.ErrServer)
+	}
+	return response.SuccessNoContent(c)
+}
+
+func (ctr *UserControllerImpl) GetAll(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
+	request := model.RequestGetAll{
+		Page:    c.QueryInt("page", 1),
+		Limit:   c.QueryInt("limit", 20),
+		Keyword: c.Query("search"),
+		Sort:    c.Query("sort"),
+	}
+	if request.Page <= 0 || request.Limit <= 0 {
+		return response.BadRequest(c, "invalid page or limit value")
+	}
+
+	ctx := c.Context()
+	roles, total, getErr := ctr.service.GetAll(ctx, request)
+	if getErr != nil {
+		return response.Error(c, consts.ErrServer+getErr.Error())
+	}
+
+	data := make([]interface{}, len(roles))
+	for i := range roles {
+		data[i] = roles[i]
+	}
+	responseData := model.GetAllResponse{
+		Meta: model.PageMeta{
+			TotalData:  total,
+			TotalPages: int(math.Ceil(float64(total) / float64(request.Limit))),
+			AtPage:     request.Page,
+		},
+		Data: data,
+	}
+	return response.SuccessLoaded(c, responseData)
+}
+
+func (ctr *UserControllerImpl) BanAccount(c *fiber.Ctx) error {
+	userClaims, ok := c.Locals("claims").(*middleware.Claims)
+	if !ok || userClaims == nil {
+		return response.Unauthorized(c)
+	}
+
+	id, err := c.ParamsInt("id")
+	if err != nil || id <= 0 {
+		return response.BadRequest(c, consts.InvalidID)
+	}
+
+	ctx := c.Context()
+	err = ctr.service.DeleteAccount(ctx, id)
 	if err != nil {
 		fiberErr, ok := err.(*fiber.Error)
 		if ok {

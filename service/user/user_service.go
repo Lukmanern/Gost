@@ -29,6 +29,7 @@ type UserService interface {
 	ResetPassword(ctx context.Context, user model.UserResetPassword) (err error)
 	// auth+admin
 	GetAll(ctx context.Context, filter model.RequestGetAll) (users []model.User, total int, err error)
+	SoftDelete(ctx context.Context, id int) (err error)
 	// auth
 	MyProfile(ctx context.Context, id int) (profile model.User, err error)
 	Logout(c *fiber.Ctx) (err error)
@@ -119,12 +120,16 @@ func (svc *UserServiceImpl) Login(ctx context.Context, data model.UserLogin) (to
 		return "", fiber.NewError(fiber.StatusBadRequest, "wrong password")
 	}
 	if user.ActivatedAt == nil || user.DeletedAt != nil {
-		return "", fiber.NewError(fiber.StatusBadRequest, "your account is inactive, please do activation")
+		return "", fiber.NewError(fiber.StatusBadRequest, "account is inactive, please do activation")
 	}
 
 	jwtHandler := middleware.NewJWTHandler()
 	expired := time.Now().Add(4 * 24 * time.Hour) // 4 days active
-	token, err = jwtHandler.GenerateJWT(user.ID, user.Email, map[string]uint8{}, expired)
+	roles := make(map[string]uint8)
+	for _, role := range user.Roles {
+		roles[role.Name] = 1
+	}
+	token, err = jwtHandler.GenerateJWT(user.ID, user.Email, roles, expired)
 	if err != nil {
 		return "", fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -151,6 +156,23 @@ func (svc *UserServiceImpl) GetAll(ctx context.Context, filter model.RequestGetA
 	return users, total, nil
 }
 
+func (svc *UserServiceImpl) SoftDelete(ctx context.Context, id int) (err error) {
+	user, getErr := svc.repository.GetByID(ctx, id)
+	if getErr == gorm.ErrRecordNotFound {
+		return fiber.NewError(fiber.StatusNotFound, consts.NotFound)
+	}
+	if getErr != nil || user == nil {
+		return errors.New("error while getting user data")
+	}
+
+	user.SetDeleteTime()
+	err = svc.repository.Update(ctx, *user)
+	if err != nil {
+		return errors.New("error while updating user data")
+	}
+	return nil
+}
+
 func (svc *UserServiceImpl) MyProfile(ctx context.Context, id int) (profile model.User, err error) {
 	user, getErr := svc.repository.GetByID(ctx, id)
 	if getErr == gorm.ErrRecordNotFound {
@@ -160,7 +182,7 @@ func (svc *UserServiceImpl) MyProfile(ctx context.Context, id int) (profile mode
 		return model.User{}, errors.New("error while getting user data")
 	}
 	if user.ActivatedAt == nil || user.DeletedAt != nil {
-		return model.User{}, fiber.NewError(fiber.StatusBadRequest, "your account is inactive, please do activation")
+		return model.User{}, fiber.NewError(fiber.StatusBadRequest, "account is inactive, please do activation")
 	}
 
 	profile = entityToResponse(user)
@@ -176,7 +198,7 @@ func (svc *UserServiceImpl) UpdateProfile(ctx context.Context, data model.UserUp
 		return errors.New("error while getting user data")
 	}
 	if user.ActivatedAt == nil || user.DeletedAt != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "your account is inactive, please do activation")
+		return fiber.NewError(fiber.StatusBadRequest, "account is inactive, please do activation")
 	}
 
 	enttUser := modelUpdateToEntity(data)
@@ -196,7 +218,7 @@ func (svc *UserServiceImpl) UpdatePassword(ctx context.Context, data model.UserP
 		return errors.New("error while getting user data")
 	}
 	if user.ActivatedAt == nil || user.DeletedAt != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "your account is inactive, please do activation")
+		return fiber.NewError(fiber.StatusBadRequest, "account is inactive, please do activation")
 	}
 
 	res, verifyErr := hash.Verify(user.Password, data.OldPassword)
@@ -240,11 +262,15 @@ func modelRegisterToEntity(data model.UserRegister) entity.User {
 }
 
 func entityToResponse(data *entity.User) model.User {
+	roles := make([]string, 0)
+	for _, role := range data.Roles {
+		roles = append(roles, role.Name)
+	}
 	return model.User{
-		ID:          data.ID,
 		Name:        data.Name,
 		Email:       data.Email,
 		ActivatedAt: data.ActivatedAt,
+		Roles:       roles,
 	}
 }
 

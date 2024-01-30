@@ -32,11 +32,11 @@ type UserRepository interface {
 	// Update modifies user information in the repository.
 	Update(ctx context.Context, user entity.User) (err error)
 
-	// Delete removes a user from the repository by their ID.
-	Delete(ctx context.Context, id int) (err error)
-
 	// UpdatePassword updates a user's password in the repository.
 	UpdatePassword(ctx context.Context, id int, passwordHashed string) (err error)
+
+	// Delete removes a user from the repository by their ID.
+	Delete(ctx context.Context, id int) (err error)
 }
 
 type UserRepositoryImpl struct {
@@ -147,6 +147,7 @@ func (repo *UserRepositoryImpl) Update(ctx context.Context, user entity.User) (e
 		}
 
 		oldData.Name = user.Name
+		oldData.DeletedAt = user.DeletedAt
 		oldData.SetUpdateTime()
 		result = tx.Save(&oldData)
 		if result.Error != nil {
@@ -156,15 +157,6 @@ func (repo *UserRepositoryImpl) Update(ctx context.Context, user entity.User) (e
 	})
 
 	return err
-}
-
-func (repo *UserRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
-	deleted := entity.User{}
-	result := repo.db.Where("id = ?", id).Delete(&deleted)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
 }
 
 func (repo *UserRepositoryImpl) UpdatePassword(ctx context.Context, id int, passwordHashed string) (err error) {
@@ -184,4 +176,13 @@ func (repo *UserRepositoryImpl) UpdatePassword(ctx context.Context, id int, pass
 	})
 
 	return err
+}
+
+func (repo *UserRepositoryImpl) Delete(ctx context.Context, id int) (err error) {
+	deleted := entity.User{}
+	result := repo.db.Where("id = ?", id).Delete(&deleted)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }

@@ -65,7 +65,7 @@ func ValidateEmails(emails ...string) error {
 	for _, email := range emails {
 		_, err := mail.ParseAddress(email)
 		if err != nil {
-			return errors.New("one or more email/s is invalid " + email)
+			return errors.New("one or more email/s is invalid: " + email)
 		}
 	}
 	return nil

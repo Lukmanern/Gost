@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/Lukmanern/gost/internal/middleware"
+	"github.com/Lukmanern/gost/internal/role"
 
 	controller "github.com/Lukmanern/gost/controller/user"
 	service "github.com/Lukmanern/gost/service/user"
@@ -23,16 +24,19 @@ func getUserRoutes(router fiber.Router) {
 	userController = controller.NewUserController(userService)
 
 	userRoute := router.Group("user")
+	userRoute.Post("register", userController.Register) // send email
+	userRoute.Post("account-activation", userController.AccountActivation)
 	userRoute.Post("login", userController.Login)
-	userRoute.Post("register", userController.Register)
-	userRoute.Post("verification", userController.AccountActivation)
-	userRoute.Post("forget-password", userController.ForgetPassword)
+	userRoute.Post("forget-password", userController.ForgetPassword) // send email
 	userRoute.Post("reset-password", userController.ResetPassword)
 
-	// get all
 	userRouteAuth := userRoute.Use(jwtHandler.IsAuthenticated)
-	userRouteAuth.Post("logout", userController.Logout)
 	userRouteAuth.Get("my-profile", userController.MyProfile)
+	userRouteAuth.Post("logout", userController.Logout)
 	userRouteAuth.Put("profile-update", userController.UpdateProfile)
 	userRouteAuth.Post("update-password", userController.UpdatePassword)
+	userRouteAuth.Delete("delete-account", userController.DeleteAccount)
+
+	userRouteAuth.Get("", jwtHandler.HasRole(role.RoleAdmin), userController.GetAll)
+	userRouteAuth.Delete("delete/:id", jwtHandler.HasRole(role.RoleAdmin), userController.BanAccount)
 }
