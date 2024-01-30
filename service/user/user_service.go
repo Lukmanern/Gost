@@ -101,7 +101,7 @@ func (svc *UserServiceImpl) Register(ctx context.Context, data model.UserRegiste
 		return 0, errors.New("error while storing user data")
 	}
 
-	code := helper.RandomString(32)
+	code := helper.RandomString(32) // verification code
 	key := data.Email + KEY_ACCOUNT_ACTIVATION
 	exp := time.Hour * 3
 	redisStatus := svc.redis.Set(key, code, exp)
@@ -193,11 +193,18 @@ func (svc *UserServiceImpl) ForgetPassword(ctx context.Context, data model.UserF
 	}
 
 	key := data.Email + KEY_FORGET_PASSWORD
-	value := helper.RandomString(30)
+	code := helper.RandomString(32)
 	exp := time.Hour * 1
-	redisStatus := svc.redis.Set(key, value, exp)
+	redisStatus := svc.redis.Set(key, code, exp)
 	if redisStatus.Err() != nil {
 		return errors.New("error while storing data to redis")
+	}
+
+	subject := "From Gost Project : Code for Reset Password"
+	message := "This code will expire in 1 hours. <br /><br />Code : " + code
+	sendErr := svc.emailService.SendMail(subject, message, strings.ToLower(data.Email))
+	if sendErr != nil {
+		return errors.New("error while sending email confirmation")
 	}
 
 	return nil
@@ -225,8 +232,9 @@ func (svc *UserServiceImpl) ResetPassword(ctx context.Context, data model.UserRe
 	if err != nil {
 		return errors.New("error while updating password, please try again")
 	}
-	svc.redis.Del(key)
 
+	// delete verification code from redis
+	svc.redis.Del(key)
 	return nil
 }
 

@@ -126,7 +126,8 @@ func (repo *UserRepositoryImpl) GetAll(ctx context.Context, filter model.Request
 	users = []entity.User{}
 	skip := int64(filter.Limit * (filter.Page - 1))
 	limit := int64(filter.Limit)
-	result = repo.db.Where(cond, args...).Limit(int(limit)).Offset(int(skip))
+	result = repo.db.Where(cond, args...).Preload("Roles")
+	result = result.Limit(int(limit)).Offset(int(skip))
 	if filter.Sort != "" {
 		result = result.Order(filter.Sort + " ASC")
 	}
@@ -152,8 +153,9 @@ func (repo *UserRepositoryImpl) Update(ctx context.Context, user entity.User) (e
 		if user.ActivatedAt != nil {
 			oldData.ActivatedAt = user.ActivatedAt
 		}
-
-		oldData.Name = user.Name
+		if user.Name != "" {
+			oldData.Name = user.Name
+		}
 		oldData.SetUpdateTime()
 		result = tx.Save(&oldData)
 		if result.Error != nil {

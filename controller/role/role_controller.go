@@ -49,11 +49,11 @@ func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 
 	var role model.RoleCreate
 	if err := c.BodyParser(&role); err != nil {
-		return response.BadRequest(c, consts.InvalidJSONBody)
+		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 	validate := validator.New()
 	if err := validate.Struct(&role); err != nil {
-		return response.BadRequest(c, consts.InvalidJSONBody)
+		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 
 	ctx := c.Context()
