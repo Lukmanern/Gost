@@ -12,9 +12,11 @@ import (
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/consts"
 	"github.com/Lukmanern/gost/internal/hash"
+	"github.com/Lukmanern/gost/internal/helper"
 	"github.com/Lukmanern/gost/internal/middleware"
 	roleRepository "github.com/Lukmanern/gost/repository/role"
 	repository "github.com/Lukmanern/gost/repository/user"
+	service "github.com/Lukmanern/gost/service/email_service"
 	"github.com/go-redis/redis"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -39,11 +41,17 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	redis      *redis.Client
-	jwtHandler *middleware.JWTHandler
-	repository repository.UserRepository
-	roleRepo   roleRepository.RoleRepository
+	redis        *redis.Client
+	jwtHandler   *middleware.JWTHandler
+	repository   repository.UserRepository
+	roleRepo     roleRepository.RoleRepository
+	emailService service.EmailService
 }
+
+const (
+	KEY_FORGET_PASSWORD    = "-forget-password"
+	KEY_ACCOUNT_ACTIVATION = "-account-activation"
+)
 
 var (
 	userSvcImpl     *UserServiceImpl
@@ -53,25 +61,14 @@ var (
 func NewUserService() UserService {
 	userSvcImplOnce.Do(func() {
 		userSvcImpl = &UserServiceImpl{
-			redis:      connector.LoadRedisCache(),
-			jwtHandler: middleware.NewJWTHandler(),
-			repository: repository.NewUserRepository(),
-			roleRepo:   roleRepository.NewRoleRepository(),
+			redis:        connector.LoadRedisCache(),
+			jwtHandler:   middleware.NewJWTHandler(),
+			repository:   repository.NewUserRepository(),
+			roleRepo:     roleRepository.NewRoleRepository(),
+			emailService: service.NewEmailService(),
 		}
 	})
 	return userSvcImpl
-}
-
-func (svg *UserServiceImpl) ForgetPassword(ctx context.Context, user model.UserForgetPassword) (err error) {
-	return nil
-}
-
-func (svg *UserServiceImpl) ResetPassword(ctx context.Context, user model.UserResetPassword) (err error) {
-	return nil
-}
-
-func (svg *UserServiceImpl) AccountActivation(ctx context.Context, data model.UserActivation) (err error) {
-	return nil
 }
 
 func (svc *UserServiceImpl) Register(ctx context.Context, data model.UserRegister) (id int, err error) {
@@ -103,7 +100,57 @@ func (svc *UserServiceImpl) Register(ctx context.Context, data model.UserRegiste
 	if err != nil {
 		return 0, errors.New("error while storing user data")
 	}
+
+	code := helper.RandomString(32)
+	key := data.Email + KEY_ACCOUNT_ACTIVATION
+	exp := time.Hour * 3
+	redisStatus := svc.redis.Set(key, code, exp)
+	if redisStatus.Err() != nil {
+		return id, errors.New("error while storing data to redis")
+	}
+
+	subject := "From Gost Project : Successfully User Register"
+	message := "This is your verification / activation code."
+	message += "This code will expire in 3 hours. <br /><br />Code : " + code
+	sendErr := svc.emailService.SendMail(subject, message, strings.ToLower(data.Email))
+	if sendErr != nil {
+		return id, errors.New("error while sending email confirmation")
+	}
+
 	return id, nil
+}
+
+func (svc *UserServiceImpl) AccountActivation(ctx context.Context, data model.UserActivation) (err error) {
+	user, getErr := svc.repository.GetByEmail(ctx, data.Email)
+	if getErr == gorm.ErrRecordNotFound {
+		return fiber.NewError(fiber.StatusNotFound, consts.NotFound)
+	}
+	if getErr != nil || user == nil {
+		return errors.New("error while getting user data")
+	}
+	if user.ActivatedAt != nil || user.DeletedAt != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "activation failed, account is active or already deleted")
+	}
+
+	key := data.Email + KEY_ACCOUNT_ACTIVATION
+	redisStatus := svc.redis.Get(key)
+	if redisStatus.Err() != nil {
+		return errors.New("error while getting data from redis")
+	}
+	if redisStatus.Val() != data.Code {
+		return fiber.NewError(fiber.StatusBadRequest, "verification code isn't match")
+	}
+
+	// delete verification code from redis
+	svc.redis.Del(key)
+
+	timeNow := time.Now()
+	user.ActivatedAt = &timeNow
+	err = svc.repository.Update(ctx, *user)
+	if err != nil {
+		return errors.New("error while updating user data")
+	}
+	return nil
 }
 
 func (svc *UserServiceImpl) Login(ctx context.Context, data model.UserLogin) (token string, err error) {
@@ -134,6 +181,53 @@ func (svc *UserServiceImpl) Login(ctx context.Context, data model.UserLogin) (to
 		return "", fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 	return token, nil
+}
+
+func (svc *UserServiceImpl) ForgetPassword(ctx context.Context, data model.UserForgetPassword) (err error) {
+	user, getErr := svc.repository.GetByEmail(ctx, data.Email)
+	if getErr == gorm.ErrRecordNotFound {
+		return fiber.NewError(fiber.StatusNotFound, consts.NotFound)
+	}
+	if getErr != nil || user == nil {
+		return errors.New("error while getting user data")
+	}
+
+	key := data.Email + KEY_FORGET_PASSWORD
+	value := helper.RandomString(30)
+	exp := time.Hour * 1
+	redisStatus := svc.redis.Set(key, value, exp)
+	if redisStatus.Err() != nil {
+		return errors.New("error while storing data to redis")
+	}
+
+	return nil
+}
+
+func (svc *UserServiceImpl) ResetPassword(ctx context.Context, data model.UserResetPassword) (err error) {
+	user, getErr := svc.repository.GetByEmail(ctx, data.Email)
+	if getErr == gorm.ErrRecordNotFound {
+		return fiber.NewError(fiber.StatusNotFound, consts.NotFound)
+	}
+	if getErr != nil || user == nil {
+		return errors.New("error while getting user data")
+	}
+	key := data.Email + KEY_FORGET_PASSWORD
+	code := svc.redis.Get(key).Val()
+	if code == "" || code != data.Code {
+		return fiber.NewError(fiber.StatusNotFound, "verfication code isn't found")
+	}
+
+	pwHashed, err := hash.Generate(data.NewPassword)
+	if err != nil {
+		return errors.New("error while hashing password, please try again")
+	}
+	err = svc.repository.UpdatePassword(ctx, user.ID, pwHashed)
+	if err != nil {
+		return errors.New("error while updating password, please try again")
+	}
+	svc.redis.Del(key)
+
+	return nil
 }
 
 func (svc *UserServiceImpl) Logout(c *fiber.Ctx) (err error) {

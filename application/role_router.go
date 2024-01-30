@@ -8,20 +8,20 @@ import (
 	"github.com/Lukmanern/gost/internal/middleware"
 	"github.com/Lukmanern/gost/internal/role"
 
-	roleCtr "github.com/Lukmanern/gost/controller/role"
-	roleSvc "github.com/Lukmanern/gost/service/role"
+	controller "github.com/Lukmanern/gost/controller/role"
+	service "github.com/Lukmanern/gost/service/role"
 )
 
 var (
-	roleService    roleSvc.RoleService
-	roleController roleCtr.RoleController
+	roleService    service.RoleService
+	roleController controller.RoleController
 )
 
 func getRolePermissionRoutes(router fiber.Router) {
 	jwtHandler := middleware.NewJWTHandler()
 
-	roleService = roleSvc.NewRoleService()
-	roleController = roleCtr.NewRoleController(roleService)
+	roleService = service.NewRoleService()
+	roleController = controller.NewRoleController(roleService)
 
 	roleRouter := router.Group("role").Use(jwtHandler.IsAuthenticated)
 	roleRouter.Post("", jwtHandler.HasRole(role.RoleSuperAdmin), roleController.Create)

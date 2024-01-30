@@ -76,7 +76,7 @@ func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer)
+		return response.Error(c, consts.ErrServer+err.Error())
 	}
 
 	message := "account successfully created. please check " + user.Email
@@ -109,7 +109,7 @@ func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer)
+		return response.Error(c, consts.ErrServer+err.Error())
 	}
 
 	return response.CreateResponse(c, fiber.StatusOK, response.Response{
@@ -139,7 +139,7 @@ func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer)
+		return response.Error(c, consts.ErrServer+err.Error())
 	}
 
 	return response.CreateResponse(c, fiber.StatusOK, response.Response{
@@ -171,7 +171,7 @@ func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer)
+		return response.Error(c, consts.ErrServer+err.Error())
 	}
 
 	return response.CreateResponse(c, fiber.StatusAccepted, response.Response{
@@ -203,7 +203,7 @@ func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer)
+		return response.Error(c, consts.ErrServer+err.Error())
 	}
 
 	return response.CreateResponse(c, fiber.StatusAccepted, response.Response{
@@ -240,7 +240,7 @@ func (ctr *UserControllerImpl) Logout(c *fiber.Ctx) error {
 	}
 	err := ctr.service.Logout(c)
 	if err != nil {
-		return response.Error(c, consts.ErrServer)
+		return response.Error(c, consts.ErrServer+err.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -270,7 +270,7 @@ func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer)
+		return response.Error(c, consts.ErrServer+err.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -307,7 +307,7 @@ func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer)
+		return response.Error(c, consts.ErrServer+err.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -327,7 +327,7 @@ func (ctr *UserControllerImpl) DeleteAccount(c *fiber.Ctx) error {
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer)
+		return response.Error(c, consts.ErrServer+err.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -389,7 +389,7 @@ func (ctr *UserControllerImpl) BanAccount(c *fiber.Ctx) error {
 				Message: fiberErr.Message, Success: false, Data: nil,
 			})
 		}
-		return response.Error(c, consts.ErrServer)
+		return response.Error(c, consts.ErrServer+err.Error())
 	}
 	return response.SuccessNoContent(c)
 }
