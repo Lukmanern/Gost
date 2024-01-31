@@ -318,8 +318,21 @@ func (ctr *UserControllerImpl) DeleteAccount(c *fiber.Ctx) error {
 		return response.Unauthorized(c)
 	}
 
+	var user model.UserDeleteAccount
+	if err := c.BodyParser(&user); err != nil {
+		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
+	}
+	user.ID = userClaims.ID
+	validate := validator.New()
+	if err := validate.Struct(&user); err != nil {
+		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
+	}
+	if user.Password != user.PasswordConfirm {
+		return response.BadRequest(c, "password confirmation isn't match")
+	}
+
 	ctx := c.Context()
-	err := ctr.service.DeleteAccount(ctx, userClaims.ID)
+	err := ctr.service.DeleteAccount(ctx, user)
 	if err != nil {
 		fiberErr, ok := err.(*fiber.Error)
 		if ok {
@@ -328,6 +341,11 @@ func (ctr *UserControllerImpl) DeleteAccount(c *fiber.Ctx) error {
 			})
 		}
 		return response.Error(c, consts.ErrServer+err.Error())
+	}
+	// invalidate / blacklist the token
+	logoutErr := ctr.service.Logout(c)
+	if logoutErr != nil {
+		return response.Error(c, consts.ErrServer+logoutErr.Error())
 	}
 	return response.SuccessNoContent(c)
 }
@@ -349,14 +367,14 @@ func (ctr *UserControllerImpl) GetAll(c *fiber.Ctx) error {
 	}
 
 	ctx := c.Context()
-	roles, total, getErr := ctr.service.GetAll(ctx, request)
+	users, total, getErr := ctr.service.GetAll(ctx, request)
 	if getErr != nil {
 		return response.Error(c, consts.ErrServer+getErr.Error())
 	}
 
-	data := make([]interface{}, len(roles))
-	for i := range roles {
-		data[i] = roles[i]
+	data := make([]interface{}, len(users))
+	for i := range users {
+		data[i] = users[i]
 	}
 	responseData := model.GetAllResponse{
 		Meta: model.PageMeta{
@@ -376,12 +394,12 @@ func (ctr *UserControllerImpl) BanAccount(c *fiber.Ctx) error {
 	}
 
 	id, err := c.ParamsInt("id")
-	if err != nil || id <= 0 {
+	if err != nil || id <= 0 || userClaims.ID == id {
 		return response.BadRequest(c, consts.InvalidID)
 	}
 
 	ctx := c.Context()
-	err = ctr.service.DeleteAccount(ctx, id)
+	err = ctr.service.SoftDelete(ctx, id)
 	if err != nil {
 		fiberErr, ok := err.(*fiber.Error)
 		if ok {

@@ -37,7 +37,7 @@ type UserService interface {
 	Logout(c *fiber.Ctx) (err error)
 	UpdateProfile(ctx context.Context, data model.UserUpdate) (err error)
 	UpdatePassword(ctx context.Context, data model.UserPasswordUpdate) (err error)
-	DeleteAccount(ctx context.Context, id int) (err error)
+	DeleteAccount(ctx context.Context, data model.UserDeleteAccount) (err error)
 }
 
 type UserServiceImpl struct {
@@ -339,8 +339,8 @@ func (svc *UserServiceImpl) UpdatePassword(ctx context.Context, data model.UserP
 	return nil
 }
 
-func (svc *UserServiceImpl) DeleteAccount(ctx context.Context, id int) (err error) {
-	user, getErr := svc.repository.GetByID(ctx, id)
+func (svc *UserServiceImpl) DeleteAccount(ctx context.Context, data model.UserDeleteAccount) (err error) {
+	user, getErr := svc.repository.GetByID(ctx, data.ID)
 	if getErr == gorm.ErrRecordNotFound {
 		return fiber.NewError(fiber.StatusNotFound, consts.NotFound)
 	}
@@ -348,7 +348,12 @@ func (svc *UserServiceImpl) DeleteAccount(ctx context.Context, id int) (err erro
 		return errors.New("error while getting user data")
 	}
 
-	err = svc.repository.Delete(ctx, id)
+	res, err := hash.Verify(user.Password, data.Password)
+	if err != nil || !res {
+		return fiber.NewError(fiber.StatusBadRequest, "wrong password, please try again")
+	}
+
+	err = svc.repository.Delete(ctx, data.ID)
 	if err != nil {
 		return errors.New("error while deleting user password")
 	}
@@ -369,9 +374,11 @@ func entityToResponse(data *entity.User) model.User {
 		roles = append(roles, role.Name)
 	}
 	return model.User{
+		ID:          data.ID,
 		Name:        data.Name,
 		Email:       data.Email,
 		ActivatedAt: data.ActivatedAt,
+		DeletedAt:   data.DeletedAt,
 		Roles:       roles,
 	}
 }

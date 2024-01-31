@@ -173,19 +173,47 @@ func (j JWTHandler) GenerateClaims(cookieToken string) *Claims {
 	return &claims
 }
 
-// CheckHasRole func is handler/middleware that
-// called before the controller for checks the fiber ctx
-func (j JWTHandler) HasRole(roles ...string) func(c *fiber.Ctx) error {
+// HasRoles is a middleware function that checks if the user associated with the incoming request
+// possesses all the specified roles in the JWT claims. If the user lacks any of the roles,
+// it returns an "Unauthorized" response; otherwise, it allows the request to proceed.
+func (j JWTHandler) HasRoles(roles ...string) func(c *fiber.Ctx) error {
 	if len(roles) < 1 {
 		return response.Unauthorized
 	}
 	return func(c *fiber.Ctx) error {
 		claims, ok := c.Locals("claims").(*Claims)
+		if !ok || claims == nil {
+			return response.Unauthorized(c)
+		}
+		// Check if user has all specified roles
 		for _, role := range roles {
-			if !ok || claims.Roles[role] != 1 {
+			if claims.Roles[role] != 1 {
 				return response.Unauthorized(c)
 			}
 		}
 		return c.Next()
+	}
+}
+
+// HasOneRole is a middleware function that checks if the user associated with the incoming request
+// possesses at least one of the specified roles in the JWT claims. If the user has at least one role,
+// it allows the request to proceed; otherwise, it returns an "Unauthorized" response.
+func (j JWTHandler) HasOneRole(roles ...string) func(c *fiber.Ctx) error {
+	if len(roles) < 1 {
+		return response.Unauthorized
+	}
+	return func(c *fiber.Ctx) error {
+		claims, ok := c.Locals("claims").(*Claims)
+		if !ok || claims == nil {
+			return response.Unauthorized(c)
+		}
+		// Check if user has at least one
+		// of the specified roles
+		for _, role := range roles {
+			if claims.Roles[role] == 1 {
+				return c.Next()
+			}
+		}
+		return response.Unauthorized(c)
 	}
 }

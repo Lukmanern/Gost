@@ -184,8 +184,10 @@ func TestJWTHandlerCheckHasRole(t *testing.T) {
 		t.Error("Error: Token is empty")
 	}
 
-	checkErr := jwtHandler.HasRole("role-x-1")
-	if checkErr == nil {
+	if checkErr := jwtHandler.HasOneRole("role-x-1"); checkErr == nil {
+		t.Error(consts.Unauthorized)
+	}
+	if checkErr := jwtHandler.HasRoles("role-x-1"); checkErr == nil {
 		t.Error(consts.Unauthorized)
 	}
 }

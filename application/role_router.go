@@ -24,9 +24,9 @@ func getRolePermissionRoutes(router fiber.Router) {
 	roleController = controller.NewRoleController(roleService)
 
 	roleRouter := router.Group("role").Use(jwtHandler.IsAuthenticated)
-	roleRouter.Post("", jwtHandler.HasRole(role.RoleSuperAdmin), roleController.Create)
-	roleRouter.Get("", jwtHandler.HasRole(role.RoleSuperAdmin), roleController.GetAll)
-	roleRouter.Get(":id", jwtHandler.HasRole(role.RoleSuperAdmin), roleController.Get)
-	roleRouter.Put(":id", jwtHandler.HasRole(role.RoleSuperAdmin), roleController.Update)
-	roleRouter.Delete(":id", jwtHandler.HasRole(role.RoleSuperAdmin), roleController.Delete)
+	roleRouter.Post("", jwtHandler.HasOneRole(role.RoleSuperAdmin, role.RoleAdmin), roleController.Create)
+	roleRouter.Get("", jwtHandler.HasOneRole(role.RoleSuperAdmin, role.RoleAdmin), roleController.GetAll)
+	roleRouter.Get(":id", jwtHandler.HasOneRole(role.RoleSuperAdmin, role.RoleAdmin), roleController.Get)
+	roleRouter.Put(":id", jwtHandler.HasOneRole(role.RoleSuperAdmin, role.RoleAdmin), roleController.Update)
+	roleRouter.Delete(":id", jwtHandler.HasOneRole(role.RoleSuperAdmin, role.RoleAdmin), roleController.Delete)
 }

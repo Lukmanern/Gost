@@ -275,8 +275,10 @@ func TestGetAll(t *testing.T) {
 	ctx := helper.NewFiberCtx().Context()
 	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
 
-	validRole := createRole()
-	defer repository.Delete(ctx, validRole.ID)
+	for i := 0; i < 3; i++ {
+		validRole := createRole()
+		defer repository.Delete(ctx, validRole.ID)
+	}
 
 	type testCase struct {
 		Name    string

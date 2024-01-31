@@ -5,9 +5,11 @@ import (
 )
 
 type User struct {
+	ID          int        `json:"id"`
 	Name        string     `json:"name"`
 	Email       string     `json:"email"`
 	ActivatedAt *time.Time `json:"activated_at"`
+	DeletedAt   *time.Time `json:"deleted_at"`
 	Roles       []string   `json:"roles"`
 }
 
@@ -30,8 +32,9 @@ type UserLogin struct {
 }
 
 type UserUpdate struct {
-	ID   int    `validate:"required,numeric,min=1" json:"id"`
-	Name string `validate:"required,min=2,max=60" json:"name"`
+	ID        int    `validate:"required,numeric,min=1" json:"id"`
+	Name      string `validate:"required,min=2,max=60" json:"name"`
+	DeletedAt *time.Time
 }
 
 type UserUpdateRoles struct {
@@ -55,4 +58,10 @@ type UserPasswordUpdate struct {
 	OldPassword        string `validate:"required,min=8,max=30" json:"old_password"`
 	NewPassword        string `validate:"required,min=8,max=30" json:"new_password"`
 	NewPasswordConfirm string `validate:"required,min=8,max=30" json:"new_password_confirm"`
+}
+
+type UserDeleteAccount struct {
+	ID              int    `validate:"required,numeric,min=1" json:"id"`
+	Password        string `validate:"required,min=8,max=30" json:"password"`
+	PasswordConfirm string `validate:"required,min=8,max=30" json:"password_confirm"`
 }

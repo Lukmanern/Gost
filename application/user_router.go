@@ -37,7 +37,7 @@ func getUserRoutes(router fiber.Router) {
 	userRouteAuth.Post("update-password", userController.UpdatePassword)
 	userRouteAuth.Delete("delete-account", userController.DeleteAccount)
 
-	userRouteAuth.Get("", jwtHandler.HasRole(role.RoleAdmin), userController.GetAll)
-	userRouteAuth.Delete("delete/:id", jwtHandler.HasRole(role.RoleAdmin), userController.BanAccount)
-	// Todo : get all users by role
+	// for admin
+	userRouteAuth.Get("", jwtHandler.HasOneRole(role.RoleSuperAdmin, role.RoleAdmin), userController.GetAll)
+	userRouteAuth.Put("ban-user/:id", jwtHandler.HasOneRole(role.RoleSuperAdmin, role.RoleAdmin), userController.BanAccount)
 }

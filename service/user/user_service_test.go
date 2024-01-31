@@ -102,7 +102,10 @@ func TestRegister(t *testing.T) {
 		assert.NoError(t, getErr, consts.ShouldNotErr, tc.Name, headerTestName)
 		assert.NotNil(t, user, consts.ShouldNotNil, tc.Name, headerTestName)
 
-		deleteErr := service.DeleteAccount(ctx, id)
+		deleteErr := service.DeleteAccount(ctx, model.UserDeleteAccount{
+			ID:       id,
+			Password: tc.Payload.Password,
+		})
 		assert.NoError(t, deleteErr, consts.ShouldNotErr, tc.Name, headerTestName)
 
 		// value reset
@@ -463,40 +466,53 @@ func TestDelete(t *testing.T) {
 	ctx := helper.NewFiberCtx().Context()
 	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
 
-	userIDs := make([]int, 2)
-	for i := range userIDs {
+	users := make([]model.UserDeleteAccount, 2)
+	for i := range users {
 		user := createUser()
-		userIDs[i] = user.ID
+		users[i] = model.UserDeleteAccount{
+			ID:       user.ID,
+			Password: user.Password,
+		}
 		defer repository.Delete(ctx, user.ID)
 	}
 
 	type testCase struct {
 		Name    string
-		ID      int
+		Payload model.UserDeleteAccount
 		WantErr bool
 	}
 
 	testCases := []testCase{
 		{
-			Name:    "Failed Delete User -1: invalid ID",
-			ID:      -1,
+			Name: "Failed Delete User -1: invalid ID",
+			Payload: model.UserDeleteAccount{
+				ID: -1,
+			},
 			WantErr: true,
 		},
 		{
-			Name:    "Failed Delete User -2: data not found",
-			ID:      userIDs[0] * 99,
+			Name: "Failed Delete User -2: data not found",
+			Payload: model.UserDeleteAccount{
+				ID: users[0].ID * 99,
+			},
 			WantErr: true,
 		},
 	}
-	for i, id := range userIDs {
+	for i, user := range users {
 		testCases = append(testCases, testCase{
-			Name:    "Success Delete User -" + strconv.Itoa(i+1),
-			ID:      id,
+			Name: "Success Delete User -" + strconv.Itoa(i+1),
+			Payload: model.UserDeleteAccount{
+				ID:       user.ID,
+				Password: user.Password,
+			},
 			WantErr: false,
 		})
 		testCases = append(testCases, testCase{
-			Name:    "Failed Delete User -" + strconv.Itoa(i+3) + ": already deleted",
-			ID:      id,
+			Name: "Failed Delete User -" + strconv.Itoa(i+3) + ": already deleted",
+			Payload: model.UserDeleteAccount{
+				ID:       user.ID,
+				Password: user.Password,
+			},
 			WantErr: true,
 		})
 	}
@@ -504,14 +520,17 @@ func TestDelete(t *testing.T) {
 	for _, tc := range testCases {
 		log.Println(tc.Name, headerTestName)
 
-		deleteErr := service.DeleteAccount(ctx, tc.ID)
+		deleteErr := service.DeleteAccount(ctx, model.UserDeleteAccount{
+			ID:       tc.Payload.ID,
+			Password: tc.Payload.Password,
+		})
 		if tc.WantErr {
 			assert.Error(t, deleteErr, consts.ShouldErr, tc.Name, headerTestName)
 			continue
 		}
 		assert.NoError(t, deleteErr, consts.ShouldNotErr, tc.Name, headerTestName)
 
-		_, getErr := service.MyProfile(ctx, tc.ID)
+		_, getErr := service.MyProfile(ctx, tc.Payload.ID)
 		assert.Error(t, getErr, consts.ShouldErr, tc.Name, headerTestName)
 	}
 }

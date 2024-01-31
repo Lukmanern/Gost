@@ -493,6 +493,11 @@ func TestGetAll(t *testing.T) {
 	ctx := helper.NewFiberCtx().Context()
 	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
 
+	for i := 0; i < 3; i++ {
+		entityUser := createUser()
+		defer repository.Delete(ctx, entityUser.ID)
+	}
+
 	token := helper.GenerateToken()
 	assert.True(t, token != "", consts.ShouldNotNil, headerTestName)
 
@@ -578,7 +583,7 @@ func TestUpdateProfile(t *testing.T) {
 	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
 
 	validUser := createUser()
-	defer service.DeleteAccount(ctx, validUser.ID)
+	defer repository.Delete(ctx, validUser.ID)
 
 	validToken, err := service.Login(ctx, model.UserLogin{
 		Email:    validUser.Email,
@@ -781,7 +786,6 @@ func TestDeleteAccount(t *testing.T) {
 	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
 
 	fakeToken := helper.GenerateToken()
-
 	entityUser := createUser()
 	validToken, loginErr := service.Login(ctx, model.UserLogin{
 		Email:    entityUser.Email,
@@ -794,23 +798,63 @@ func TestDeleteAccount(t *testing.T) {
 		Name    string
 		ResCode int
 		Token   string
+		Payload model.UserDeleteAccount
 	}
 
 	testCases := []testCase{
 		{
+			Name:    "Failed Delete Account -1: wrong password",
+			ResCode: fiber.StatusBadRequest,
+			Token:   validToken,
+			Payload: model.UserDeleteAccount{
+				Password:        "valid-password-xyz",
+				PasswordConfirm: "valid-password-xyz",
+			},
+		},
+		{
+			Name:    "Failed Delete Account -2: password isn't match",
+			ResCode: fiber.StatusBadRequest,
+			Token:   validToken, // fake but valid
+			Payload: model.UserDeleteAccount{
+				Password:        "valid-password",
+				PasswordConfirm: "invalid-password",
+			},
+		},
+		{
+			Name:    "Failed Delete Account -3: password too short",
+			ResCode: fiber.StatusBadRequest,
+			Token:   validToken, // fake but valid
+			Payload: model.UserDeleteAccount{
+				Password:        "",
+				PasswordConfirm: "invalid-password",
+			},
+		},
+		{
 			Name:    "Success Delete Account -1",
 			ResCode: fiber.StatusNoContent,
 			Token:   validToken,
+			Payload: model.UserDeleteAccount{
+				Password:        entityUser.Password,
+				PasswordConfirm: entityUser.Password,
+			},
 		},
 		{
-			Name:    "Failed Delete Account -1: user not found (invalid token)",
-			ResCode: fiber.StatusNotFound,
-			Token:   fakeToken, // fake but valid
+			Name:    "Failed Delete Account -4: user already deleted",
+			ResCode: fiber.StatusUnauthorized,
+			Token:   validToken, // token is invalid
+			Payload: model.UserDeleteAccount{
+				Password:        entityUser.Password,
+				PasswordConfirm: entityUser.Password,
+			},
 		},
 		{
-			Name:    "Failed Delete Account -2: user already deleted",
+			Name:    "Failed Delete Account -4: user not found",
 			ResCode: fiber.StatusNotFound,
-			Token:   validToken, // is deleted before
+			Token:   fakeToken, // user not found
+			Payload: model.UserDeleteAccount{
+				Password:        "valid-password",
+				PasswordConfirm: "valid-password",
+			},
 		},
 	}
 
@@ -819,8 +863,12 @@ func TestDeleteAccount(t *testing.T) {
 	for _, tc := range testCases {
 		log.Println(tc.Name, headerTestName)
 
+		// Marshal payload to JSON
+		jsonData, marshalErr := json.Marshal(&tc.Payload)
+		assert.NoError(t, marshalErr, consts.ShouldNotErr, marshalErr)
+
 		// Create HTTP request
-		req := httptest.NewRequest(fiber.MethodDelete, URL, nil)
+		req := httptest.NewRequest(fiber.MethodDelete, URL, bytes.NewReader(jsonData))
 		req.Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", tc.Token))
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
@@ -833,7 +881,7 @@ func TestDeleteAccount(t *testing.T) {
 		res, testErr := app.Test(req, -1)
 		assert.Nil(t, testErr, consts.ShouldNil, testErr)
 		defer res.Body.Close()
-		assert.Equal(t, tc.ResCode, res.StatusCode, consts.ShouldEqual, res.StatusCode)
+		assert.Equal(t, tc.ResCode, res.StatusCode, consts.ShouldEqual, res.StatusCode, tc.Name)
 
 		if res.StatusCode != fiber.StatusNoContent {
 			responseStruct := response.Response{}
