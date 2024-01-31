@@ -3,9 +3,11 @@ package service
 import (
 	"log"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/consts"
@@ -13,16 +15,18 @@ import (
 	"github.com/Lukmanern/gost/internal/hash"
 	"github.com/Lukmanern/gost/internal/helper"
 	repository "github.com/Lukmanern/gost/repository/user"
+	"github.com/go-redis/redis"
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	headerTestName string = "at UserServiceTest"
+	headerTestName string = "at User Service Test"
 )
 
 var (
 	timeNow        time.Time
 	userRepository repository.UserRepository
+	redisConTest   *redis.Client
 )
 
 func init() {
@@ -30,6 +34,7 @@ func init() {
 	env.ReadConfig(envFilePath)
 	timeNow = time.Now()
 	userRepository = repository.NewUserRepository()
+	redisConTest = connector.LoadRedisCache()
 }
 
 func TestRegister(t *testing.T) {
@@ -117,6 +122,81 @@ func TestRegister(t *testing.T) {
 	}
 }
 
+func TestAccountActivation(t *testing.T) {
+	service := NewUserService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	repository := userRepository
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	validUser := model.UserRegister{
+		Name:     strings.ToLower(helper.RandomString(12)),
+		Email:    helper.RandomEmail(),
+		Password: helper.RandomString(12),
+		RoleIDs:  []int{1, 2, 3},
+	}
+	id, err := service.Register(ctx, validUser)
+	assert.Nil(t, err, consts.ShouldNotNil, headerTestName)
+	defer repository.Delete(ctx, id)
+
+	key := validUser.Email + KEY_ACCOUNT_ACTIVATION
+	validCode := redisConTest.Get(key).Val()
+	assert.True(t, len(validCode) > 0, consts.ShouldNotNil, headerTestName)
+
+	type testCase struct {
+		Name    string
+		Payload model.UserActivation
+		WantErr bool
+	}
+
+	testCases := []testCase{
+		{
+			Name: "Failed Activation -1: wrong code",
+			Payload: model.UserActivation{
+				Code:  "wrongcode",
+				Email: validUser.Email,
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Success Activation -1",
+			Payload: model.UserActivation{
+				Code:  validCode,
+				Email: validUser.Email,
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Activation -2: code is already used",
+			Payload: model.UserActivation{
+				Code:  validCode,
+				Email: validUser.Email,
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Activation -3: account not found",
+			Payload: model.UserActivation{
+				Code:  validCode,
+				Email: helper.RandomEmail(),
+			},
+			WantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		err := service.AccountActivation(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, err, consts.ShouldErr, tc.Name, headerTestName)
+			continue
+		}
+		assert.NoError(t, err, consts.ShouldNotErr, tc.Name, headerTestName)
+	}
+}
+
 func TestLogin(t *testing.T) {
 	service := NewUserService()
 	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
@@ -188,17 +268,131 @@ func TestLogin(t *testing.T) {
 	}
 }
 
-// func TestLogout(t *testing.T) {
-// 	service := NewUserService()
-// 	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
-// 	repository := userRepository
-// 	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
-// 	c := helper.NewFiberCtx()
-// 	assert.NotNil(t, c, consts.ShouldNotNil, headerTestName)
+func TestForgetPassword(t *testing.T) {
+	service := NewUserService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	repository := userRepository
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
 
-// 	logoutErr := service.Logout(c)
-// 	assert.Error(t, logoutErr, consts.ShouldErr, headerTestName)
-// }
+	validUser := createUser()
+	defer repository.Delete(ctx, validUser.ID)
+
+	type testCase struct {
+		Name    string
+		WantErr bool
+		Payload model.UserForgetPassword
+	}
+
+	testCases := []testCase{
+		{
+			Name:    "Success Forget Password -1",
+			Payload: model.UserForgetPassword{Email: validUser.Email},
+			WantErr: false,
+		},
+		{
+			Name:    "Success Forget Password -2",
+			Payload: model.UserForgetPassword{Email: validUser.Email},
+			WantErr: false,
+		},
+		{
+			Name:    "Failed Forget Password -1: user not found",
+			Payload: model.UserForgetPassword{Email: helper.RandomEmail()},
+			WantErr: true,
+		},
+		{
+			Name:    "Failed Forget Password -2: user not found",
+			Payload: model.UserForgetPassword{Email: helper.RandomEmail()},
+			WantErr: true,
+		},
+	}
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		err := service.ForgetPassword(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, err, consts.ShouldErr, tc.Name, headerTestName)
+			continue
+		}
+		assert.NoError(t, err, consts.ShouldNotErr, tc.Name, headerTestName)
+	}
+}
+
+func TestResetPassword(t *testing.T) {
+	service := NewUserService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	repository := userRepository
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	validUser := createUser()
+	defer repository.Delete(ctx, validUser.ID)
+
+	err := service.ForgetPassword(ctx, model.UserForgetPassword{Email: validUser.Email})
+	assert.Nil(t, err, consts.ShouldNil, headerTestName)
+
+	key := validUser.Email + KEY_FORGET_PASSWORD
+	validCode := redisConTest.Get(key).Val()
+	assert.True(t, len(validCode) > 0, consts.ShouldNotNil, headerTestName)
+
+	type testCase struct {
+		Name    string
+		Payload model.UserResetPassword
+		WantErr bool
+	}
+
+	testCases := []testCase{
+		{
+			Name: "Success Reset Password -1",
+			Payload: model.UserResetPassword{
+				Email:       validUser.Email,
+				Code:        validCode,
+				NewPassword: "new-password",
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Reset Password -1: code not found",
+			Payload: model.UserResetPassword{
+				Email:       validUser.Email,
+				Code:        validCode,
+				NewPassword: "new-password",
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Reset Password -2: user not found",
+			Payload: model.UserResetPassword{
+				Email:       helper.RandomEmail(),
+				Code:        validCode,
+				NewPassword: "new-password",
+			},
+			WantErr: true,
+		},
+	}
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		err := service.ResetPassword(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, err, consts.ShouldErr, tc.Name, headerTestName)
+			continue
+		}
+		assert.NoError(t, err, consts.ShouldNotErr, tc.Name, headerTestName)
+	}
+}
+
+func TestLogout(t *testing.T) {
+	service := NewUserService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	c := helper.NewFiberCtx()
+	assert.NotNil(t, c, consts.ShouldNotNil, headerTestName)
+
+	logoutErr := service.Logout(c)
+	assert.NoError(t, logoutErr, consts.ShouldErr, headerTestName)
+}
 
 func TestGetAll(t *testing.T) {
 	service := NewUserService()
@@ -207,6 +401,11 @@ func TestGetAll(t *testing.T) {
 	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
 	ctx := helper.NewFiberCtx().Context()
 	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	for i := 0; i < 3; i++ {
+		validUser := createUser()
+		defer repository.Delete(ctx, validUser.ID)
+	}
 
 	type testCase struct {
 		Name    string
@@ -251,6 +450,58 @@ func TestGetAll(t *testing.T) {
 			continue
 		}
 		assert.NoError(t, getErr, consts.ShouldNotErr, tc.Name, headerTestName)
+	}
+}
+
+func TestSoftDelete(t *testing.T) {
+	service := NewUserService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	repository := userRepository
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	validUser := createUser()
+	defer repository.Delete(ctx, validUser.ID)
+
+	type testCase struct {
+		Name    string
+		WantErr bool
+		ID      int
+	}
+
+	testCases := []testCase{
+		{
+			Name:    "Success Soft Delete -1",
+			WantErr: false,
+			ID:      validUser.ID,
+		},
+		{
+			Name:    "Failed Soft Delete -1: user not found",
+			WantErr: true,
+			ID:      validUser.ID + 99,
+		},
+		{
+			Name:    "Failed Soft Delete -1: invalid ID / user not found",
+			WantErr: true,
+			ID:      -10,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		err := service.SoftDelete(ctx, tc.ID)
+		if tc.WantErr {
+			assert.Error(t, err, consts.ShouldErr, tc.Name, headerTestName)
+			continue
+		}
+		assert.NoError(t, err, consts.ShouldNotErr, tc.Name, headerTestName)
+
+		user, getErr := repository.GetByID(ctx, tc.ID)
+		assert.NoError(t, getErr, consts.ShouldNotErr, tc.Name, headerTestName)
+		assert.NotNil(t, user, consts.ShouldNotNil, tc.Name, headerTestName)
+		assert.NotNil(t, user.DeletedAt, consts.ShouldNotNil, tc.Name, headerTestName)
 	}
 }
 
@@ -383,80 +634,80 @@ func TestUpdateProfile(t *testing.T) {
 	}
 }
 
-// func TestUpdatePassword(t *testing.T) {
-// 	service := NewUserService()
-// 	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
-// 	repository := userRepository
-// 	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
-// 	ctx := helper.NewFiberCtx().Context()
-// 	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+func TestUpdatePassword(t *testing.T) {
+	service := NewUserService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	repository := userRepository
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
 
-// 	validUser := createUser()
-// 	defer repository.Delete(ctx, validUser.ID)
+	validUser := createUser()
+	defer repository.Delete(ctx, validUser.ID)
 
-// 	type testCase struct {
-// 		Name    string
-// 		Payload model.UserPasswordUpdate
-// 		WantErr bool
-// 	}
+	type testCase struct {
+		Name    string
+		Payload model.UserPasswordUpdate
+		WantErr bool
+	}
 
-// 	testCases := []testCase{
-// 		{
-// 			Name: "Success Update -1",
-// 			Payload: model.UserPasswordUpdate{
-// 				ID:          validUser.ID,
-// 				OldPassword: validUser.Password,
-// 				NewPassword: helper.RandomString(16),
-// 			},
-// 			WantErr: false,
-// 		},
-// 		{
-// 			Name: "Failed Update -1: wrong password / password is already changed",
-// 			Payload: model.UserPasswordUpdate{
-// 				ID:          validUser.ID,
-// 				OldPassword: validUser.Password,
-// 				NewPassword: helper.RandomString(16),
-// 			},
-// 			WantErr: true,
-// 		},
-// 		{
-// 			Name: "Failed Update -2: invalid ID",
-// 			Payload: model.UserPasswordUpdate{
-// 				ID:          -1,
-// 				OldPassword: validUser.Password,
-// 			},
-// 			WantErr: true,
-// 		},
-// 		{
-// 			Name: "Failed Update -3: invalid ID",
-// 			Payload: model.UserPasswordUpdate{
-// 				ID:          0,
-// 				OldPassword: validUser.Password,
-// 			},
-// 			WantErr: true,
-// 		},
-// 	}
+	testCases := []testCase{
+		{
+			Name: "Success Update Password -1",
+			Payload: model.UserPasswordUpdate{
+				ID:          validUser.ID,
+				OldPassword: validUser.Password,
+				NewPassword: helper.RandomString(16),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Update Password -1: wrong password / password is already changed",
+			Payload: model.UserPasswordUpdate{
+				ID:          validUser.ID,
+				OldPassword: validUser.Password,
+				NewPassword: helper.RandomString(16),
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Update Password -2: invalid ID",
+			Payload: model.UserPasswordUpdate{
+				ID:          -1,
+				OldPassword: validUser.Password,
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Update Password -3: invalid ID",
+			Payload: model.UserPasswordUpdate{
+				ID:          0,
+				OldPassword: validUser.Password,
+			},
+			WantErr: true,
+		},
+	}
 
-// 	for _, tc := range testCases {
-// 		log.Println(tc.Name, headerTestName)
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
 
-// 		updateErr := service.UpdatePassword(ctx, tc.Payload)
-// 		if tc.WantErr {
-// 			assert.Error(t, updateErr, consts.ShouldErr, tc.Name, headerTestName)
-// 			continue
-// 		}
-// 		assert.NoError(t, updateErr, consts.ShouldNotErr, tc.Name, headerTestName)
+		updateErr := service.UpdatePassword(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, updateErr, consts.ShouldErr, tc.Name, headerTestName)
+			continue
+		}
+		assert.NoError(t, updateErr, consts.ShouldNotErr, tc.Name, headerTestName)
 
-// 		if tc.Payload.ID == validUser.ID {
-// 			token, loginErr := service.Login(ctx, model.UserLogin{
-// 				Email:    validUser.Email,
-// 				Password: tc.Payload.NewPassword,
-// 			})
-// 			assert.NoError(t, loginErr, consts.ShouldNotErr, tc.Name, headerTestName)
-// 			assert.True(t, token != "", consts.ShouldNotNil, tc.Name, headerTestName)
-// 		}
-// 	}
-// }
+		if tc.Payload.ID == validUser.ID {
+			token, loginErr := service.Login(ctx, model.UserLogin{
+				Email:    validUser.Email,
+				Password: tc.Payload.NewPassword,
+			})
+			assert.NoError(t, loginErr, consts.ShouldNotErr, tc.Name, headerTestName)
+			assert.True(t, token != "", consts.ShouldNotNil, tc.Name, headerTestName)
+		}
+	}
+}
 
 func TestDelete(t *testing.T) {
 	service := NewUserService()
@@ -494,6 +745,14 @@ func TestDelete(t *testing.T) {
 			Name: "Failed Delete User -2: data not found",
 			Payload: model.UserDeleteAccount{
 				ID: users[0].ID * 99,
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Delete User -3: wrong password",
+			Payload: model.UserDeleteAccount{
+				ID:       users[0].ID,
+				Password: "wrong-password",
 			},
 			WantErr: true,
 		},
