@@ -232,6 +232,107 @@ func TestRegister(t *testing.T) {
 	}
 }
 
+func TestAccountActivation(t *testing.T) {
+	// Initialize repository, service and controller
+	repository := repository.NewUserRepository()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	_service := service.NewUserService()
+	assert.NotNil(t, _service, consts.ShouldNotNil, headerTestName)
+	controller := NewUserController(_service)
+	assert.NotNil(t, controller, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	// validUser2 := createUser()
+	// defer repository.Delete(ctx, validUser2.ID)
+
+	validUser := model.UserRegister{
+		Name:     helper.RandomString(15),
+		Email:    helper.RandomEmail(),
+		Password: helper.RandomString(14),
+		RoleIDs:  []int{1, 2, 3},
+	}
+	id, err := _service.Register(ctx, validUser)
+	defer repository.Delete(ctx, id)
+	assert.Nil(t, err, consts.ShouldNil, headerTestName)
+
+	redisConTest := connector.LoadRedisCache()
+	key := validUser.Email + service.KEY_ACCOUNT_ACTIVATION
+	validCode := redisConTest.Get(key).Val()
+
+	type testCase struct {
+		Name    string
+		ResCode int
+		Payload model.UserActivation
+	}
+
+	testCases := []testCase{
+		{
+			Name:    "Success Account Activation -1",
+			ResCode: fiber.StatusOK,
+			Payload: model.UserActivation{
+				Email: validUser.Email,
+				Code:  validCode,
+			},
+		},
+		{
+			Name:    "Failed Account Activation -1 : account already active",
+			ResCode: fiber.StatusBadRequest,
+			Payload: model.UserActivation{
+				Email: validUser.Email,
+				Code:  validCode,
+			},
+		},
+		{
+			Name:    "Failed Account Activation -2 : data not found",
+			ResCode: fiber.StatusNotFound,
+			Payload: model.UserActivation{
+				Email: helper.RandomEmail(),
+				Code:  validCode,
+			},
+		},
+		{
+			Name:    "Failed Account Activation -3 : invalid email",
+			ResCode: fiber.StatusBadRequest,
+			Payload: model.UserActivation{
+				Email: "invalid-email",
+				Code:  helper.RandomString(15),
+			},
+		},
+	}
+
+	pathURL := "user/account-activation"
+	URL := baseURL + pathURL
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		// Marshal payload to JSON
+		jsonData, marshalErr := json.Marshal(&tc.Payload)
+		assert.NoError(t, marshalErr, consts.ShouldNotErr, marshalErr)
+
+		// Create HTTP request
+		req := httptest.NewRequest(fiber.MethodPost, URL, bytes.NewReader(jsonData))
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		// Set up Fiber app and handle the request with the controller
+		app := fiber.New()
+		app.Post(pathURL, controller.AccountActivation)
+		req.Close = true
+
+		// run test
+		res, testErr := app.Test(req, -1)
+		assert.Nil(t, testErr, consts.ShouldNil, testErr)
+		defer res.Body.Close()
+		assert.Equal(t, res.StatusCode, tc.ResCode, consts.ShouldEqual, res.StatusCode, tc.Name, headerTestName)
+
+		if res.StatusCode != fiber.StatusNoContent {
+			responseStruct := response.Response{}
+			err := json.NewDecoder(res.Body).Decode(&responseStruct)
+			assert.NoErrorf(t, err, "Failed to parse response JSON: %v", err)
+		}
+	}
+}
+
 func TestLogin(t *testing.T) {
 	// Initialize repository, service and controller
 	repository := repository.NewUserRepository()
@@ -623,6 +724,14 @@ func TestUpdateProfile(t *testing.T) {
 			},
 			Token: helper.GenerateToken(), // valid token
 		},
+		{
+			Name:    "Failed Update Profile -3: User not found",
+			ResCode: fiber.StatusNotFound,
+			Payload: model.UserUpdate{
+				Name: "valid-name",
+			},
+			Token: helper.GenerateToken(), // valid token
+		},
 	}
 
 	pathURL := "user/profile"
@@ -786,12 +895,12 @@ func TestDeleteAccount(t *testing.T) {
 	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
 
 	fakeToken := helper.GenerateToken()
-	entityUser := createUser()
+	validUser := createUser()
 	validToken, loginErr := service.Login(ctx, model.UserLogin{
-		Email:    entityUser.Email,
-		Password: entityUser.Password,
+		Email:    validUser.Email,
+		Password: validUser.Password,
 	})
-	defer repository.Delete(ctx, entityUser.ID)
+	defer repository.Delete(ctx, validUser.ID)
 	assert.NoError(t, loginErr, consts.ShouldNotErr, headerTestName)
 
 	type testCase struct {
@@ -834,8 +943,8 @@ func TestDeleteAccount(t *testing.T) {
 			ResCode: fiber.StatusNoContent,
 			Token:   validToken,
 			Payload: model.UserDeleteAccount{
-				Password:        entityUser.Password,
-				PasswordConfirm: entityUser.Password,
+				Password:        validUser.Password,
+				PasswordConfirm: validUser.Password,
 			},
 		},
 		{
@@ -843,8 +952,8 @@ func TestDeleteAccount(t *testing.T) {
 			ResCode: fiber.StatusUnauthorized,
 			Token:   validToken, // token is invalid
 			Payload: model.UserDeleteAccount{
-				Password:        entityUser.Password,
-				PasswordConfirm: entityUser.Password,
+				Password:        validUser.Password,
+				PasswordConfirm: validUser.Password,
 			},
 		},
 		{
@@ -910,4 +1019,261 @@ func createUser() entity.User {
 	data.Password = pw
 	data.ID = id
 	return data
+}
+
+func TestForgetPassword(t *testing.T) {
+	// Initialize repository, service and controller
+	repository := repository.NewUserRepository()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	service := service.NewUserService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	controller := NewUserController(service)
+	assert.NotNil(t, controller, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	validUser := createUser()
+	defer repository.Delete(ctx, validUser.ID)
+
+	testCases := []testCase{
+		{
+			Name:    "Success Forgot Password -1",
+			ResCode: fiber.StatusOK,
+			Payload: model.UserForgetPassword{
+				Email: validUser.Email,
+			},
+		},
+		{
+			Name:    "Failed Forgot Password -1: user isn't found",
+			ResCode: fiber.StatusNotFound,
+			Payload: model.UserForgetPassword{
+				Email: helper.RandomEmail(),
+			},
+		},
+		{
+			Name:    "Failed Forgot Password -2: invalid email",
+			ResCode: fiber.StatusBadRequest,
+			Payload: model.UserForgetPassword{
+				Email: "invalid-email",
+			},
+		},
+	}
+
+	pathURL := "user/forget-password"
+	URL := baseURL + pathURL
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		// Marshal payload to JSON
+		jsonData, marshalErr := json.Marshal(&tc.Payload)
+		assert.NoError(t, marshalErr, consts.ShouldNotErr, marshalErr)
+
+		// Create HTTP request
+		req := httptest.NewRequest(fiber.MethodPost, URL, bytes.NewReader(jsonData))
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		// Set up Fiber app and handle the request with the controller
+		app := fiber.New()
+		app.Post(pathURL, controller.ForgetPassword)
+		req.Close = true
+
+		// run test
+		res, testErr := app.Test(req, -1)
+		assert.Nil(t, testErr, consts.ShouldNil, testErr)
+		defer res.Body.Close()
+		assert.Equal(t, tc.ResCode, res.StatusCode, consts.ShouldEqual, res.StatusCode)
+
+		if res.StatusCode != fiber.StatusNoContent {
+			responseStruct := response.Response{}
+			err := json.NewDecoder(res.Body).Decode(&responseStruct)
+			assert.NoErrorf(t, err, "Failed to parse response JSON: %v", err)
+		}
+	}
+}
+
+func TestResetPassword(t *testing.T) {
+	// Initialize repository, service and controller
+	repository := repository.NewUserRepository()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	_service := service.NewUserService()
+	assert.NotNil(t, _service, consts.ShouldNotNil, headerTestName)
+	controller := NewUserController(_service)
+	assert.NotNil(t, controller, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	validUser := model.UserRegister{
+		Name:     helper.RandomString(13),
+		Email:    helper.RandomEmail(),
+		Password: helper.RandomString(13),
+		RoleIDs:  []int{1, 2, 3},
+	}
+	id, err := _service.Register(ctx, validUser)
+	defer repository.Delete(ctx, id)
+	assert.Nil(t, err, consts.ShouldNotNil, headerTestName)
+	err = _service.ForgetPassword(ctx, model.UserForgetPassword{Email: validUser.Email})
+	assert.Nil(t, err, consts.ShouldNil, headerTestName)
+
+	redisConTest := connector.LoadRedisCache()
+	key := validUser.Email + service.KEY_FORGET_PASSWORD
+	validCode := redisConTest.Get(key).Val()
+	assert.True(t, len(validCode) >= 21, "should true", headerTestName)
+
+	testCases := []testCase{
+		{
+			Name:    "Success Reset Password -1",
+			ResCode: fiber.StatusOK,
+			Payload: model.UserResetPassword{
+				Email:              validUser.Email,
+				Code:               validCode,
+				NewPassword:        "new-password-00",
+				NewPasswordConfirm: "new-password-00",
+			},
+		},
+		{
+			Name:    "Failed Reset Password -1: user isn't found",
+			ResCode: fiber.StatusNotFound,
+			Payload: model.UserResetPassword{
+				Email:              helper.RandomEmail(),
+				Code:               helper.RandomString(28),
+				NewPassword:        "valid-passwd-00",
+				NewPasswordConfirm: "valid-passwd-00",
+			},
+		},
+		{
+			Name:    "Failed Reset Password -2: invalid email",
+			ResCode: fiber.StatusBadRequest,
+			Payload: model.UserResetPassword{
+				Email:              "invalid-email",
+				Code:               helper.RandomString(28),
+				NewPassword:        "valid-passwd-00",
+				NewPasswordConfirm: "valid-passwd-00",
+			},
+		},
+		{
+			Name:    "Failed Reset Password -2: password isn't match",
+			ResCode: fiber.StatusBadRequest,
+			Payload: model.UserResetPassword{
+				Email:              helper.RandomEmail(),
+				Code:               helper.RandomString(28),
+				NewPassword:        "valid-passwd-11",
+				NewPasswordConfirm: "valid-passwd-00",
+			},
+		},
+	}
+
+	pathURL := "user/reset-password"
+	URL := baseURL + pathURL
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		// Marshal payload to JSON
+		jsonData, marshalErr := json.Marshal(&tc.Payload)
+		assert.NoError(t, marshalErr, consts.ShouldNotErr, marshalErr)
+
+		// Create HTTP request
+		req := httptest.NewRequest(fiber.MethodPost, URL, bytes.NewReader(jsonData))
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		// Set up Fiber app and handle the request with the controller
+		app := fiber.New()
+		app.Post(pathURL, controller.ResetPassword)
+		req.Close = true
+
+		// run test
+		res, testErr := app.Test(req, -1)
+		assert.Nil(t, testErr, consts.ShouldNil, testErr, tc.Name)
+		defer res.Body.Close()
+		assert.Equal(t, tc.ResCode, res.StatusCode, consts.ShouldEqual, res.StatusCode, tc.Name)
+
+		if res.StatusCode != fiber.StatusNoContent {
+			responseStruct := response.Response{}
+			err := json.NewDecoder(res.Body).Decode(&responseStruct)
+			assert.NoErrorf(t, err, "Failed to parse response JSON: %v", err, tc.Name)
+		}
+	}
+
+}
+
+func TestBanAccount(t *testing.T) {
+	// Initialize repository, service and controller
+	repository := repository.NewUserRepository()
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	service := service.NewUserService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	controller := NewUserController(service)
+	assert.NotNil(t, controller, consts.ShouldNotNil, headerTestName)
+	jwtHandler := middleware.NewJWTHandler()
+	assert.NotNil(t, jwtHandler, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	validUser1 := createUser()
+	defer repository.Delete(ctx, validUser1.ID)
+
+	fakeToken := helper.GenerateToken()
+
+	validUser2 := createUser()
+	validToken, loginErr := service.Login(ctx, model.UserLogin{
+		Email:    validUser2.Email,
+		Password: validUser2.Password,
+	})
+	defer repository.Delete(ctx, validUser2.ID)
+	assert.NoError(t, loginErr, consts.ShouldNotErr, headerTestName)
+
+	type testCase struct {
+		Name    string
+		ResCode int
+		Token   string
+		ID      string
+	}
+
+	testCases := []testCase{
+		{
+			Name:    "Success Ban Account -1",
+			ResCode: fiber.StatusNoContent,
+			Token:   validToken,
+			ID:      strconv.Itoa(validUser1.ID),
+		},
+		{
+			Name:    "Failed Ban Account -1: user not found",
+			ResCode: fiber.StatusNotFound,
+			Token:   validToken,
+			ID:      strconv.Itoa(validUser1.ID + 100),
+		},
+		{
+			Name:    "Failed Ban Account -2: invalid ID",
+			ResCode: fiber.StatusBadRequest,
+			Token:   fakeToken,
+			ID:      "-10",
+		},
+	}
+
+	pathURL := "user/ban-user/"
+	URL := baseURL + pathURL
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		// Create HTTP request
+		req := httptest.NewRequest(fiber.MethodPut, URL+tc.ID, nil)
+		req.Header.Set(fiber.HeaderAuthorization, fmt.Sprintf("Bearer %s", tc.Token))
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+		// Set up Fiber app and handle the request with the controller
+		app := fiber.New()
+		app.Put(pathURL+":id", jwtHandler.IsAuthenticated, controller.BanAccount)
+		req.Close = true
+
+		// run test
+		res, testErr := app.Test(req, -1)
+		assert.Nil(t, testErr, consts.ShouldNil, testErr)
+		defer res.Body.Close()
+		assert.Equal(t, tc.ResCode, res.StatusCode, consts.ShouldEqual, res.StatusCode, tc.Name)
+
+		if res.StatusCode != fiber.StatusNoContent {
+			responseStruct := response.Response{}
+			err := json.NewDecoder(res.Body).Decode(&responseStruct)
+			assert.NoErrorf(t, err, "Failed to parse response JSON: %v", err)
+		}
+	}
 }

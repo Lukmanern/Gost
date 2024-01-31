@@ -174,7 +174,7 @@ func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 		return response.Error(c, consts.ErrServer+err.Error())
 	}
 
-	return response.CreateResponse(c, fiber.StatusAccepted, response.Response{
+	return response.CreateResponse(c, fiber.StatusOK, response.Response{
 		Message: "success sending link for reset password to email, check your email inbox",
 		Success: true,
 		Data:    nil,
@@ -206,7 +206,7 @@ func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 		return response.Error(c, consts.ErrServer+err.Error())
 	}
 
-	return response.CreateResponse(c, fiber.StatusAccepted, response.Response{
+	return response.CreateResponse(c, fiber.StatusOK, response.Response{
 		Message: "your password already updated, you can login with the new password",
 		Success: true,
 		Data:    nil,
