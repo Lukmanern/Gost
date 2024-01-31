@@ -1,214 +1,259 @@
-// Don't run test per file without -p 1
-// or simply run test per func or run
-// project test using make test command
-// check Makefile file
 package service
 
 import (
+	"log"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
+	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/domain/model"
-	"github.com/Lukmanern/gost/internal/constants"
+	"github.com/Lukmanern/gost/internal/consts"
 	"github.com/Lukmanern/gost/internal/env"
 	"github.com/Lukmanern/gost/internal/helper"
-	permService "github.com/Lukmanern/gost/service/permission"
+	repository "github.com/Lukmanern/gost/repository/role"
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	headerTestName string = "at Role Service Test"
+)
+
+var (
+	timeNow        time.Time
+	roleRepository repository.RoleRepository
 )
 
 func init() {
-	// Check env and database
-	env.ReadConfig("./../../.env")
-
-	connector.LoadDatabase()
-	connector.LoadRedisCache()
+	envFilePath := "./../../.env"
+	env.ReadConfig(envFilePath)
+	timeNow = time.Now()
+	roleRepository = repository.NewRoleRepository()
 }
 
-func TestNewRoleService(t *testing.T) {
-	permSvc := permService.NewPermissionService()
-	svc := NewRoleService(permSvc)
-	if svc == nil {
-		t.Error(constants.ShouldNotNil)
-	}
-}
+// type Role struct {
+// 	ID          int    `gorm:"type:serial;primaryKey" json:"id"`
+// 	Name        string `gorm:"type:varchar(255) not null unique" json:"name"`
+// 	Description string `gorm:"type:varchar(255) not null" json:"description"`
+// 	TimeFields
+//   }
 
-// create 1 role, create 4 permissions
-// trying to connect
-func TestSuccessCrudRole(t *testing.T) {
-	c := helper.NewFiberCtx()
-	ctx := c.Context()
-	permSvc := permService.NewPermissionService()
-	if permSvc == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
-	}
-	svc := NewRoleService(permSvc)
-	if svc == nil {
-		t.Error(constants.ShouldNotNil)
-	}
+func TestCreate(t *testing.T) {
+	service := NewRoleService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	repository := roleRepository
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
 
-	modelRole := model.RoleCreate{
-		Name:        strings.ToLower(helper.RandomString(10)),
-		Description: helper.RandomString(30),
-	}
-	roleID, createErr := svc.Create(ctx, modelRole)
-	if createErr != nil || roleID < 1 {
-		t.Error("should not error and id should more than zero")
+	role := createRole()
+	defer repository.Delete(ctx, role.ID)
+
+	type testCase struct {
+		Name    string
+		Payload model.RoleCreate
+		WantErr bool
 	}
 
-	// Save the ID for deleting the permissions
-	permsID := make([]int, 0)
-	for i := 0; i < 3; i++ {
-		modelPerm := model.PermissionCreate{
-			Name:        strings.ToLower(helper.RandomString(10)),
-			Description: helper.RandomString(30),
+	testCases := []testCase{
+		{
+			Name: "Success Create Role -1",
+			Payload: model.RoleCreate{
+				Name:        strings.ToLower(helper.RandomString(6)),
+				Description: helper.RandomWords(8),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Create Role -2",
+			Payload: model.RoleCreate{
+				Name:        strings.ToLower(helper.RandomString(6)),
+				Description: helper.RandomWords(8),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Create Role -2: name has been used",
+			Payload: model.RoleCreate{
+				Name:        role.Name,
+				Description: helper.RandomWords(8),
+			},
+			WantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		id, err := service.Create(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, err, consts.ShouldErr, tc.Name, headerTestName)
+			continue
 		}
-		permID, createErr := permSvc.Create(ctx, modelPerm)
-		if createErr != nil || permID < 1 {
-			t.Error("should not error and permID should be more than one")
-		}
+		assert.NoError(t, err, consts.ShouldNotErr, tc.Name, headerTestName)
 
-		permsID = append(permsID, permID)
-	}
+		// expect no error
+		role, getErr := service.GetByID(ctx, id)
+		assert.NoError(t, getErr, consts.ShouldNotErr, tc.Name, headerTestName)
+		assert.Equal(t, role.Name, tc.Payload.Name, tc.Name, headerTestName)
+		assert.Equal(t, role.Description, tc.Payload.Description, tc.Name, headerTestName)
 
-	defer func() {
-		svc.Delete(ctx, roleID)
-		for _, id := range permsID {
-			permSvc.Delete(ctx, id)
-		}
-	}()
+		deleteErr := service.Delete(ctx, id)
+		assert.NoError(t, deleteErr, consts.ShouldNotErr, tc.Name, headerTestName)
 
-	// Success connect
-	modelConnect := model.RoleConnectToPermissions{
-		RoleID:        roleID,
-		PermissionsID: permsID,
-	}
-	connectErr := svc.ConnectPermissions(ctx, modelConnect)
-	if connectErr != nil {
-		t.Error(constants.ShouldNotErr)
-	}
+		// expect error
+		_, getErr = service.GetByID(ctx, id)
+		assert.Error(t, getErr, consts.ShouldErr, tc.Name, headerTestName)
 
-	roleByID, getErr := svc.GetByID(ctx, roleID)
-	if getErr != nil || roleByID == nil {
-		t.Error("should not error and role not nil")
-	}
-	if len(roleByID.Permissions) != len(permsID) {
-		t.Error("total of permissions connected by role should be equal")
-	}
+		deleteErr = service.Delete(ctx, id)
+		assert.Error(t, deleteErr, consts.ShouldErr, tc.Name, headerTestName)
 
-	roles, total, getAllErr := svc.GetAll(ctx, base.RequestGetAll{Limit: 10, Page: 1})
-	if len(roles) < 1 || total < 1 || getAllErr != nil {
-		t.Error("should be more than or equal to one and not error at all")
-	}
-
-	updateRoleModel := model.RoleUpdate{
-		ID:          roleID,
-		Name:        strings.ToLower(helper.RandomString(11)),
-		Description: helper.RandomString(31),
-	}
-	updateErr := svc.Update(ctx, updateRoleModel)
-	if updateErr != nil {
-		t.Error(constants.ShouldNotErr)
-	}
-
-	// Value reset
-	roleByID = nil
-	getErr = nil
-	roleByID, getErr = svc.GetByID(ctx, roleID)
-	if getErr != nil || roleByID == nil {
-		t.Error("should not error and roleByID should not be nil")
-	}
-	if roleByID.Name != updateRoleModel.Name || roleByID.Description != updateRoleModel.Description {
-		t.Error("name and description should be the same")
-	}
-
-	deleteErr := svc.Delete(ctx, roleID)
-	if deleteErr != nil {
-		t.Error(constants.ShouldNotErr)
-	}
-
-	// Value reset
-	roleByID = nil
-	getErr = nil
-	roleByID, getErr = svc.GetByID(ctx, roleID)
-	if getErr == nil || roleByID != nil {
-		t.Error("should error and roleByID should be nil")
 	}
 }
 
-func TestFailedCrudRoles(t *testing.T) {
-	c := helper.NewFiberCtx()
-	ctx := c.Context()
-	permSvc := permService.NewPermissionService()
-	if permSvc == nil || ctx == nil {
-		t.Error(constants.ShouldNotNil)
-	}
-	svc := NewRoleService(permSvc)
-	if svc == nil {
-		t.Error(constants.ShouldNotNil)
+func TestGetAll(t *testing.T) {
+	service := NewRoleService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	repository := roleRepository
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	totalRoleCreated := 5
+
+	for i := 0; i < totalRoleCreated; i++ {
+		role := createRole()
+		defer repository.Delete(ctx, role.ID)
 	}
 
-	// failed create: permissions not found
-	func() {
-		modelRole := model.RoleCreate{
-			Name:          strings.ToLower(helper.RandomString(10)),
-			Description:   helper.RandomString(30),
-			PermissionsID: []int{-1, -2, -3},
+	type testCase struct {
+		Name    string
+		Payload model.RequestGetAll
+		WantErr bool
+	}
+
+	testCases := []testCase{
+		{
+			Name: "Success Get All Role -1",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 100,
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Get All Role -2",
+			Payload: model.RequestGetAll{
+				Page:  1,
+				Limit: 10 + totalRoleCreated,
+			},
+			WantErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		roles, total, err := service.GetAll(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, err, consts.ShouldErr, tc.Name, headerTestName)
+			continue
 		}
-		roleID, createErr := svc.Create(ctx, modelRole)
-		if createErr == nil || roleID != 0 {
-			t.Error("should error and id should zero")
+		assert.NoError(t, err, consts.ShouldNotErr, tc.Name, headerTestName)
+		assert.True(t, len(roles) >= totalRoleCreated, consts.ShouldNotErr, tc.Name, headerTestName)
+		assert.True(t, total >= totalRoleCreated, consts.ShouldNotErr, tc.Name, headerTestName)
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	service := NewRoleService()
+	assert.NotNil(t, service, consts.ShouldNotNil, headerTestName)
+	repository := roleRepository
+	assert.NotNil(t, repository, consts.ShouldNotNil, headerTestName)
+	ctx := helper.NewFiberCtx().Context()
+	assert.NotNil(t, ctx, consts.ShouldNotNil, headerTestName)
+
+	role := createRole()
+	defer repository.Delete(ctx, role.ID)
+
+	type testCase struct {
+		Name    string
+		Payload model.RoleUpdate
+		WantErr bool
+	}
+
+	testCases := []testCase{
+		{
+			Name: "Success Update Role -1",
+			Payload: model.RoleUpdate{
+				ID:          role.ID,
+				Name:        strings.ToLower(helper.RandomString(5)),
+				Description: helper.RandomWords(8),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Success Update Role -2",
+			Payload: model.RoleUpdate{
+				ID:          role.ID,
+				Name:        strings.ToLower(helper.RandomString(5)),
+				Description: helper.RandomWords(8),
+			},
+			WantErr: false,
+		},
+		{
+			Name: "Failed Update Role -1: invalid ID",
+			Payload: model.RoleUpdate{
+				ID: -10,
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Update Role -2: role not found",
+			Payload: model.RoleUpdate{
+				ID: role.ID + 999,
+			},
+			WantErr: true,
+		},
+		{
+			Name: "Failed Update Role -3: name has been used",
+			Payload: model.RoleUpdate{
+				ID:   role.ID,
+				Name: "admin",
+			},
+			WantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Println(tc.Name, headerTestName)
+
+		err := service.Update(ctx, tc.Payload)
+		if tc.WantErr {
+			assert.Error(t, err, consts.ShouldErr, tc.Name, headerTestName)
+			continue
 		}
-	}()
+		assert.NoError(t, err, consts.ShouldNotErr, tc.Name, headerTestName)
 
-	// success create
-	modelRole := model.RoleCreate{
-		Name:        strings.ToLower(helper.RandomString(10)),
-		Description: helper.RandomString(30),
+		role, err := service.GetByID(ctx, tc.Payload.ID)
+		assert.NoError(t, err, consts.ShouldNotErr, tc.Name, headerTestName)
+		assert.Equal(t, role.Name, tc.Payload.Name, consts.ShouldNotErr, tc.Name, headerTestName)
+		assert.Equal(t, role.Description, tc.Payload.Description, consts.ShouldNotErr, tc.Name, headerTestName)
 	}
-	roleID, createErr := svc.Create(ctx, modelRole)
-	if createErr != nil || roleID < 1 {
-		t.Error("should not error and id should more than zero")
-	}
+}
 
-	defer func() {
-		svc.Delete(ctx, roleID)
-	}()
-
-	// failed connect
-	modelConnectFailed := model.RoleConnectToPermissions{
-		RoleID:        roleID,
-		PermissionsID: []int{-3, -2, -1},
+func createRole() entity.Role {
+	repository := roleRepository
+	ctx := helper.NewFiberCtx().Context()
+	role := entity.Role{
+		Name:        strings.ToLower(helper.RandomString(15)),
+		Description: helper.RandomWords(8),
 	}
-	connectErr := svc.ConnectPermissions(ctx, modelConnectFailed)
-	if connectErr == nil {
-		t.Error(constants.ShouldErr)
+	role.SetCreateTime()
+	id, err := repository.Create(ctx, role)
+	if err != nil {
+		log.Fatal("failed create a new user", headerTestName)
 	}
-
-	modelConnectFailed = model.RoleConnectToPermissions{
-		RoleID:        -1,
-		PermissionsID: []int{},
-	}
-	connectErr = nil
-	connectErr = svc.ConnectPermissions(ctx, modelConnectFailed)
-	if connectErr == nil {
-		t.Error(constants.ShouldErr)
-	}
-
-	// failed update
-	updateRoleModel := model.RoleUpdate{
-		ID:          -1,
-		Name:        strings.ToLower(helper.RandomString(11)),
-		Description: helper.RandomString(31),
-	}
-	updateErr := svc.Update(ctx, updateRoleModel)
-	if updateErr == nil {
-		t.Error(constants.ShouldErr)
-	}
-
-	// failed delete
-	deleteErr := svc.Delete(ctx, -1)
-	if deleteErr == nil {
-		t.Error(constants.ShouldErr)
-	}
+	role.ID = id
+	return role
 }

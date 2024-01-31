@@ -5,17 +5,14 @@ import (
 	"sync"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/domain/model"
 	"gorm.io/gorm"
 )
 
 type RoleRepository interface {
-	// Create adds a new role to the repository with specified permissions.
-	Create(ctx context.Context, role entity.Role, permissionsID []int) (id int, err error)
-
-	// ConnectToPermission associates a role with specified permissions.
-	ConnectToPermission(ctx context.Context, roleID int, permissionsID []int) (err error)
+	// Create adds a new role to the repository.
+	Create(ctx context.Context, role entity.Role) (id int, err error)
 
 	// GetByID retrieves a role by its unique identifier.
 	GetByID(ctx context.Context, id int) (role *entity.Role, err error)
@@ -24,7 +21,7 @@ type RoleRepository interface {
 	GetByName(ctx context.Context, name string) (role *entity.Role, err error)
 
 	// GetAll retrieves all roles based on a filter for pagination.
-	GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error)
+	GetAll(ctx context.Context, filter model.RequestGetAll) (roles []entity.Role, total int, err error)
 
 	// Update modifies role information in the repository.
 	Update(ctx context.Context, role entity.Role) (err error)
@@ -51,7 +48,7 @@ func NewRoleRepository() RoleRepository {
 	return roleRepositoryImpl
 }
 
-func (repo *RoleRepositoryImpl) Create(ctx context.Context, role entity.Role, permissionsID []int) (id int, err error) {
+func (repo *RoleRepositoryImpl) Create(ctx context.Context, role entity.Role) (id int, err error) {
 	err = repo.db.Transaction(func(tx *gorm.DB) error {
 		res := tx.Create(&role)
 		if res.Error != nil {
@@ -59,17 +56,6 @@ func (repo *RoleRepositoryImpl) Create(ctx context.Context, role entity.Role, pe
 			return res.Error
 		}
 		id = role.ID
-
-		for _, permissionID := range permissionsID {
-			roleHasPermissionEntity := entity.RoleHasPermission{
-				RoleID:       id,
-				PermissionID: permissionID,
-			}
-			if err := tx.Create(&roleHasPermissionEntity).Error; err != nil {
-				tx.Rollback()
-				return err
-			}
-		}
 		return nil
 	})
 	if err != nil {
@@ -79,36 +65,9 @@ func (repo *RoleRepositoryImpl) Create(ctx context.Context, role entity.Role, pe
 	return id, nil
 }
 
-func (repo *RoleRepositoryImpl) ConnectToPermission(ctx context.Context, roleID int, permissionsID []int) (err error) {
-	err = repo.db.Transaction(func(tx *gorm.DB) error {
-		deleted := entity.RoleHasPermission{}
-		result := tx.Where("role_id = ?", roleID).Delete(&deleted)
-		if result.Error != nil {
-			tx.Rollback()
-			return result.Error
-		}
-
-		for _, permissionID := range permissionsID {
-			roleHasPermissionEntity := entity.RoleHasPermission{
-				RoleID:       roleID,
-				PermissionID: permissionID,
-			}
-			if err := tx.Create(&roleHasPermissionEntity).Error; err != nil {
-				tx.Rollback()
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (repo *RoleRepositoryImpl) GetByID(ctx context.Context, id int) (role *entity.Role, err error) {
 	role = &entity.Role{}
-	result := repo.db.Where("id = ?", id).Preload("Permissions").First(&role)
+	result := repo.db.Where("id = ?", id).First(&role)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -117,15 +76,16 @@ func (repo *RoleRepositoryImpl) GetByID(ctx context.Context, id int) (role *enti
 
 func (repo *RoleRepositoryImpl) GetByName(ctx context.Context, name string) (role *entity.Role, err error) {
 	role = &entity.Role{}
-	result := repo.db.Where("name = ?", name).Preload("Permissions").First(&role)
+	result := repo.db.Where("name = ?", name).First(&role)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 	return role, nil
 }
 
-func (repo *RoleRepositoryImpl) GetAll(ctx context.Context, filter base.RequestGetAll) (roles []entity.Role, total int, err error) {
+func (repo *RoleRepositoryImpl) GetAll(ctx context.Context, filter model.RequestGetAll) (roles []entity.Role, total int, err error) {
 	var count int64
+	filter.Sort = ""
 	args := []interface{}{"%" + filter.Keyword + "%"}
 	cond := "name LIKE ?"
 	result := repo.db.Where(cond, args...).Find(&roles)

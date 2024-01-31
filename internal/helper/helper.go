@@ -8,11 +8,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Lukmanern/gost/internal/middleware"
+	"github.com/XANi/loremipsum"
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
+
+func RandomWords(n int) string {
+	if n < 2 {
+		n = 2
+	}
+	loremIpsumGenerator := loremipsum.New()
+	words := loremIpsumGenerator.Words(n)
+	return words
+}
 
 // RandomString func generate random string
 // used for testing and any needs.
@@ -25,23 +36,6 @@ func RandomString(n uint) string {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
 	}
 	return string(b)
-}
-
-// RandomEmails func return some emails
-// used for testing and any needs.
-func RandomEmails(n uint) []string {
-	emailsMap := make(map[string]int)
-	for uint(len(emailsMap)) < n {
-		body := strings.ToLower(RandomString(7) + RandomString(7) + RandomString(7))
-		randEmail := body + "@gost.project"
-		emailsMap[randEmail]++
-	}
-
-	emails := make([]string, 0, len(emailsMap))
-	for email := range emailsMap {
-		emails = append(emails, email)
-	}
-	return emails
 }
 
 // RandomEmail func return a email
@@ -71,7 +65,7 @@ func ValidateEmails(emails ...string) error {
 	for _, email := range emails {
 		_, err := mail.ParseAddress(email)
 		if err != nil {
-			return errors.New("one or more email/s is invalid " + email)
+			return errors.New("one or more email/s is invalid: " + email)
 		}
 	}
 	return nil
@@ -88,4 +82,22 @@ func NewFiberCtx() *fiber.Ctx {
 // Example : Your name => Your Name
 func ToTitle(s string) string {
 	return cases.Title(language.Und).String(s)
+}
+
+// Generate token for admin role : Full Access
+func GenerateToken() string {
+	jwtHandler := middleware.NewJWTHandler()
+	expire := time.Now().Add(15 * time.Hour)
+	token, err := jwtHandler.GenerateJWT(GenerateRandomID(), RandomEmail(), map[string]uint8{"admin": 1}, expire)
+	if err != nil {
+		return ""
+	}
+	return token
+}
+
+func GenerateRandomID() int {
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+	min := 9000000
+	max := 10000000
+	return rand.Intn(max-min) + min
 }

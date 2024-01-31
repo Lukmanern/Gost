@@ -12,12 +12,9 @@ import (
 
 type EmailService interface {
 	// SendMail func sends message with subject to some emails address.
-	SendMail(emails []string, subject, message string) error
+	SendMail(subject, message string, emails ...string) error
 }
 
-// EmailServiceImpl struct contains all the
-// SMTP needs for sending emails.
-// SMTP => Simple Mail Transfer Protocol
 type EmailServiceImpl struct {
 	Server   string
 	Port     int
@@ -51,7 +48,7 @@ func NewEmailService() EmailService {
 	return emailService
 }
 
-func (svc *EmailServiceImpl) SendMail(emails []string, subject, message string) error {
+func (svc *EmailServiceImpl) SendMail(subject, message string, emails ...string) error {
 	validateErr := helper.ValidateEmails(emails...)
 	if validateErr != nil {
 		return validateErr

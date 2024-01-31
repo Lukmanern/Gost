@@ -5,25 +5,16 @@ package entity
 
 import (
 	"time"
-
-	"github.com/Lukmanern/gost/domain/base"
 )
 
 type User struct {
-	ID               int        `gorm:"type:serial;primaryKey" json:"id"`
-	Name             string     `gorm:"type:varchar(100) not null" json:"name"`
-	Email            string     `gorm:"type:varchar(100) not null unique" json:"email"`
-	Password         string     `gorm:"type:varchar(255) not null" json:"password"`
-	VerificationCode *string    `gorm:"type:varchar(100) null" json:"verification_code"`
-	ActivatedAt      *time.Time `gorm:"type:timestamp null;default:null" json:"activated_at"`
-	Roles            []Role     `gorm:"many2many:user_has_roles" json:"roles"`
-	base.TimeFields
-}
-
-func (e *User) SetActivateAccount() {
-	timeNow := time.Now()
-	e.ActivatedAt = &timeNow
-	e.VerificationCode = nil
+	ID          int        `gorm:"type:bigserial;primaryKey" json:"id"`
+	Name        string     `gorm:"type:varchar(100) not null" json:"name"`
+	Email       string     `gorm:"type:varchar(100) not null unique" json:"email"`
+	Password    string     `gorm:"type:varchar(255) not null" json:"password"`
+	ActivatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"activated_at"`
+	Roles       []Role     `gorm:"many2many:user_has_roles" json:"roles"`
+	TimeFields
 }
 
 func (e *User) TableName() string {
@@ -31,9 +22,9 @@ func (e *User) TableName() string {
 }
 
 type UserHasRoles struct {
-	UserID int  `json:"role_id"`
+	UserID int  `json:"user_id"`
 	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user"`
-	RoleID int  `json:"permission_id"`
+	RoleID int  `json:"role_id"`
 	Role   Role `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"role"`
 }
 

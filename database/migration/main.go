@@ -7,7 +7,7 @@ import (
 	"github.com/Lukmanern/gost/database/connector"
 	"github.com/Lukmanern/gost/domain/entity"
 	"github.com/Lukmanern/gost/internal/env"
-	"github.com/Lukmanern/gost/internal/rbac"
+	"github.com/Lukmanern/gost/internal/role"
 	"gorm.io/gorm"
 )
 
@@ -63,7 +63,7 @@ func main() {
 		}
 	}
 
-	// Seed master-RBAC data (roles and permissions)
+	// Seed Roles
 	if !config.GetAppInProduction() {
 		seeding()
 	}
@@ -80,9 +80,7 @@ func dropAll() {
 	}
 }
 
-// seeding func seed data like role, permission,
-// and role_has_permissions tables. You can add
-// more seed if you want.
+// seeding roles
 func seeding() {
 	// Create a new transaction for seeding
 	tx := db.Begin()
@@ -90,38 +88,12 @@ func seeding() {
 		log.Panicf("Error starting transaction for seeding: %s", tx.Error)
 	}
 
-	// Seeding permission and role
-	for _, data := range rbac.AllRoles() {
+	// Seeding role
+	for _, data := range role.AllRoles() {
+		data.SetCreateTime()
 		if createErr := tx.Create(&data).Error; createErr != nil {
 			tx.Rollback()
 			log.Panicf("Error while creating Roles: %s", createErr)
-		}
-	}
-	for _, perm := range rbac.AllPermissions() {
-		perm.SetCreateTime()
-		perm.ID = 0
-		if createErr := tx.Create(&perm).Error; createErr != nil {
-			tx.Rollback()
-			log.Panicf("Error while creating Permissions: %s", createErr)
-		}
-
-		if perm.ID <= 20 {
-			if createErr := tx.Create(&entity.RoleHasPermission{
-				RoleID:       1, // admin
-				PermissionID: perm.ID,
-			}).Error; createErr != nil {
-				tx.Rollback()
-				log.Panicf("Error while creating Roles: %s", createErr)
-			}
-		}
-		if perm.ID > 10 {
-			if createErr := tx.Create(&entity.RoleHasPermission{
-				RoleID:       2, // user
-				PermissionID: perm.ID,
-			}).Error; createErr != nil {
-				tx.Rollback()
-				log.Panicf("Error while creating Roles: %s", createErr)
-			}
 		}
 	}
 

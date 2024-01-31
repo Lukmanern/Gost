@@ -1,10 +1,4 @@
-// 📌 Origin Github Repository: https://github.com/Lukmanern<slash>gost
-
-// 🔍 README
-// Application package configures middleware, error management, and
-// handles OS signals for gracefully stopping the server when receiving
-// an interrupt signal. This package provides routes related to user
-// management and role-based access control (RBAC). And so on.
+// 📌 Origin Github Repository: https://github.com/Lukmanern
 
 package application
 
@@ -12,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"time"
@@ -73,8 +68,17 @@ func setup() {
 	connector.LoadRedisCache()
 }
 
+func checkLocalPort(port int) {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatal("port is being used by other process")
+	}
+	defer listener.Close()
+}
+
 func RunApp() {
 	setup()
+	checkLocalPort(port)
 	router.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 	}))
@@ -109,10 +113,8 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getUserManagementRoutes(router) // user CRUD without auth ⚠️
-	getDevopmentRouter(router)      // experimental without auth ⚠️
-	getUserRoutes(router)           // user with auth
-	getRolePermissionRoutes(router) // RBAC CRUD with auth
+	getUserRoutes(router)
+	getRolePermissionRoutes(router)
 
 	if err := router.Listen(fmt.Sprintf(":%d", port)); err != nil {
 		log.Printf("Oops... Server is not running! Reason: %v", err)

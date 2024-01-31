@@ -15,17 +15,16 @@ type Table interface {
 // AllTables func serve/ return all structs that
 // developer has been created. This func used in
 // database migration scripts.
-func AllTables() []any {
-	allTables := []any{
-		&User{},
-		&UserHasRoles{},
-		&Role{},
-		&RoleHasPermission{},
-		&Permission{},
 
-		// ...
-		// Add more tables/structs
-	}
+var allTables = []any{
+	&User{},
+	&UserHasRoles{},
+	&Role{},
+
+	// add more tables/structs
+}
+
+func AllTables() []any {
 	for _, table := range allTables {
 		_, ok := table.(Table)
 		if !ok {

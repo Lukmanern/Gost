@@ -40,3 +40,7 @@ Techs and tools were used in this project:
 This project is under license from MIT. For more details, see the [LICENSE](LICENSE) file.
 
 &#xa0;
+
+## Todo
+
+- Add password and password confirm at DeleteProfile (permanent) by User

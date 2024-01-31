@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"crypto/rsa"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -27,12 +26,12 @@ type JWTHandler struct {
 }
 
 // Claims struct will be generated as token,contains
-// user data like ID, email, role and permissions.
+// user data like ID, email and roles.
+// You can add new field/property if you want.
 type Claims struct {
-	ID          int         `json:"id"`
-	Email       string      `json:"email"`
-	Role        string      `json:"role"`
-	Permissions map[int]int `json:"permissions"`
+	ID    int              `json:"id"`
+	Email string           `json:"email"`
+	Roles map[string]uint8 `json:"roles"`
 	jwt.RegisteredClaims
 }
 
@@ -67,16 +66,12 @@ func NewJWTHandler() *JWTHandler {
 }
 
 // GenerateJWT func generate new token with expire time for user
-func (j *JWTHandler) GenerateJWT(id int, email, role string, permissions map[int]int, expired time.Time) (t string, err error) {
-	if email == "" || role == "" || len(permissions) < 1 {
-		return "", errors.New("email/ role/ permission too short or void")
-	}
+func (j *JWTHandler) GenerateJWT(id int, email string, roles map[string]uint8, expired time.Time) (t string, err error) {
 	// Create Claims
 	claims := Claims{
-		ID:          id,
-		Email:       email,
-		Role:        role,
-		Permissions: permissions,
+		ID:    id,
+		Email: email,
+		Roles: roles,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: &jwt.NumericDate{Time: expired},
 			NotBefore: &jwt.NumericDate{Time: time.Now()},
@@ -178,79 +173,47 @@ func (j JWTHandler) GenerateClaims(cookieToken string) *Claims {
 	return &claims
 }
 
-// BuildBitGroups func builds bit-group that can contains
-// so much permissions data inside with fast and effective
-// with bit manipulations. See the example :
-// permissions = {9:10,10:256}
-// => read as : bit-group-9th, contains 2 permissions
-// => read as : bit-group-10th, contains 8 permissions
-// per group contain max 8 permissions sequentially,
-// for more You can read in paper (for link, see in readme-md)
-func BuildBitGroups(permIDs ...int) map[int]int {
-	groups := make(map[int]int)
-	for _, id := range permIDs {
-		group := (id - 1) / 8
-		bitPosition := uint(id - 1 - (group * 8))
-		groups[group+1] |= 1 << bitPosition
+// HasRoles is a middleware function that checks if the user associated with the incoming request
+// possesses all the specified roles in the JWT claims. If the user lacks any of the roles,
+// it returns an "Unauthorized" response; otherwise, it allows the request to proceed.
+func (j JWTHandler) HasRoles(roles ...string) func(c *fiber.Ctx) error {
+	if len(roles) < 1 {
+		return response.Unauthorized
 	}
-	return groups
-}
-
-// CheckHasPermission func checks if bitGroups (map[int]int)
-// contains require permission ID or not
-func CheckHasPermission(requirePermID int, userPermissions map[int]int) bool {
-	endpointBits := BuildBitGroups(requirePermID)
-	// it seems O(n), but it's actually O(1)
-	// because length of $endpointBits is 1
-	for key, requiredBits := range endpointBits {
-		userBits, ok := userPermissions[key]
-		if !ok || requiredBits&userBits == 0 {
-			return false
-		}
-	}
-	return true
-}
-
-// HasPermission func extracts and checks for claims from fiber Ctx
-func (j JWTHandler) HasPermission(c *fiber.Ctx, endpointPermID int) error {
-	claims, ok := c.Locals("claims").(*Claims)
-	if !ok {
-		return response.Unauthorized(c)
-	}
-	userPermissions := claims.Permissions
-	endpointBits := BuildBitGroups(endpointPermID)
-	// it seems O(n), but it's actually O(1)
-	// because length of $endpointBits is 1
-	for key, requiredBits := range endpointBits {
-		userBits, ok := userPermissions[key]
-		if !ok || requiredBits&userBits == 0 {
+	return func(c *fiber.Ctx) error {
+		claims, ok := c.Locals("claims").(*Claims)
+		if !ok || claims == nil {
 			return response.Unauthorized(c)
 		}
+		// Check if user has all specified roles
+		for _, role := range roles {
+			if claims.Roles[role] != 1 {
+				return response.Unauthorized(c)
+			}
+		}
+		return c.Next()
 	}
-	return c.Next()
 }
 
-// HasRole func check claims-role equal or not with require role
-func (j JWTHandler) HasRole(c *fiber.Ctx, role string) error {
-	claims, ok := c.Locals("claims").(*Claims)
-	if !ok || role != claims.Role {
+// HasOneRole is a middleware function that checks if the user associated with the incoming request
+// possesses at least one of the specified roles in the JWT claims. If the user has at least one role,
+// it allows the request to proceed; otherwise, it returns an "Unauthorized" response.
+func (j JWTHandler) HasOneRole(roles ...string) func(c *fiber.Ctx) error {
+	if len(roles) < 1 {
+		return response.Unauthorized
+	}
+	return func(c *fiber.Ctx) error {
+		claims, ok := c.Locals("claims").(*Claims)
+		if !ok || claims == nil {
+			return response.Unauthorized(c)
+		}
+		// Check if user has at least one
+		// of the specified roles
+		for _, role := range roles {
+			if claims.Roles[role] == 1 {
+				return c.Next()
+			}
+		}
 		return response.Unauthorized(c)
-	}
-	return c.Next()
-}
-
-// CheckHasPermission func is handler/middleware that
-// called before the controller for checks the fiber ctx
-func (j JWTHandler) CheckHasPermission(endpointPermID int) func(c *fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		return j.HasPermission(c, endpointPermID)
-	}
-}
-
-// CheckHasRole func is handler/middleware that
-// called before the controller for checks the fiber ctx
-func (j JWTHandler) CheckHasRole(role string) func(c *fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		return j.HasRole(c, role)
 	}
 }

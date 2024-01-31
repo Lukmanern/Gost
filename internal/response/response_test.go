@@ -71,7 +71,11 @@ func TestCreateResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := CreateResponse(tt.args.c, tt.args.statusCode, tt.args.success, tt.args.message, tt.args.data); (err != nil) != tt.wantErr {
+			if err := CreateResponse(tt.args.c, tt.args.statusCode, Response{
+				Message: tt.args.message,
+				Success: tt.args.success,
+				Data:    tt.args.data,
+			}); (err != nil) != tt.wantErr {
 				t.Errorf("CreateResponse() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -244,7 +248,7 @@ func TestDataNotFound(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := DataNotFound(tt.args.c, tt.args.message); (err != nil) != tt.wantErr {
+			if err := DataNotFound(tt.args.c); (err != nil) != tt.wantErr {
 				t.Errorf("DataNotFound() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

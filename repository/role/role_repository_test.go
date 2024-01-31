@@ -2,22 +2,20 @@ package repository
 
 import (
 	"context"
-	"reflect"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/Lukmanern/gost/database/connector"
-	"github.com/Lukmanern/gost/domain/base"
 	"github.com/Lukmanern/gost/domain/entity"
+	"github.com/Lukmanern/gost/domain/model"
 	"github.com/Lukmanern/gost/internal/env"
 )
 
 var (
-	roleRepoImpl  RoleRepositoryImpl
-	permissionsID []int
-	timeNow       time.Time
-	ctx           context.Context
+	roleRepoImpl RoleRepositoryImpl
+	timeNow      time.Time
+	ctx          context.Context
 )
 
 func init() {
@@ -30,20 +28,18 @@ func init() {
 	roleRepoImpl = RoleRepositoryImpl{
 		db: connector.LoadDatabase(),
 	}
-	permissionsID = []int{1, 2, 3, 4, 5}
-
 }
 
 func createOneRole(t *testing.T, namePrefix string) *entity.Role {
 	role := entity.Role{
 		Name:        "valid-role-name-" + namePrefix,
 		Description: "valid-role-description-" + namePrefix,
-		TimeFields: base.TimeFields{
+		TimeFields: entity.TimeFields{
 			CreatedAt: &timeNow,
 			UpdatedAt: &timeNow,
 		},
 	}
-	id, createErr := roleRepoImpl.Create(ctx, role, permissionsID)
+	id, createErr := roleRepoImpl.Create(ctx, role)
 	if createErr != nil {
 		t.Error("error while creating role : ", createErr.Error())
 	}
@@ -68,9 +64,8 @@ func TestCreate(t *testing.T) {
 	}()
 
 	type args struct {
-		ctx           context.Context
-		role          entity.Role
-		permissionsID []int
+		ctx  context.Context
+		role entity.Role
 	}
 	tests := []struct {
 		name      string
@@ -87,7 +82,7 @@ func TestCreate(t *testing.T) {
 				role: entity.Role{
 					Name:        role.Name,
 					Description: "",
-					TimeFields: base.TimeFields{
+					TimeFields: entity.TimeFields{
 						CreatedAt: &timeNow,
 						UpdatedAt: &timeNow,
 					},
@@ -102,70 +97,13 @@ func TestCreate(t *testing.T) {
 					t.Errorf("create() do not panic")
 				}
 			}()
-			gotID, err := tt.repo.Create(tt.args.ctx, tt.args.role, tt.args.permissionsID)
+			gotID, err := tt.repo.Create(tt.args.ctx, tt.args.role)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RoleRepositoryImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if gotID <= 0 {
 				t.Errorf("ID should be positive")
-			}
-		})
-	}
-}
-
-func TestConnectToPermission(t *testing.T) {
-	role := createOneRole(t, "TestRoleConnectToPermission")
-	if role == nil || role.ID == 0 {
-		t.Error("failed creating role : role is nil")
-	}
-	defer func() {
-		roleRepoImpl.Delete(ctx, role.ID)
-	}()
-
-	ctxBg := context.Background()
-	testCases := []struct {
-		name          string
-		roleID        int
-		permissionsID []int
-		wantErr       bool
-	}{
-		{
-			name:          "Success Case",
-			roleID:        role.ID,
-			permissionsID: []int{2, 3, 4},
-			wantErr:       false,
-		},
-		{
-			name:          "Failed Case",
-			roleID:        role.ID,
-			permissionsID: []int{-2, 3, 4},
-			wantErr:       true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := roleRepoImpl.ConnectToPermission(ctxBg, tc.roleID, tc.permissionsID)
-			if err != nil && !tc.wantErr {
-				t.Errorf("Expected error: %v, got error: %v", tc.wantErr, err)
-			}
-
-			roleByID, getErr := roleRepoImpl.GetByID(ctx, role.ID)
-			if getErr != nil {
-				t.Errorf("Expect no error, got error: %v", getErr)
-			}
-
-			if !tc.wantErr {
-				perms := roleByID.Permissions
-				permsID := []int{}
-				for _, perm := range perms {
-					permsID = append(permsID, perm.ID)
-				}
-
-				if !reflect.DeepEqual(tc.permissionsID, permsID) {
-					t.Error("permsID should equal")
-				}
 			}
 		})
 	}
@@ -191,7 +129,7 @@ func TestGetByID(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "success get permission by valid id",
+			name: "success get role",
 			repo: roleRepoImpl,
 			args: args{
 				ctx: ctx,
@@ -200,7 +138,7 @@ func TestGetByID(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "failed get permission by invalid id",
+			name: "failed get role: invalid id",
 			repo: roleRepoImpl,
 			args: args{
 				ctx: ctx,
@@ -243,7 +181,7 @@ func TestGetByName(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "success get permission by valid id",
+			name: "success get role by valid id",
 			repo: roleRepoImpl,
 			args: args{
 				ctx:  ctx,
@@ -252,7 +190,7 @@ func TestGetByName(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "failed get permission by invalid id",
+			name: "failed get role by invalid id",
 			repo: roleRepoImpl,
 			args: args{
 				ctx:  ctx,
@@ -291,7 +229,7 @@ func TestGetAll(t *testing.T) {
 	lenRoles := len(roles)
 	type args struct {
 		ctx    context.Context
-		filter base.RequestGetAll
+		filter model.RequestGetAll
 	}
 	tests := []struct {
 		name    string
@@ -304,7 +242,7 @@ func TestGetAll(t *testing.T) {
 			repo: roleRepoImpl,
 			args: args{
 				ctx: ctx,
-				filter: base.RequestGetAll{
+				filter: model.RequestGetAll{
 					Limit: 1000,
 					Page:  1,
 				},
@@ -316,7 +254,7 @@ func TestGetAll(t *testing.T) {
 			repo: roleRepoImpl,
 			args: args{
 				ctx: ctx,
-				filter: base.RequestGetAll{
+				filter: model.RequestGetAll{
 					Limit: 1,
 					Page:  1,
 				},
@@ -332,13 +270,13 @@ func TestGetAll(t *testing.T) {
 				return
 			}
 			if tt.args.filter.Limit > lenRoles && len(gotRoles) < lenRoles {
-				t.Error("permissions should be $lenRoles or more")
+				t.Error("role should be $lenRoles or more")
 			}
 			if tt.args.filter.Limit > lenRoles && gotTotal < lenRoles {
-				t.Error("total permissions should be $lenRoles or more")
+				t.Error("total role should be $lenRoles or more")
 			}
 			if tt.args.filter.Limit < lenRoles && len(gotRoles) > lenRoles {
-				t.Error("permissions should be less than $lenPermission")
+				t.Error("role should be less than $lenRoles")
 			}
 		})
 	}
@@ -427,7 +365,7 @@ func TestDelete(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "success update permission",
+			name:    "success update role",
 			repo:    roleRepoImpl,
 			wantErr: false,
 			args: args{

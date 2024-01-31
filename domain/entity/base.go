@@ -1,4 +1,4 @@
-package base
+package entity
 
 import "time"
 
@@ -8,6 +8,7 @@ import "time"
 type TimeFields struct {
 	CreatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"created_at"`
 	UpdatedAt *time.Time `gorm:"type:timestamp null;default:null" json:"updated_at"`
+	DeletedAt *time.Time `gorm:"type:timestamp null;default:null" json:"deleted_at"`
 }
 
 // SetCreateTime func fills created_at and updated_at fields
@@ -19,9 +20,15 @@ func (att *TimeFields) SetCreateTime() {
 }
 
 // SetUpdateTime func fills updated_at fields
-// This struct prevents developers from forgets
-// or any common mistake.
+// This struct prevents developers from forgets or any common mistake.
 func (att *TimeFields) SetUpdateTime() {
 	timeNow := time.Now()
 	att.UpdatedAt = &timeNow
+}
+
+// SetDeleteTime func fills deleted_at fields and for status in softdelete feature
+// This struct prevents developers from forgets or any common mistake.
+func (att *TimeFields) SetDeleteTime() {
+	timeNow := time.Now()
+	att.DeletedAt = &timeNow
 }
