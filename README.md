@@ -17,7 +17,7 @@ Techs and tools were used in this project:
 - [Github CLI](https://cli.github.com/) → Github management for repository's secrets & etc.
 - [Github Action](https://github.com/features/actions) → Automated testing and building across multiple versions of Go.
 - [Snyk](https://app.snyk.io/) → Dependency scanning.
-- [SonarLint, VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) → Detects & highlights issues that can lead to bugs & vulnerabilities.
+- [SonarLint as VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) → Detects & highlights issues that can lead to bugs & vulnerabilities.
 - [GoLint](https://github.com/golang/lint) → CLI static code analytic for code-styling & many more.
 
 &#xa0;
@@ -40,7 +40,3 @@ Techs and tools were used in this project:
 This project is under license from MIT. For more details, see the [LICENSE](LICENSE) file.
 
 &#xa0;
-
-## Todo
-
-- Add password and password confirm at DeleteProfile (permanent) by User

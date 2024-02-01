@@ -14,15 +14,29 @@ import (
 	service "github.com/Lukmanern/gost/service/role"
 )
 
+// RoleController defines all methods for handling
+// role-related operations and logic.
+// All these operations should be performed by an admin
+// or other roles that defined in route-file.
 type RoleController interface {
-	// auth + admin
+	// Create handles the creation of a new role.
 	Create(c *fiber.Ctx) error
+
+	// Get retrieves information about a specific role.
 	Get(c *fiber.Ctx) error
+
+	// GetAll retrieves information about all roles.
 	GetAll(c *fiber.Ctx) error
+
+	// Update handles updating role information.
 	Update(c *fiber.Ctx) error
+
+	// Delete handles the deletion of a role.
 	Delete(c *fiber.Ctx) error
 }
 
+// RoleControllerImpl is the implementation of
+// RoleController with a RoleService dependency.
 type RoleControllerImpl struct {
 	service service.RoleService
 }
@@ -32,6 +46,8 @@ var (
 	roleControllerImplOnce sync.Once
 )
 
+// NewRoleController creates a singleton RoleController
+// instance with the provided RoleService.
 func NewRoleController(service service.RoleService) RoleController {
 	roleControllerImplOnce.Do(func() {
 		roleControllerImpl = &RoleControllerImpl{
@@ -41,6 +57,7 @@ func NewRoleController(service service.RoleService) RoleController {
 	return roleControllerImpl
 }
 
+// Create handles the creation of a new role.
 func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -73,6 +90,7 @@ func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 	return response.SuccessCreated(c, data)
 }
 
+// Get retrieves information about a specific role.
 func (ctr *RoleControllerImpl) Get(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -98,6 +116,7 @@ func (ctr *RoleControllerImpl) Get(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, role)
 }
 
+// GetAll retrieves information about all roles.
 func (ctr *RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -135,6 +154,7 @@ func (ctr *RoleControllerImpl) GetAll(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, responseData)
 }
 
+// Update handles updating role information.
 func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -169,6 +189,7 @@ func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
+// Delete handles the deletion of a role.
 func (ctr *RoleControllerImpl) Delete(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {

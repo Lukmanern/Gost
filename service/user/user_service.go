@@ -48,9 +48,11 @@ type UserServiceImpl struct {
 	emailService service.EmailService
 }
 
+// KeyResetPassword and KeyAccountActivation are
+// used for addition key to get value from redis
 const (
-	KEY_FORGET_PASSWORD    = "-forget-password"
-	KEY_ACCOUNT_ACTIVATION = "-account-activation"
+	KeyResetPassword     = "-forget-password"
+	KeyAccountActivation = "-account-activation"
 )
 
 var (
@@ -102,7 +104,7 @@ func (svc *UserServiceImpl) Register(ctx context.Context, data model.UserRegiste
 	}
 
 	code := helper.RandomString(32) // verification code
-	key := data.Email + KEY_ACCOUNT_ACTIVATION
+	key := data.Email + KeyAccountActivation
 	exp := time.Hour * 3
 	redisStatus := svc.redis.Set(key, code, exp)
 	if redisStatus.Err() != nil {
@@ -132,7 +134,7 @@ func (svc *UserServiceImpl) AccountActivation(ctx context.Context, data model.Us
 		return fiber.NewError(fiber.StatusBadRequest, "activation failed, account is active or already deleted")
 	}
 
-	key := data.Email + KEY_ACCOUNT_ACTIVATION
+	key := data.Email + KeyAccountActivation
 	redisStatus := svc.redis.Get(key)
 	if redisStatus.Err() != nil {
 		return errors.New("error while getting data from redis")
@@ -192,7 +194,7 @@ func (svc *UserServiceImpl) ForgetPassword(ctx context.Context, data model.UserF
 		return errors.New("error while getting user data")
 	}
 
-	key := data.Email + KEY_FORGET_PASSWORD
+	key := data.Email + KeyResetPassword
 	code := helper.RandomString(32)
 	exp := time.Hour * 1
 	redisStatus := svc.redis.Set(key, code, exp)
@@ -218,7 +220,7 @@ func (svc *UserServiceImpl) ResetPassword(ctx context.Context, data model.UserRe
 	if getErr != nil || user == nil {
 		return errors.New("error while getting user data")
 	}
-	key := data.Email + KEY_FORGET_PASSWORD
+	key := data.Email + KeyResetPassword
 	code := svc.redis.Get(key).Val()
 	if code == "" || code != data.Code {
 		return fiber.NewError(fiber.StatusNotFound, "verfication code isn't found")

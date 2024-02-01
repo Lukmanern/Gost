@@ -140,7 +140,7 @@ func TestAccountActivation(t *testing.T) {
 	assert.Nil(t, err, consts.ShouldNotNil, headerTestName)
 	defer repository.Delete(ctx, id)
 
-	key := validUser.Email + KEY_ACCOUNT_ACTIVATION
+	key := validUser.Email + KeyAccountActivation
 	validCode := redisConTest.Get(key).Val()
 	assert.True(t, len(validCode) > 0, consts.ShouldNotNil, headerTestName)
 
@@ -333,7 +333,7 @@ func TestResetPassword(t *testing.T) {
 	err := service.ForgetPassword(ctx, model.UserForgetPassword{Email: validUser.Email})
 	assert.Nil(t, err, consts.ShouldNil, headerTestName)
 
-	key := validUser.Email + KEY_FORGET_PASSWORD
+	key := validUser.Email + KeyResetPassword
 	validCode := redisConTest.Get(key).Val()
 	assert.True(t, len(validCode) > 0, consts.ShouldNotNil, headerTestName)
 
