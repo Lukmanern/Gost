@@ -119,8 +119,9 @@ func RunApp() {
 		close(idleConnsClosed)
 	}()
 
-	getUserRoutes(router)
-	getRolePermissionRoutes(router)
+	helloRoutes(router)
+	userRoutes(router)
+	roleRoutes(router)
 
 	if err := router.Listen(fmt.Sprintf(":%d", port)); err != nil {
 		log.Printf("Oops... Server is not running! Reason: %v", err)

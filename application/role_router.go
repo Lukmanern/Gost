@@ -17,7 +17,7 @@ var (
 	roleController controller.RoleController
 )
 
-func getRolePermissionRoutes(router fiber.Router) {
+func roleRoutes(router fiber.Router) {
 	jwtHandler := middleware.NewJWTHandler()
 
 	roleService = service.NewRoleService()

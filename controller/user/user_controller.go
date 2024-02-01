@@ -69,7 +69,8 @@ type UserController interface {
 // UserControllerImpl is the implementation of
 // UserController with a UserService dependency.
 type UserControllerImpl struct {
-	service service.UserService
+	service  service.UserService
+	validate *validator.Validate
 }
 
 var (
@@ -82,7 +83,8 @@ var (
 func NewUserController(service service.UserService) UserController {
 	userControllerOnce.Do(func() {
 		userController = &UserControllerImpl{
-			service: service,
+			service:  service,
+			validate: validator.New(),
 		}
 	})
 
@@ -101,8 +103,7 @@ func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 	}
 	user.Email = strings.ToLower(user.Email)
 
-	validate := validator.New()
-	if err := validate.Struct(&user); err != nil {
+	if err := ctr.validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 
@@ -137,10 +138,10 @@ func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
-	validate := validator.New()
-	if err := validate.Struct(&user); err != nil {
+	if err := ctr.validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
+
 	ctx := c.Context()
 	err := ctr.service.AccountActivation(ctx, user)
 	if err != nil {
@@ -167,8 +168,7 @@ func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 	user.IP = helper.RandomIPAddress() // Todo : update to c.IP()
-	validate := validator.New()
-	if err := validate.Struct(&user); err != nil {
+	if err := ctr.validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 
@@ -201,8 +201,8 @@ func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
-	validate := validator.New()
-	if err := validate.Struct(&user); err != nil {
+
+	if err := ctr.validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 
@@ -231,8 +231,7 @@ func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
-	validate := validator.New()
-	if err := validate.Struct(&user); err != nil {
+	if err := ctr.validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 	if user.NewPassword != user.NewPasswordConfirm {
@@ -305,8 +304,7 @@ func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 	user.ID = userClaims.ID
-	validate := validator.New()
-	if err := validate.Struct(&user); err != nil {
+	if err := ctr.validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 
@@ -336,9 +334,7 @@ func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 	user.ID = userClaims.ID
-
-	validate := validator.New()
-	if err := validate.Struct(&user); err != nil {
+	if err := ctr.validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 	if user.NewPassword != user.NewPasswordConfirm {
@@ -374,8 +370,7 @@ func (ctr *UserControllerImpl) DeleteAccount(c *fiber.Ctx) error {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 	user.ID = userClaims.ID
-	validate := validator.New()
-	if err := validate.Struct(&user); err != nil {
+	if err := ctr.validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 	if user.Password != user.PasswordConfirm {

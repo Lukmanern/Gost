@@ -38,7 +38,8 @@ type RoleController interface {
 // RoleControllerImpl is the implementation of
 // RoleController with a RoleService dependency.
 type RoleControllerImpl struct {
-	service service.RoleService
+	service  service.RoleService
+	validate *validator.Validate
 }
 
 var (
@@ -51,7 +52,8 @@ var (
 func NewRoleController(service service.RoleService) RoleController {
 	roleControllerImplOnce.Do(func() {
 		roleControllerImpl = &RoleControllerImpl{
-			service: service,
+			service:  service,
+			validate: validator.New(),
 		}
 	})
 	return roleControllerImpl
@@ -68,8 +70,7 @@ func (ctr *RoleControllerImpl) Create(c *fiber.Ctx) error {
 	if err := c.BodyParser(&role); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
-	validate := validator.New()
-	if err := validate.Struct(&role); err != nil {
+	if err := ctr.validate.Struct(&role); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
 
@@ -170,8 +171,7 @@ func (ctr *RoleControllerImpl) Update(c *fiber.Ctx) error {
 		return response.BadRequest(c, consts.InvalidJSONBody)
 	}
 	role.ID = id
-	validate := validator.New()
-	if err := validate.Struct(&role); err != nil {
+	if err := ctr.validate.Struct(&role); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody)
 	}
 

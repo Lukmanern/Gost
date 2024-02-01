@@ -17,7 +17,7 @@ var (
 	userController controller.UserController
 )
 
-func getUserRoutes(router fiber.Router) {
+func userRoutes(router fiber.Router) {
 	jwtHandler := middleware.NewJWTHandler()
 
 	userService = service.NewUserService()
