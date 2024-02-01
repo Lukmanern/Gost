@@ -53,8 +53,10 @@ var (
 	})
 )
 
+// setup initializes the application
+// by checking the environment and
+// database configuration.
 func setup() {
-	// Check env and database
 	env.ReadConfig("./.env")
 	config := env.Configuration()
 	privKey := config.GetPrivateKey()
@@ -68,6 +70,7 @@ func setup() {
 	connector.LoadRedisCache()
 }
 
+// checkLocalPort checks if a given port is available for local use.
 func checkLocalPort(port int) {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
@@ -76,6 +79,9 @@ func checkLocalPort(port int) {
 	defer listener.Close()
 }
 
+// RunApp initializes and runs the application,
+// handling setup, port checking, middleware,
+// and route registration.
 func RunApp() {
 	setup()
 	checkLocalPort(port)

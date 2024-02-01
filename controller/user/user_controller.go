@@ -16,24 +16,58 @@ import (
 	service "github.com/Lukmanern/gost/service/user"
 )
 
+// UserController defines methods for handling
+// user-related operations.
 type UserController interface {
-	// no-auth
+	// NO-AUTH
+
+	// Register handles for user registration for all roles.
+	// This handler will send an email for confirmation.
 	Register(c *fiber.Ctx) error
+
+	// AccountActivation handles the account activation
+	// process after registration.
 	AccountActivation(c *fiber.Ctx) error
+
+	// Login handles user login.
 	Login(c *fiber.Ctx) error
+
+	// ForgetPassword handles the forget password request.
+	// This handler will send an email for reset password.
 	ForgetPassword(c *fiber.Ctx) error
+
+	// ResetPassword handles the password reset process.
 	ResetPassword(c *fiber.Ctx) error
-	// auth
+
+	// AUTH
+
+	// MyProfile retrieves the user's own profile information.
 	MyProfile(c *fiber.Ctx) error
+
+	// Logout handles user logout.
+	// Black-listing the user token / JWT.
 	Logout(c *fiber.Ctx) error
+
+	// UpdateProfile handles updating user profile information.
 	UpdateProfile(c *fiber.Ctx) error
+
+	// UpdatePassword handles updating user password.
 	UpdatePassword(c *fiber.Ctx) error
+
+	// DeleteAccount handles the account deletion process.
 	DeleteAccount(c *fiber.Ctx) error
-	// auth + admin
+
+	// AUTH and ROLE-ADMIN AREA
+
+	// GetAll retrieves all user accounts (need admin access).
 	GetAll(c *fiber.Ctx) error
+
+	// BanAccount handles banning a user account (need admin access).
 	BanAccount(c *fiber.Ctx) error
 }
 
+// UserControllerImpl is the implementation of
+// UserController with a UserService dependency.
 type UserControllerImpl struct {
 	service service.UserService
 }
@@ -43,6 +77,8 @@ var (
 	userControllerOnce sync.Once
 )
 
+// NewUserController creates a singleton UserController
+// instance with the given UserService.
 func NewUserController(service service.UserService) UserController {
 	userControllerOnce.Do(func() {
 		userController = &UserControllerImpl{
@@ -53,16 +89,19 @@ func NewUserController(service service.UserService) UserController {
 	return userController
 }
 
+// Register handles for user registration for all roles.
+// This handler will send an email for confirmation.
 func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 	var user model.UserRegister
 	if err := c.BodyParser(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
-	user.Email = strings.ToLower(user.Email)
-	validate := validator.New()
 	if len(user.RoleIDs) < 1 {
 		return response.BadRequest(c, "please choose one or more role")
 	}
+	user.Email = strings.ToLower(user.Email)
+
+	validate := validator.New()
 	if err := validate.Struct(&user); err != nil {
 		return response.BadRequest(c, consts.InvalidJSONBody+err.Error())
 	}
@@ -91,6 +130,8 @@ func (ctr *UserControllerImpl) Register(c *fiber.Ctx) error {
 	})
 }
 
+// AccountActivation handles the account activation
+// process after registration.
 func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 	var user model.UserActivation
 	if err := c.BodyParser(&user); err != nil {
@@ -119,6 +160,7 @@ func (ctr *UserControllerImpl) AccountActivation(c *fiber.Ctx) error {
 	})
 }
 
+// Login handles user login.
 func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 	var user model.UserLogin
 	if err := c.BodyParser(&user); err != nil {
@@ -152,6 +194,8 @@ func (ctr *UserControllerImpl) Login(c *fiber.Ctx) error {
 	})
 }
 
+// ForgetPassword handles the forget password request.
+// This handler will send an email for reset password.
 func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	var user model.UserForgetPassword
 	if err := c.BodyParser(&user); err != nil {
@@ -181,6 +225,7 @@ func (ctr *UserControllerImpl) ForgetPassword(c *fiber.Ctx) error {
 	})
 }
 
+// ResetPassword handles the password reset process.
 func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 	var user model.UserResetPassword
 	if err := c.BodyParser(&user); err != nil {
@@ -213,6 +258,7 @@ func (ctr *UserControllerImpl) ResetPassword(c *fiber.Ctx) error {
 	})
 }
 
+// MyProfile retrieves the user's own profile information.
 func (ctr *UserControllerImpl) MyProfile(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -233,6 +279,8 @@ func (ctr *UserControllerImpl) MyProfile(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, userProfile)
 }
 
+// Logout handles user logout.
+// Black-listing the user token / JWT.
 func (ctr *UserControllerImpl) Logout(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -245,6 +293,7 @@ func (ctr *UserControllerImpl) Logout(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
+// UpdateProfile handles updating user profile information.
 func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -275,6 +324,7 @@ func (ctr *UserControllerImpl) UpdateProfile(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
+// UpdatePassword handles updating user password.
 func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -312,6 +362,7 @@ func (ctr *UserControllerImpl) UpdatePassword(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
+// DeleteAccount handles the account deletion process.
 func (ctr *UserControllerImpl) DeleteAccount(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -350,6 +401,7 @@ func (ctr *UserControllerImpl) DeleteAccount(c *fiber.Ctx) error {
 	return response.SuccessNoContent(c)
 }
 
+// GetAll retrieves all user accounts (need admin access).
 func (ctr *UserControllerImpl) GetAll(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {
@@ -387,6 +439,7 @@ func (ctr *UserControllerImpl) GetAll(c *fiber.Ctx) error {
 	return response.SuccessLoaded(c, responseData)
 }
 
+// BanAccount handles banning a user account (need admin access).
 func (ctr *UserControllerImpl) BanAccount(c *fiber.Ctx) error {
 	userClaims, ok := c.Locals("claims").(*middleware.Claims)
 	if !ok || userClaims == nil {

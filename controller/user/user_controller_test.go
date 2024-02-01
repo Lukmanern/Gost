@@ -257,7 +257,7 @@ func TestAccountActivation(t *testing.T) {
 	assert.Nil(t, err, consts.ShouldNil, headerTestName)
 
 	redisConTest := connector.LoadRedisCache()
-	key := validUser.Email + service.KEY_ACCOUNT_ACTIVATION
+	key := validUser.Email + service.KeyAccountActivation
 	validCode := redisConTest.Get(key).Val()
 
 	type testCase struct {
@@ -516,7 +516,7 @@ func TestResetPassword(t *testing.T) {
 	assert.Nil(t, err, consts.ShouldNil, headerTestName)
 
 	redisConTest := connector.LoadRedisCache()
-	key := validUser.Email + service.KEY_FORGET_PASSWORD
+	key := validUser.Email + service.KeyResetPassword
 	validCode := redisConTest.Get(key).Val()
 	assert.True(t, len(validCode) >= 21, "should true", headerTestName)
 
