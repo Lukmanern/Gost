@@ -6,7 +6,7 @@ Golang project starter with Fiber Framework, jwt-auth, email service and soft de
 
 &#xa0;
 
-## :rocket: Technologies And :wrench: Tools
+## :rocket: Technologies and :wrench: Tools
 
 Techs and tools were used in this project:
 
@@ -21,7 +21,7 @@ Techs and tools were used in this project:
 
 &#xa0;
 
-## Run Project
+## :checkered_flag: Run Project
 
 1. Clone project
 
@@ -31,7 +31,7 @@ git clone https://github.com/Lukmanern/gost && cd gost
 
 2. Rename or copy the file .env.example to .env
 
-3. Fill all the values in the .env file. For a quick setup, I suggest using Supabase for the database and Gmail for the system email.
+3. Fill all the values in the .env file. For a quick setup, I suggest using [Supabase](https://www.supabase.com) for the database and Gmail for the system email.
 
 4. Download all dependencies, turn on Redis, and then test the connections to the databases (DB and Redis).
 
@@ -39,9 +39,19 @@ git clone https://github.com/Lukmanern/gost && cd gost
 go get -v ./... && go test ./database/...
 ```
 
-## Github Action and Repository
+5. Run the project and try to hit hello endpoints : /hello and /hello/your-name
 
-1. Remove the .git directory to prevent repository cloning.
+```bash
+go run .
+```
+
+6. Last but not least, if you are using VSCode, you can easily search/find and replace github.com/Lukmanern/gost with your repository.
+
+&#xa0;
+
+## :octocat: Github Action and Repository
+
+1. Delete the .git directory to prevent repository cloning.
 
 2. Create a repository on GitHub, but don't push initially. Ensure to add the Repository Secrets for GitHub Actions (SNYK_TOKEN and ENV).
 
@@ -55,7 +65,7 @@ go get -v ./... && go test ./database/...
 
 &#xa0;
 
-## Some Tips
+## :dango: Some Tips
 
 1. You can use [Github-CLI](https://cli.github.com/) to set, remove, or update your GitHub Repository Secret.
 
