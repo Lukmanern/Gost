@@ -26,23 +26,25 @@ Techs and tools were used in this project:
 1. Clone project
 
 ```bash
-git clone https://github.com/Lukmanern/gost && cd gost
+git clone https://github.com/Lukmanern/gost your_project && cd your_project
 ```
 
-2. Rename or copy the file .env.example to .env
+2. Delete the .git directory to prevent repository cloning. The .git directory is not visible, you can try with `rm -rf .git` command.
 
-3. Delete the .git directory to prevent repository cloning. The .git directory is not visible, you can try with `rm -rf .git` command.
+3. Rename or copy the file .env.example to .env
 
-4. Create keys directory, then generate keys.
+4. For a quick setup, I suggest using [Supabase](https://www.supabase.com) for the database and Gmail for the system email. Then, fill all the values in the .env file.
+
+5. Create `keys` directory, then generate keys.
 
 ```bash
+mkdir keys
+
 # unix
 openssl req -x509 -newkey rsa:2048 -keyout keys/private.key -out keys/publickey.crt -days 365 -nodes -subj "/CN=localhost"
 # windows: using openssl.exe
 "C:\Program Files\Git\usr\bin\openssl.exe" req -x509 -newkey rsa:2048 -keyout keys/private.key -out keys/publickey.crt -days 365 -nodes -subj "/CN=localhost"
 ```
-
-5. Fill all the values in the .env file. For a quick setup, I suggest using [Supabase](https://www.supabase.com) for the database and Gmail for the system email.
 
 6. Download all dependencies, turn on Redis, and then test the connections to the databases (DB and Redis).
 
