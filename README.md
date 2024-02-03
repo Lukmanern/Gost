@@ -13,7 +13,7 @@ Techs and tools were used in this project:
 - [Fiber Framework](https://docs.gofiber.io/) → Framework for routing & HTTP handler.
 - [GORM](https://gorm.io/) → Database logics & queries.
 - [PostgreSQL @ Supabase](https://www.supabase.com) → Free database.
-- [Github CLI](https://cli.github.com/) → Github management for repository's secrets & etc.
+- [Github CLI](https://cli.github.com/) → Github repository's management.
 - [Github Action](https://github.com/features/actions) → Automated testing and building across multiple versions of Go.
 - [Snyk](https://app.snyk.io/) → Dependency scanning.
 - [SonarLint as VSCode ext.](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) → Detects & highlights issues that can lead to bugs & vulnerabilities.
@@ -31,37 +31,70 @@ git clone https://github.com/Lukmanern/gost && cd gost
 
 2. Rename or copy the file .env.example to .env
 
-3. Fill all the values in the .env file. For a quick setup, I suggest using [Supabase](https://www.supabase.com) for the database and Gmail for the system email.
+3. Delete the .git directory to prevent repository cloning. The .git directory is not visible, you can try with `rm -rf .git` command.
 
-4. Download all dependencies, turn on Redis, and then test the connections to the databases (DB and Redis).
+4. Create keys directory, then generate keys.
+
+```bash
+# unix
+openssl req -x509 -newkey rsa:2048 -keyout keys/private.key -out keys/publickey.crt -days 365 -nodes -subj "/CN=localhost"
+# windows: using openssl.exe
+"C:\Program Files\Git\usr\bin\openssl.exe" req -x509 -newkey rsa:2048 -keyout keys/private.key -out keys/publickey.crt -days 365 -nodes -subj "/CN=localhost"
+```
+
+5. Fill all the values in the .env file. For a quick setup, I suggest using [Supabase](https://www.supabase.com) for the database and Gmail for the system email.
+
+6. Download all dependencies, turn on Redis, and then test the connections to the databases (DB and Redis).
 
 ```bash
 go get -v ./... && go test ./database/...
 ```
 
-5. Run the project and try to hit hello endpoints : /hello and /hello/your-name
+7. Run the project and try to hit hello endpoints : /hello and /hello/your-name
 
 ```bash
 go run .
 ```
 
-6. Last but not least, if you are using VSCode, you can easily search/find and replace github.com/Lukmanern/gost with your repository.
+8. Command list :
+
+```bash
+# db-tables drop and re-create
+go run ./database/migration/.
+
+# db connections test
+go test ./database/...
+
+# Generate keys
+# unix
+openssl req -x509 -newkey rsa:2048 -keyout keys/private.key -out keys/publickey.crt -days 365 -nodes -subj "/CN=localhost"
+# windows: using openssl.exe
+"C:\Program Files\Git\usr\bin\openssl.exe" req -x509 -newkey rsa:2048 -keyout keys/private.key -out keys/publickey.crt -days 365 -nodes -subj "/CN=localhost"
+
+# Test
+go test -race -cover ./...
+
+# Download all package
+go mod download
+go get -d -v ./...
+go install -v ./...
+```
 
 &#xa0;
 
 ## :octocat: Github Action and Repository
 
-1. Delete the .git directory to prevent repository cloning.
+1. Create a repository on GitHub, but don't push initially. Ensure to add the Repository Secrets for GitHub Actions (SNYK_TOKEN and ENV).
 
-2. Create a repository on GitHub, but don't push initially. Ensure to add the Repository Secrets for GitHub Actions (SNYK_TOKEN and ENV).
+2. Log in to Snyk, get the account token, and then add the token in the GitHub Repository Secret (named: SNYK_TOKEN) of the repository you created.
 
-3. Log in to Snyk, get the account token, and then add the token in the GitHub Repository Secret (named: SNYK_TOKEN) of the repository you created.
+3. Also, add all .env values to the GitHub Repository Secret (named: ENV) for the repository. If you need a different database for GitHub Actions testing, you can modify the values.
 
-4. Also, add all .env values to the GitHub Repository Secret (named: ENV) for the repository. If you need a different database for GitHub Actions testing, you can modify the values.
+4. Before committing and pushing, take a few minutes to review the GitHub Actions workflow at: `./.github/workflows/*.yml`
 
-5. Before committing and pushing, take a few minutes to review the GitHub Actions workflow at: `./.github/workflows/*.yml`
+5. Search/find and replace github.com/Lukmanern/gost with your project name.
 
-6. Once you understand each workflow, proceed with the commit and push!
+6. Commit and push!
 
 &#xa0;
 
