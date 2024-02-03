@@ -21,7 +21,7 @@ Techs and tools were used in this project:
 
 &#xa0;
 
-## :checkered_flag: Run Project
+## :checkered_flag: Run Project or see [quick-setup](https://www.youtube.com/watch?v=bK4HQK4ECP8)
 
 1. Clone project
 
