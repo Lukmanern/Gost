@@ -33,7 +33,7 @@ func LoadDatabase() *gorm.DB {
 		var conErr error
 		gormDatabase, conErr = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if conErr != nil {
-			panic("panic while try to connect : " + conErr.Error())
+			panic("panic while try to connect : failed to connect to database") // conErr.Error()
 		}
 		if gormDatabase == nil {
 			panic("error : database is nil")
@@ -42,14 +42,14 @@ func LoadDatabase() *gorm.DB {
 		// try to ping database
 		database, sqlErr := gormDatabase.DB()
 		if sqlErr != nil {
-			log.Panicf("can't get sql-db : %s", sqlErr)
+			log.Panic("can't get sql-db") // sqlErr
 		}
 		if database == nil {
-			log.Panicf("can't get sql-db : database is nil")
+			log.Panic("can't get sql-db : database is nil")
 		}
 		pingErr := database.Ping()
 		if pingErr != nil {
-			log.Panicf("can't ping sql-db : %s", pingErr)
+			log.Panic("can't ping sql-db") // pingErr
 		}
 
 		// config for small-to-medium web applications
